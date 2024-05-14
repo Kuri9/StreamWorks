@@ -1,0 +1,15 @@
+﻿@* <AuthorizeView Policy="Admin">
+    <a class="login-link" href="/admin">
+        Admin
+    </a>
+</AuthorizeView> *@
+<AuthorizeView>
+    <Authorized>
+        <ManageNavMenu />
+    </Authorized>
+    <NotAuthorized>
+        <a class="login-link" href="/Account/SignIn">
+            Login
+        </a>
+    </NotAuthorized>
+</AuthorizeView>
