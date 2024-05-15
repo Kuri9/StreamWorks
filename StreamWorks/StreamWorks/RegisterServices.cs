@@ -17,6 +17,15 @@ public static class RegisterServices
         builder.Services.AddScoped<IdentityRedirectManager>();
         builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
 
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("Admin", policy =>
+            {
+                //policy.RequireClaim("jobTitle", "Admin");
+                policy.RequireRole("Administrator");
+            });
+        });
+
         //builder.Services.AddAuthentication(options =>
         //{
         //    options.DefaultScheme = IdentityConstants.ApplicationScheme;
@@ -40,5 +49,7 @@ public static class RegisterServices
             .AddDefaultTokenProviders();
 
         builder.Services.AddSingleton<IEmailSender<StreamWorksUser>, IdentityNoOpEmailSender>();
+
+        builder.Services.AddBlazorBootstrap();
     }
 }

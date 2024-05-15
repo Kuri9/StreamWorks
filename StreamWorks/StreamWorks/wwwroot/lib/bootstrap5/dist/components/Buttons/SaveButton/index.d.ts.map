@@ -1,0 +1,1 @@
+{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../../../src/components/Buttons/SaveButton/index.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,OAAO,CAAC;AAI1B,MAAM,WAAW,eAAe;IAC9B,IAAI,CAAC,EAAE,QAAQ,GAAG,QAAQ,GAAG,OAAO,GAAG,SAAS,CAAC;IACjD,KAAK,CAAC,EAAE,MAAM,CAAC;CAChB;AAED,eAAO,MAAM,UAAU,EAAE,KAAK,CAAC,EAAE,CAAC,eAAe,CAMhD,CAAC"}

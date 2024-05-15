@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "defaultProvider": "unpkg",
+  "libraries": [
+    {
+      "library": "bootstrap5@1.1.9",
+      "destination": "wwwroot/lib/bootstrap5/"
+    }
+  ]
+}

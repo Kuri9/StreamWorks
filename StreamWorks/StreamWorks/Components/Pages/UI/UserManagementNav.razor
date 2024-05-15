@@ -1,14 +1,14 @@
-﻿@* <AuthorizeView Policy="Admin">
-    <a class="login-link" href="/admin">
-        Admin
+﻿<AuthorizeView Policy="Admin">
+    <a class="login-link" href="/Account/Manage/Administration">
+        Administration
     </a>
-</AuthorizeView> *@
+</AuthorizeView>
 <AuthorizeView>
     <Authorized>
         <ManageNavMenu />
     </Authorized>
     <NotAuthorized>
-        <a class="login-link" href="/Account/SignIn">
+        <a class="login-link" href="/Account/Login">
             Login
         </a>
     </NotAuthorized>

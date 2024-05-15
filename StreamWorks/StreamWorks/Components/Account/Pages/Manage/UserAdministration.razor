@@ -1,0 +1,332 @@
+﻿@page "/Account/Manage/Administration"
+
+@rendermode InteractiveServer
+@inject IConfiguration _Config
+@inject UserManager<StreamWorksUser> _UserManager
+@inject RoleManager<StreamWorksRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Administration</h3>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="row">
+            <div class="col-8">
+                @if (@context.User.IsInRole(admin_role))
+                {
+                    <h2>Administrator Dashboard</h2>
+                    <h3>You are an @admin_role </h3>
+
+                    <div class="row">
+                        <span style="color:red">@error</span>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>User Name</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in userList)
+                            {
+                                <tr>
+                                    <td>@user.Id.ToString().Substring(0, 5) ...</td>
+                                    <td>@user.UserName</td>
+                                    <td>@user.Email</td>
+                                    <td>
+                                        <!-- Edit the current users information -->
+                                        <Button Color="ButtonColor.Primary" @onclick="(() => EditUser(user))">Edit</Button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                <Button Color="ButtonColor.Success" @onclick="AddNewUser">Add New User</Button>
+                }
+                else
+                {
+                    <p>You're not signed in as an @admin_role.</p>
+                }
+            </div>
+            <div class="col-4">
+
+            </div>
+        </div>
+
+        <Modal @ref="userEditModal" Title="@modalTitle">
+            <BodyTemplate>
+                <div class="row">
+                    @if (selectedUser.Id != Guid.Empty)
+                    {
+                        <p>@selectedUser.Id</p>
+                    }
+
+                    @if (selectedUser.Id != Guid.Empty)
+                    {
+                        <p>@selectedUser.UserName</p>
+                    }
+                    else
+                    {
+                        <input class="form-control" type="text"
+                                placeholder="UserName"
+                                @bind="selectedUser.UserName" />
+                    }
+
+                    <input class="form-control" type="text"
+                            placeholder="Email"
+                            @bind="selectedUser.Email" />
+
+                    <input class="form-control" type="password"
+                            placeholder="Password"
+                            @bind="selectedUser.PasswordHash" />
+
+                    <select class="form-control"
+                            @bind="@roleID">
+                                @foreach (var role in _RoleManager.Roles)
+                            {
+                                <option value="@role.Id">
+                                    @role.Name
+                                </option>
+                            }
+                    </select>
+                </div>
+                <div class="row">
+                    @if (selectedUser.Id != Guid.Empty)
+                    {
+                        <Button Color="ButtonColor.Primary" @onclick="UpdateUser">Update</Button>
+                    }
+                    else
+                    {
+                        <Button Color="ButtonColor.Primary" @onclick="CreateUser">Create User</Button>
+                    }
+                    @if (selectedUser.Id.ToString() != "")
+                    {
+                        <Button Color="ButtonColor.Warning" @onclick="DeleteUser">Delete</Button>
+                    }
+                </div>
+            </BodyTemplate>
+            <FooterTemplate>
+
+            </FooterTemplate>
+        </Modal>
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not loggged in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+
+    string admin_role = "Administrator";
+    System.Security.Claims.ClaimsPrincipal? CurrentUser;
+    StreamWorksUser selectedUser = new StreamWorksUser();
+    Guid roleID;
+    StreamWorksRole? SelectedUserRole;
+
+    StreamWorksUser newUser = new StreamWorksUser();
+    StreamWorksUser updateUser = new StreamWorksUser();
+
+    List<StreamWorksUser> userList = new List<StreamWorksUser>();
+
+    string error = "";
+    private Modal? userEditModal;
+    private string modalTitle = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // ensure there is a ADMINISTRATION_ROLE
+        var RoleResult = await _RoleManager.FindByNameAsync(admin_role);
+        if (RoleResult == null)
+        {
+            // Create ADMINISTRATION_ROLE Role
+            var role = new StreamWorksRole();
+            role.Name = admin_role;
+            await _RoleManager.CreateAsync(role);
+        }
+        // Ensure a user matching the Config Admin Account is an Administrator
+        var adminAccount = await _UserManager.FindByNameAsync(_Config.GetValue<string>("AdminAccount"));
+        if (adminAccount != null)
+        {
+            // Is this user in an administrator role?
+            var userResult = await _UserManager.IsInRoleAsync(adminAccount, admin_role);
+            if (!userResult)
+            {
+                // Put admin in Administrator role
+                await _UserManager.AddToRoleAsync(adminAccount, admin_role);
+            }
+        }
+        // Get the current logged in user
+        CurrentUser = (await authenticationStateTask).User;
+
+        // Get all users
+        GetUsers();
+    }
+
+
+    private async Task OnShowModalClick()
+    {
+        await userEditModal?.ShowAsync();
+    }
+
+    private async Task OnHideModalClick()
+    {
+        await userEditModal?.HideAsync();
+    }
+
+    private void GetUsers()
+    {
+        error = "";
+
+        userList = new List<StreamWorksUser>();
+
+        var user = _UserManager.Users.Select(u => new StreamWorksUser
+            {
+                Id = u.Id,
+                UserName = u.UserName,
+                Email = u.Email,
+                PasswordHash = "*****"
+            });
+        foreach (var entry in user)
+        {
+            userList.Add(entry);
+        }
+    }
+
+    private async Task CheckAdminAccount(StreamWorksUser userAccount)
+    {
+        // Ensure a user matching the Config Admin Account is an Administrator
+        var adminAccount = await _UserManager.FindByNameAsync(_Config.GetValue<string>("AdminAccount"));
+
+        if (adminAccount != null && userAccount.Id == adminAccount.Id)
+        {
+            // Is this user in an administrator role?
+            var userResult = await _UserManager.IsInRoleAsync(userAccount, admin_role);
+            if (!userResult)
+            {
+                // Put admin in Administrator role
+                await _UserManager.AddToRoleAsync(userAccount, admin_role);
+            }
+        }
+    }
+
+    private async void AddNewUser()
+    {
+        modalTitle = "Create a New User";
+        newUser = new StreamWorksUser();
+        newUser.Id = Guid.Empty;
+        newUser.PasswordHash = "*****";
+
+        selectedUser = newUser;
+        await OnShowModalClick();
+    }
+
+    private async Task EditUser(StreamWorksUser user)
+    {
+        modalTitle = "Edit User Information";
+        selectedUser = user;
+        await OnShowModalClick();
+    }
+
+    private async Task UpdateUser()
+    {
+        try
+        {
+            updateUser = new StreamWorksUser();
+            updateUser = await _UserManager.FindByIdAsync(selectedUser.Id.ToString());
+
+            if (updateUser is not null)
+            {
+                updateUser.UserName = selectedUser.UserName;
+                updateUser.Email = selectedUser.Email;
+
+                SelectedUserRole = _RoleManager.Roles.Where(r => r.Id == roleID).FirstOrDefault();
+
+                await _UserManager.UpdateAsync(updateUser);
+
+                if (updateUser.Roles != selectedUser.Roles)
+                {
+                    updateUser.Roles.Clear();
+                    await _UserManager.AddToRoleAsync(updateUser, SelectedUserRole?.Name);
+                }
+                // Ensure ADMIN account isnt accidently removed from site admin set in Config. 
+                // Re-adds it if it was.
+                await CheckAdminAccount(updateUser);
+
+                await OnHideModalClick();
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Error Updating User: {ex.Message}";
+        }
+    }
+
+    private async Task CreateUser()
+    {
+        try
+        {
+            // Check if the User already exists
+            if (selectedUser is not null)
+            {
+                newUser = new StreamWorksUser();
+                newUser.UserName = selectedUser.UserName;
+                newUser.Email = selectedUser.Email;
+
+                var result = await _UserManager.CreateAsync(newUser, selectedUser.PasswordHash);
+
+                if (!result.Succeeded)
+                {
+                    if (result.Errors.FirstOrDefault() is not null)
+                    {
+                        error = result.Errors.FirstOrDefault().Description; 
+                    }
+                    else
+                    {
+                        error = "Error Creating the User.";
+                    }
+                    return;
+                }
+                else
+                {
+                    // Add Roles
+                    if (SelectedUserRole?.Name == admin_role)
+                    {
+                        // If Admin role selected
+                        await _UserManager.AddToRoleAsync(newUser, admin_role);
+                    }
+                }
+                await CheckAdminAccount(newUser);
+
+                await OnHideModalClick();
+                GetUsers();
+            }   
+        }
+        catch (Exception ex)
+        {
+            error = ex.GetBaseException().Message;
+        }
+    }
+
+    private async Task DeleteUser()
+    {
+        // Close the Modal
+        await OnHideModalClick();
+
+        // Get the User
+        var user = await _UserManager.FindByIdAsync(selectedUser.Id.ToString());
+        if (user != null)
+        {
+            // Delete the user
+            await _UserManager.DeleteAsync(user);
+        }
+
+        // Refresh Users
+        GetUsers();
+    }
+}
