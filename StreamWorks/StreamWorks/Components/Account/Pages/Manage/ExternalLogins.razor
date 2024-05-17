@@ -71,6 +71,8 @@
     private IList<AuthenticationScheme>? otherLogins;
     private bool showRemoveButton;
 
+    private ExternalLoginInfo? externalLoginInfo;
+
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
@@ -120,13 +122,13 @@
     private async Task OnGetLinkLoginCallbackAsync()
     {
         var userId = await UserManager.GetUserIdAsync(user);
-        var info = await SignInManager.GetExternalLoginInfoAsync(userId);
-        if (info is null)
+        externalLoginInfo = await SignInManager.GetExternalLoginInfoAsync(userId);
+        if (externalLoginInfo is null)
         {
             RedirectManager.RedirectToCurrentPageWithStatus("Error: Could not load external login info.", HttpContext);
         }
 
-        var result = await UserManager.AddLoginAsync(user, info);
+        var result = await UserManager.AddLoginAsync(user, externalLoginInfo);
         if (!result.Succeeded)
         {
             RedirectManager.RedirectToCurrentPageWithStatus("Error: The external login was not added. External logins can only be associated with one account.", HttpContext);

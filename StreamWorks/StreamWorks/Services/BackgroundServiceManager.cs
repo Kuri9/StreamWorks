@@ -14,11 +14,13 @@ public class BackgroundServiceManager : IHostedService
     {
         logger.LogInformation("BackgroundServiceManager has started.");
         Console.WriteLine("BackgroundServiceManager has started.");
+        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("BackgroundServiceManager has ended.");
         Console.WriteLine("BackgroundServiceManager has ended.");
+        return Task.CompletedTask;
     }
 }
