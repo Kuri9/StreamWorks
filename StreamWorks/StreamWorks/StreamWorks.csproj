@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\StreamWorks.Library\StreamWorks.Library.csproj" />
+    <ProjectReference Include="..\..\StreamWorks.Twitch.Api\StreamWorks.Twitch.Api.csproj" />
+    <ProjectReference Include="..\..\StreamWorks.Twitch.Events\StreamWorks.Twitch.Events.csproj" />
+    <ProjectReference Include="..\..\StreamWorks.TwitchLibrary\StreamWorks.TwitchLibrary.csproj" />
     <ProjectReference Include="..\StreamWorks.Client\StreamWorks.Client.csproj" />
     <PackageReference Include="AspNet.Security.OAuth.Twitch" Version="8.0.0" />
     <PackageReference Include="AspNetCore.Identity.MongoDbCore" Version="3.1.2" />

@@ -18,8 +18,6 @@ namespace StreamWorks;
 
 public static class RegisterServices
 {
-    const string MS_OIDC_SCHEME = "MicrosoftOidc";
-
     public static void ConfigureServices(this WebApplicationBuilder builder)
     {
         // Add services to the container.
@@ -27,10 +25,14 @@ public static class RegisterServices
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
 
+        builder.Services.AddMemoryCache();
+        builder.Services.AddRazorPages();
+
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddScoped<IdentityUserAccessor>();
         builder.Services.AddScoped<IdentityRedirectManager>();
         builder.Services.AddScoped<AuthenticationStateProvider, PersistingAuthenticationStateProvider>();
+        builder.Services.ConfigureCookieOidcRefresh(CookieAuthenticationDefaults.AuthenticationScheme, IdentityConstants.ExternalScheme);
 
         builder.Services.Configure<IdentityOptions>(options =>
         {
@@ -56,8 +58,6 @@ public static class RegisterServices
             .AddRoles<StreamWorksRole>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
-
-        //builder.Services.ConfigureCookieOidcRefresh(CookieAuthenticationDefaults.AuthenticationScheme, MS_OIDC_SCHEME);
 
         builder.Services.AddAuthentication(options => {
                 options.DefaultScheme = IdentityConstants.ApplicationScheme;

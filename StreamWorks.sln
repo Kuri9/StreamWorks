@@ -9,6 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Client", "Strea
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Library", "StreamWorks.Library\StreamWorks.Library.csproj", "{5C423A8F-7096-4EE6-92EC-53878BFF3756}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamWorks.Twitch.Api", "StreamWorks.Twitch.Api\StreamWorks.Twitch.Api.csproj", "{7A61FA67-2A86-40C6-9E26-127F58B419F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamWorks.TwitchLibrary", "StreamWorks.TwitchLibrary\StreamWorks.TwitchLibrary.csproj", "{FDFF5706-D3C5-45B2-A670-DFCBC512C576}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamWorks.Twitch.Events", "StreamWorks.Twitch.Events\StreamWorks.Twitch.Events.csproj", "{8DB7F48B-1FD5-40C3-8817-79A5F282913D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +33,18 @@ Global
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A61FA67-2A86-40C6-9E26-127F58B419F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A61FA67-2A86-40C6-9E26-127F58B419F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A61FA67-2A86-40C6-9E26-127F58B419F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A61FA67-2A86-40C6-9E26-127F58B419F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDFF5706-D3C5-45B2-A670-DFCBC512C576}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDFF5706-D3C5-45B2-A670-DFCBC512C576}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDFF5706-D3C5-45B2-A670-DFCBC512C576}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDFF5706-D3C5-45B2-A670-DFCBC512C576}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DB7F48B-1FD5-40C3-8817-79A5F282913D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DB7F48B-1FD5-40C3-8817-79A5F282913D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DB7F48B-1FD5-40C3-8817-79A5F282913D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DB7F48B-1FD5-40C3-8817-79A5F282913D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

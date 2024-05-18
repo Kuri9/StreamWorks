@@ -1,0 +1,6 @@
+@StreamWorks.Twitch.Api_HostAddress = http://localhost:5276
+
+GET {{StreamWorks.Twitch.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
