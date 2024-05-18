@@ -60,8 +60,8 @@ public static class RegisterServices
         //builder.Services.ConfigureCookieOidcRefresh(CookieAuthenticationDefaults.AuthenticationScheme, MS_OIDC_SCHEME);
 
         builder.Services.AddAuthentication(options => {
-                //options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                options.DefaultScheme = TwitchAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                //options.DefaultScheme = TwitchAuthenticationDefaults.AuthenticationScheme;
                 options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
             })
            .AddTwitch("TwitchLogin", twitchOptions =>
@@ -71,6 +71,7 @@ public static class RegisterServices
 
                // All the scopes to request Twitch for
                AuthScopes[] scopes = [
+                   AuthScopes.OpenId,
                    AuthScopes.Helix_Analytics_Read_Extensions,
                    AuthScopes.Helix_Analytics_Read_Games,
                    AuthScopes.Helix_Bits_Read,

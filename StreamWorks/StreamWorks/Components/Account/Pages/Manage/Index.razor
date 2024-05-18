@@ -32,20 +32,11 @@
         </EditForm>
     </div>
 </div>
-<div class="col">
-    @if (loginInfoList is not null) {
-        @foreach (var login in loginInfoList)
-        {
-            @login.LoginProvider
-        }
-    }
-</div>
 
 @code {
     private StreamWorksUser user = default!;
     private string? username;
     private string? phoneNumber;
-    private IList<UserLoginInfo>? loginInfoList;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -58,8 +49,6 @@
         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
         username = await UserManager.GetUserNameAsync(user);
         phoneNumber = await UserManager.GetPhoneNumberAsync(user);
-
-        loginInfoList = await UserManager.GetLoginsAsync(user);
 
         Input.PhoneNumber ??= phoneNumber;
     }

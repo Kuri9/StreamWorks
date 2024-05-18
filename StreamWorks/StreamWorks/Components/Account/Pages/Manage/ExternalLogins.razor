@@ -63,6 +63,58 @@
     </form>
 }
 
+<div class="row">
+    <h2>External Claims Info</h2>
+    @if (externalLoginInfo?.ProviderDisplayName is not null)
+    {
+        <h2>
+            @externalLoginInfo.ProviderDisplayName
+        </h2>
+
+        <h4>
+            Expires At: @externalLoginInfo.AuthenticationProperties?.ExpiresUtc
+        </h4>
+
+        <h3>Tokens</h3>
+        <ul>
+            @if (externalLoginInfo?.AuthenticationTokens is not null)
+            {
+                @foreach (var token in externalLoginInfo.AuthenticationTokens)
+                {
+                    <li>@token.Name / @token.Value</li>
+                }
+            }
+        </ul>
+
+        <h3>Properties</h3>
+        <ul>
+            @if (externalLoginInfo?.AuthenticationProperties?.Items is not null)
+            {
+                @foreach (var item in externalLoginInfo.AuthenticationProperties.Items)
+                {
+                    <li>@item.Key</li>
+                }
+            }
+        </ul>
+
+        <h3>Principals</h3>
+
+        <ul>
+            @foreach (var identity in externalLoginInfo.Principal.Identities)
+            {
+                <li>@identity.Actor</li>
+            }
+        </ul>
+
+        <ul>
+            @foreach (var claim in externalLoginInfo.Principal.Claims)
+            {
+                <li>@claim.Value</li>
+            }
+        </ul>
+    }
+</div>
+
 @code {
     public const string LinkLoginCallbackAction = "LinkLoginCallback";
 
@@ -71,7 +123,7 @@
     private IList<AuthenticationScheme>? otherLogins;
     private bool showRemoveButton;
 
-    private ExternalLoginInfo? externalLoginInfo;
+    private ExternalLoginInfo? externalLoginInfo = default!;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -100,6 +152,15 @@
         }
 
         showRemoveButton = passwordHash is not null || currentLogins.Count > 1;
+
+        // Added to Page. Try to get external Login info for the user
+        ExternalLoginInfo? externalResult = await SignInManager.GetExternalLoginInfoAsync();
+        if (externalResult is null)
+        {
+            Console.WriteLine("Error: Could not load external login info.", HttpContext);
+        }
+        //tokenInfo = await UserManager.GetAuthenticationTokenAsync(user, "TwitchLogin", "access_token");
+        externalLoginInfo = externalResult;
 
         if (HttpMethods.IsGet(HttpContext.Request.Method) && Action == LinkLoginCallbackAction)
         {
@@ -132,6 +193,21 @@
         if (!result.Succeeded)
         {
             RedirectManager.RedirectToCurrentPageWithStatus("Error: The external login was not added. External logins can only be associated with one account.", HttpContext);
+        }
+
+        // Added to this page. Adds the Token to the UserProfile in DB if a Token exists
+        if (externalLoginInfo?.AuthenticationTokens is not null)
+        {
+            foreach (var token in externalLoginInfo.AuthenticationTokens)
+            {
+                await UserManager.SetAuthenticationTokenAsync(
+                    user, 
+                    externalLoginInfo.LoginProvider, 
+                    externalLoginInfo.AuthenticationTokens.First().Name, 
+                    externalLoginInfo.AuthenticationTokens.First().Value
+                );
+                Console.WriteLine($"Token Set: {externalLoginInfo.AuthenticationTokens.First().Name} / {externalLoginInfo.AuthenticationTokens.First().Value}");
+            }
         }
 
         // Clear the existing external cookie to ensure a clean login process
