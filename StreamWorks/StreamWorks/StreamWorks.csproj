@@ -8,6 +8,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.bundle.js" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.bundle.js.map" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.bundle.min.js" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.bundle.min.js.map" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.esm.js" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.esm.js.map" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.esm.min.js" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.esm.min.js.map" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.js" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.js.map" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.min.js" />
+    <Content Remove="C:\Users\chris\.nuget\packages\bootstrap\5.3.3\contentFiles\any\any\wwwroot\js\bootstrap.min.js.map" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\StreamWorks.Library\StreamWorks.Library.csproj" />
     <ProjectReference Include="..\..\StreamWorks.Twitch.Api\StreamWorks.Twitch.Api.csproj" />
     <ProjectReference Include="..\..\StreamWorks.Twitch.Events\StreamWorks.Twitch.Events.csproj" />
@@ -31,6 +46,8 @@
 
   <ItemGroup>
     <Folder Include="Components\Account\Pages\Roles\" />
+    <Folder Include="Components\Twitch\" />
+    <Folder Include="Components\Pages\TwitchPages\" />
     <Folder Include="Helpers\Twitch\" />
     <Folder Include="wwwroot\css\" />
   </ItemGroup>

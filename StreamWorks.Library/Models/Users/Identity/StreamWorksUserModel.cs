@@ -1,9 +1,9 @@
 ﻿using AspNetCore.Identity.MongoDbCore.Models;
 using MongoDbGenericRepository.Attributes;
 
-namespace StreamWorks.Data.MongoDB;
+namespace StreamWorks.Library.Models.Users.Identity;
 
 [CollectionName("Users")]
-public class StreamWorksUser : MongoIdentityUser<Guid>
+public class StreamWorksUserModel : MongoIdentityUser<Guid>
 {
 }

@@ -3,10 +3,9 @@
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using StreamWorks.Data
 
-@inject UserManager<StreamWorksUser> UserManager
-@inject IEmailSender<StreamWorksUser> EmailSender
+@inject UserManager<StreamWorksUserModel> UserManager
+@inject IEmailSender<StreamWorksUserModel> EmailSender
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 

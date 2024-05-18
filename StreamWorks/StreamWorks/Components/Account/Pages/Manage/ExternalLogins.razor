@@ -2,12 +2,11 @@
 
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
-@using StreamWorks.Data
 
-@inject UserManager<StreamWorksUser> UserManager
-@inject SignInManager<StreamWorksUser> SignInManager
+@inject UserManager<StreamWorksUserModel> UserManager
+@inject SignInManager<StreamWorksUserModel> SignInManager
 @inject IdentityUserAccessor UserAccessor
-@inject IUserStore<StreamWorksUser> UserStore
+@inject IUserStore<StreamWorksUserModel> UserStore
 @inject IdentityRedirectManager RedirectManager
 
 <div class="row">
@@ -123,7 +122,7 @@
 @code {
     public const string LinkLoginCallbackAction = "LinkLoginCallback";
 
-    private StreamWorksUser user = default!;
+    private StreamWorksUserModel user = default!;
     private IList<UserLoginInfo>? currentLogins;
     private IList<AuthenticationScheme>? otherLogins;
     private bool showRemoveButton;
@@ -151,7 +150,7 @@
             .ToList();
 
         string? passwordHash = null;
-        if (UserStore is IUserPasswordStore<StreamWorksUser> userPasswordStore)
+        if (UserStore is IUserPasswordStore<StreamWorksUserModel> userPasswordStore)
         {
             passwordHash = await userPasswordStore.GetPasswordHashAsync(user, HttpContext.RequestAborted);
         }

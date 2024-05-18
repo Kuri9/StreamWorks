@@ -1,5 +1,13 @@
 ﻿@page "/"
-@inject UserManager<StreamWorksUser> UserManager
+@* @using StreamWorks.Twitch.Api *@
+
+@rendermode InteractiveServer
+
+@inject AuthenticationStateProvider authProvider
+@inject UserManager<StreamWorksUserModel> UserManager
+@inject IdentityUserAccessor UserAccessor
+
+@* @inject TwitchApi api *@
 
 <PageTitle>Home</PageTitle>
 
@@ -7,6 +15,59 @@
 
 Welcome to your new app.
 
-@code {
 
+<AuthorizeView Policy="Admin">
+    @if (loggedInUser is not null)
+    {
+        <h4></h4>
+        <h3>@loggedInUser?.User?.Identity?.Name</h3>
+
+        <ul>
+            @foreach (var identity in loggedInUser.User.Identities)
+            {
+                <li>
+                    <ul>
+                        <li>
+                            <h4>@identity.Name / @identity.Label</h4>
+                        </li>
+                        <li>
+                            @identity.AuthenticationType
+                        </li>
+                        <li>
+                            Is Authenticated? : @identity.IsAuthenticated
+                        </li>
+                        <li>
+                            @identity.RoleClaimType
+                        </li>
+                    </ul>
+                </li>
+            }
+        </ul>
+
+        <ul>
+            @foreach (var claim in loggedInUser.User.Claims)
+            {
+                <li>
+                    @claim.Issuer / @claim.Value / @claim.Type
+                </li>
+            }
+        </ul>
+
+    }
+</AuthorizeView>
+
+@code {
+    AuthenticationState? loggedInUser;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // if (HttpContext is not null)
+        // {
+        //     loggedInUser = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        // }
+        loggedInUser = await authProvider.GetAuthenticationStateAsync();
+    }
 }

@@ -2,10 +2,9 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
-@using StreamWorks.Data
 
-@inject SignInManager<StreamWorksUser> SignInManager
-@inject UserManager<StreamWorksUser> UserManager
+@inject SignInManager<StreamWorksUserModel> SignInManager
+@inject UserManager<StreamWorksUserModel> UserManager
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<LoginWith2fa> Logger
 
@@ -46,7 +45,7 @@
 
 @code {
     private string? message;
-    private StreamWorksUser user = default!;
+    private StreamWorksUserModel user = default!;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();

@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using StreamWorks.Components.Account.Pages;
 using StreamWorks.Components.Account.Pages.Manage;
-using StreamWorks.Data;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -22,7 +21,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         accountGroup.MapPost("/PerformExternalLogin", (
             HttpContext context,
-            [FromServices] SignInManager<StreamWorksUser> signInManager,
+            [FromServices] SignInManager<StreamWorksUserModel> signInManager,
             [FromForm] string provider,
             [FromForm] string returnUrl) =>
         {
@@ -41,7 +40,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         accountGroup.MapPost("/Logout", async (
             ClaimsPrincipal user,
-            SignInManager<StreamWorksUser> signInManager,
+            SignInManager<StreamWorksUserModel> signInManager,
             [FromForm] string returnUrl) =>
         {
             await signInManager.SignOutAsync();
@@ -52,7 +51,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         manageGroup.MapPost("/LinkExternalLogin", async (
             HttpContext context,
-            [FromServices] SignInManager<StreamWorksUser> signInManager,
+            [FromServices] SignInManager<StreamWorksUserModel> signInManager,
             [FromForm] string provider) =>
         {
             // Clear the existing external cookie to ensure a clean login process
@@ -72,7 +71,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         manageGroup.MapPost("/DownloadPersonalData", async (
             HttpContext context,
-            [FromServices] UserManager<StreamWorksUser> userManager,
+            [FromServices] UserManager<StreamWorksUserModel> userManager,
             [FromServices] AuthenticationStateProvider authenticationStateProvider) =>
         {
             var user = await userManager.GetUserAsync(context.User);
@@ -86,7 +85,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
             // Only include personal data for download
             var personalData = new Dictionary<string, string>();
-            var personalDataProps = typeof(StreamWorksUser).GetProperties().Where(
+            var personalDataProps = typeof(StreamWorksUserModel).GetProperties().Where(
                 prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
             foreach (var p in personalDataProps)
             {

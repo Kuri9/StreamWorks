@@ -3,10 +3,9 @@
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using StreamWorks.Data
 
-@inject UserManager<StreamWorksUser> UserManager
-@inject SignInManager<StreamWorksUser> SignInManager
+@inject UserManager<StreamWorksUserModel> UserManager
+@inject SignInManager<StreamWorksUserModel> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Confirm email change</PageTitle>

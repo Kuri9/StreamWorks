@@ -16,11 +16,11 @@ public class DbConnection : IDbConnection
     // GENERAL
 
     // USERS
-    public string IdentityUserCollectionName { get; private set; }
-    public string IdentityRoleCollectionName { get; private set; }
+    public string StreamWorksUserModelCollectionName { get; private set; }
+    public string StreamWorksRoleCollectionName { get; private set; }
 
-    public IMongoCollection<IdentityUserModel> IdentityUserCollection { get; private set; }
-    public IMongoCollection<IdentityRoleModel> IdentityRoleCollection { get; private set; }
+    public IMongoCollection<StreamWorksUserModel> StreamWorksUserModelCollection { get; private set; }
+    public IMongoCollection<StreamWorksRoleModel> StreamWorksRoleCollection { get; private set; }
 
     // STREAMWORKS COLLECTIONS
     //public string StreamTimerCollectionName { get; private set; } = "stream-timer";
@@ -38,8 +38,8 @@ public class DbConnection : IDbConnection
         // GENERAL
 
         // USERS
-        IdentityUserCollection = _db.GetCollection<IdentityUserModel>(IdentityUserCollectionName);
-        IdentityRoleCollection = _db.GetCollection<IdentityRoleModel>(IdentityRoleCollectionName);
+        StreamWorksUserModelCollection = _db.GetCollection<StreamWorksUserModel>(StreamWorksUserModelCollectionName);
+        StreamWorksRoleCollection = _db.GetCollection<StreamWorksRoleModel>(StreamWorksRoleCollectionName);
 
         // STREAMWORKS DATA
         //StreamTimerCollection = _db.GetCollection<StreamTimerModel>(StreamTimerCollectionName);

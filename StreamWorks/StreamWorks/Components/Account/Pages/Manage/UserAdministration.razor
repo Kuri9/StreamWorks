@@ -2,8 +2,8 @@
 
 @rendermode InteractiveServer
 @inject IConfiguration _Config
-@inject UserManager<StreamWorksUser> _UserManager
-@inject RoleManager<StreamWorksRole> _RoleManager
+@inject UserManager<StreamWorksUserModel> _UserManager
+@inject RoleManager<StreamWorksRoleModel> _RoleManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <h3>Administration</h3>
@@ -125,14 +125,14 @@
 
     string admin_role = "Administrator";
     System.Security.Claims.ClaimsPrincipal? CurrentUser;
-    StreamWorksUser selectedUser = new StreamWorksUser();
+    StreamWorksUserModel selectedUser = new StreamWorksUserModel();
     Guid roleID;
-    StreamWorksRole? SelectedUserRole;
+    StreamWorksRoleModel? SelectedUserRole;
 
-    StreamWorksUser newUser = new StreamWorksUser();
-    StreamWorksUser updateUser = new StreamWorksUser();
+    StreamWorksUserModel newUser = new StreamWorksUserModel();
+    StreamWorksUserModel updateUser = new StreamWorksUserModel();
 
-    List<StreamWorksUser> userList = new List<StreamWorksUser>();
+    List<StreamWorksUserModel> userList = new List<StreamWorksUserModel>();
 
     string error = "";
     private Modal? userEditModal;
@@ -145,7 +145,7 @@
         if (RoleResult == null)
         {
             // Create ADMINISTRATION_ROLE Role
-            var role = new StreamWorksRole();
+            var role = new StreamWorksRoleModel();
             role.Name = admin_role;
             await _RoleManager.CreateAsync(role);
         }
@@ -183,9 +183,9 @@
     {
         error = "";
 
-        userList = new List<StreamWorksUser>();
+        userList = new List<StreamWorksUserModel>();
 
-        var user = _UserManager.Users.Select(u => new StreamWorksUser
+        var user = _UserManager.Users.Select(u => new StreamWorksUserModel
             {
                 Id = u.Id,
                 UserName = u.UserName,
@@ -198,7 +198,7 @@
         }
     }
 
-    private async Task CheckAdminAccount(StreamWorksUser userAccount)
+    private async Task CheckAdminAccount(StreamWorksUserModel userAccount)
     {
         // Ensure a user matching the Config Admin Account is an Administrator
         var adminAccount = await _UserManager.FindByNameAsync(_Config.GetValue<string>("AdminAccount"));
@@ -218,7 +218,7 @@
     private async void AddNewUser()
     {
         modalTitle = "Create a New User";
-        newUser = new StreamWorksUser();
+        newUser = new StreamWorksUserModel();
         newUser.Id = Guid.Empty;
         newUser.PasswordHash = "*****";
 
@@ -226,7 +226,7 @@
         await OnShowModalClick();
     }
 
-    private async Task EditUser(StreamWorksUser user)
+    private async Task EditUser(StreamWorksUserModel user)
     {
         modalTitle = "Edit User Information";
         selectedUser = user;
@@ -237,7 +237,7 @@
     {
         try
         {
-            updateUser = new StreamWorksUser();
+            updateUser = new StreamWorksUserModel();
             updateUser = await _UserManager.FindByIdAsync(selectedUser.Id.ToString());
 
             if (updateUser is not null)
@@ -274,7 +274,7 @@
             // Check if the User already exists
             if (selectedUser is not null)
             {
-                newUser = new StreamWorksUser();
+                newUser = new StreamWorksUserModel();
                 newUser.UserName = selectedUser.UserName;
                 newUser.Email = selectedUser.Email;
 

@@ -13,6 +13,9 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using AspNet.Security.OAuth.Twitch;
 using static System.Net.WebRequestMethods;
+using StreamWorks.Twitch.Api;
+using StreamWorks.Library.DataAccess;
+using StreamWorks.Library.Models.Users.Identity;
 
 namespace StreamWorks;
 
@@ -46,22 +49,22 @@ public static class RegisterServices
         });
 
         var mongoDbSettings = builder.Configuration.GetSection("MongoDbConfig");
-        builder.Services.AddIdentity<StreamWorksUser, StreamWorksRole>()
-        .AddMongoDbStores<StreamWorksUser, StreamWorksRole, Guid>
+        builder.Services.AddIdentity<StreamWorksUserModel, StreamWorksRoleModel>()
+        .AddMongoDbStores<StreamWorksUserModel, StreamWorksRoleModel, Guid>
         (
             mongoDbSettings.GetConnectionString("MongoDB"),
             mongoDbSettings.GetSection("DatabaseName").Value
         );
 
-        builder.Services.AddIdentityCore<StreamWorksUser>(options => options.SignIn.RequireConfirmedAccount = true)
+        builder.Services.AddIdentityCore<StreamWorksUserModel>(options => options.SignIn.RequireConfirmedAccount = true)
             //.AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddRoles<StreamWorksRole>()
+            .AddRoles<StreamWorksRoleModel>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
 
         builder.Services.AddAuthentication(options => {
-                options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                //options.DefaultScheme = TwitchAuthenticationDefaults.AuthenticationScheme;
+                //options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultScheme = TwitchAuthenticationDefaults.AuthenticationScheme;
                 options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
             })
            .AddTwitch("TwitchLogin", twitchOptions =>
@@ -128,9 +131,15 @@ public static class RegisterServices
             });
         });
 
-        builder.Services.AddSingleton<IEmailSender<StreamWorksUser>, IdentityNoOpEmailSender>();
+        builder.Services.AddSingleton<IEmailSender<StreamWorksUserModel>, IdentityNoOpEmailSender>();
         builder.Services.AddHttpContextAccessor();
 
         builder.Services.AddBlazorBootstrap();
+
+        //builder.Services.AddSingleton<TwitchApi>();
+
+        // Common Data Services
+        builder.Services.AddSingleton<IDbConnection, DbConnection>();
+        //builder.Services.AddSingleton<IUserData, MongoUserData>();
     }
 }

@@ -3,9 +3,9 @@
 namespace StreamWorks.Library.DataAccess.MongoDB.Identity;
 public interface IIdentityUserData
 {
-    Task CreateUser(IdentityUserModel user);
-    Task<List<IdentityUserModel>> GetAllUsersAsync();
-    Task<IdentityUserModel> GetUser(string id);
-    Task<IdentityUserModel> GetUserFromAuthentication(string objectId);
-    Task UpdateUser(IdentityUserModel user);
+    Task CreateUser(StreamWorksUserModel user);
+    Task<List<StreamWorksUserModel>> GetAllUsersAsync();
+    Task<StreamWorksUserModel> GetUser(string id);
+    Task<StreamWorksUserModel> GetUserFromAuthentication(string objectId);
+    Task UpdateUser(StreamWorksUserModel user);
 }

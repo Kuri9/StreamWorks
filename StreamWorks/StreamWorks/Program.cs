@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using StreamWorks;
 using StreamWorks.Components;
 using StreamWorks.Components.Account;
-using StreamWorks.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 

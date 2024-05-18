@@ -2,10 +2,9 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
-@using StreamWorks.Data
 
-@inject UserManager<StreamWorksUser> UserManager
-@inject SignInManager<StreamWorksUser> SignInManager
+@inject UserManager<StreamWorksUserModel> UserManager
+@inject SignInManager<StreamWorksUserModel> SignInManager
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<DeletePersonalData> Logger
@@ -40,7 +39,7 @@
 
 @code {
     private string? message;
-    private StreamWorksUser user = default!;
+    private StreamWorksUserModel user = default!;
     private bool requirePassword;
 
     [CascadingParameter]

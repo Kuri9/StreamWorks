@@ -6,12 +6,11 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using StreamWorks.Data
 
-@inject SignInManager<StreamWorksUser> SignInManager
-@inject UserManager<StreamWorksUser> UserManager
-@inject IUserStore<StreamWorksUser> UserStore
-@inject IEmailSender<StreamWorksUser> EmailSender
+@inject SignInManager<StreamWorksUserModel> SignInManager
+@inject UserManager<StreamWorksUserModel> UserManager
+@inject IUserStore<StreamWorksUserModel> UserStore
+@inject IEmailSender<StreamWorksUserModel> EmailSender
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<ExternalLogin> Logger
@@ -164,26 +163,26 @@
         message = $"Error: {string.Join(",", result.Errors.Select(error => error.Description))}";
     }
 
-    private StreamWorksUser CreateUser()
+    private StreamWorksUserModel CreateUser()
     {
         try
         {
-            return Activator.CreateInstance<StreamWorksUser>();
+            return Activator.CreateInstance<StreamWorksUserModel>();
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(StreamWorksUser)}'. " +
-                $"Ensure that '{nameof(StreamWorksUser)}' is not an abstract class and has a parameterless constructor");
+            throw new InvalidOperationException($"Can't create an instance of '{nameof(StreamWorksUserModel)}'. " +
+                $"Ensure that '{nameof(StreamWorksUserModel)}' is not an abstract class and has a parameterless constructor");
         }
     }
 
-    private IUserEmailStore<StreamWorksUser> GetEmailStore()
+    private IUserEmailStore<StreamWorksUserModel> GetEmailStore()
     {
         if (!UserManager.SupportsUserEmail)
         {
             throw new NotSupportedException("The default UI requires a user store with email support.");
         }
-        return (IUserEmailStore<StreamWorksUser>)UserStore;
+        return (IUserEmailStore<StreamWorksUserModel>)UserStore;
     }
 
     private sealed class InputModel

@@ -5,10 +5,9 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using StreamWorks.Data
 
-@inject UserManager<StreamWorksUser> UserManager
-@inject IEmailSender<StreamWorksUser> EmailSender
+@inject UserManager<StreamWorksUserModel> UserManager
+@inject IEmailSender<StreamWorksUserModel> EmailSender
 @inject IdentityUserAccessor UserAccessor
 @inject NavigationManager NavigationManager
 
@@ -55,7 +54,7 @@
 
 @code {
     private string? message;
-    private StreamWorksUser user = default!;
+    private StreamWorksUserModel user = default!;
     private string? email;
     private bool isEmailConfirmed;
 

@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Identity;
-using StreamWorks.Data;
 
 namespace StreamWorks.Components.Account;
-internal sealed class IdentityUserAccessor(UserManager<StreamWorksUser> userManager, IdentityRedirectManager redirectManager)
+internal sealed class IdentityUserAccessor(UserManager<StreamWorksUserModel> userManager, IdentityRedirectManager redirectManager)
 {
-    public async Task<StreamWorksUser> GetRequiredUserAsync(HttpContext context)
+    public async Task<StreamWorksUserModel> GetRequiredUserAsync(HttpContext context)
     {
         var user = await userManager.GetUserAsync(context.User);
 
