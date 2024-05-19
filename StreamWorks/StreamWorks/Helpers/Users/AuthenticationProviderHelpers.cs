@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
+using MongoDB.Bson;
 using StreamWorks.Library.DataAccess.MongoDB.Identity;
 using StreamWorks.Library.Models.Users.Identity;
+using static AspNet.Security.OAuth.Twitch.TwitchAuthenticationConstants;
 
 namespace StreamWorks.Helpers.Users;
 
@@ -16,10 +18,10 @@ public static class AuthenticationProviderHelpers
 
     public static async Task<StreamWorksUserModel> GetUserFromAuth(
         this AuthenticationStateProvider provider,
-        IIdentityUserData userData)
+        IStreamWorksUserData userData)
     {
         var authState = await provider.GetAuthenticationStateAsync();
-        string objectId = authState?.User.Identity.Name;
+        string objectId = authState?.User.Claims.FirstOrDefault(c => c.Type.Contains("user_id"))?.Value;
         var result = await userData.GetUserFromAuthentication(objectId);
         return result;
     }

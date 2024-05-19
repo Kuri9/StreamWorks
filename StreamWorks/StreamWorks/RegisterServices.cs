@@ -46,6 +46,10 @@ public static class RegisterServices
             options.Password.RequireLowercase = false;
             options.Password.RequireUppercase = false;
             options.Password.RequireNonAlphanumeric = false;
+
+            options.ClaimsIdentity.UserIdClaimType = "user_id";
+            options.ClaimsIdentity.UserNameClaimType = "user_name";
+            options.ClaimsIdentity.EmailClaimType = "user_email";
         });
 
         var mongoDbSettings = builder.Configuration.GetSection("MongoDbConfig");
@@ -71,6 +75,9 @@ public static class RegisterServices
            {
                twitchOptions.ClientId = builder.Configuration["Twitch:ClientId"]!;
                twitchOptions.ClientSecret = builder.Configuration["Twitch:ClientSecret"]!;
+               twitchOptions.ClaimActions.MapJsonKey("aud", "client_id", "string");
+               twitchOptions.ClaimActions.MapJsonKey("preferred_username", "twitch_name", "string");
+               twitchOptions.ClaimActions.MapJsonKey("picture", "twitch_picture", "url");
 
                // All the scopes to request Twitch for
                AuthScopes[] scopes = [
@@ -140,6 +147,6 @@ public static class RegisterServices
 
         // Common Data Services
         builder.Services.AddSingleton<IDbConnection, DbConnection>();
-        //builder.Services.AddSingleton<IUserData, MongoUserData>();
+        builder.Services.AddSingleton<IStreamWorksUserData, MongoStreamWorksUserData>();
     }
 }

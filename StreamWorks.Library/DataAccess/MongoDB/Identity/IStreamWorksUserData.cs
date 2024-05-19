@@ -1,7 +1,7 @@
 ﻿using StreamWorks.Library.Models.Users.Identity;
 
 namespace StreamWorks.Library.DataAccess.MongoDB.Identity;
-public interface IIdentityUserData
+public interface IStreamWorksUserData
 {
     Task CreateUser(StreamWorksUserModel user);
     Task<List<StreamWorksUserModel>> GetAllUsersAsync();

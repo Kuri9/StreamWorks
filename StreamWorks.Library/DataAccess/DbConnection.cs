@@ -7,6 +7,7 @@ public class DbConnection : IDbConnection
     // Can change to a Scoped Singleton after to make seperate connections for multiple users if needed.
     private readonly IConfiguration _config;
     private readonly IMongoDatabase _db;
+    private string _connectionGroup = "MongoDbConfig";
     private string _connectionId = "MongoDB";
 
     public MongoClient Client { get; private set; }
@@ -16,8 +17,8 @@ public class DbConnection : IDbConnection
     // GENERAL
 
     // USERS
-    public string StreamWorksUserModelCollectionName { get; private set; }
-    public string StreamWorksRoleCollectionName { get; private set; }
+    public string StreamWorksUserModelCollectionName { get; private set; } = "Users";
+    public string StreamWorksRoleCollectionName { get; private set; } = "Roles";
 
     public IMongoCollection<StreamWorksUserModel> StreamWorksUserModelCollection { get; private set; }
     public IMongoCollection<StreamWorksRoleModel> StreamWorksRoleCollection { get; private set; }
@@ -30,9 +31,11 @@ public class DbConnection : IDbConnection
     public DbConnection(IConfiguration config)
     {
         _config = config;
-        Client = new MongoClient(_config.GetConnectionString(_connectionId))
+
+        var mongoDbSettings = _config.GetSection(_connectionGroup);
+        Client = new MongoClient(mongoDbSettings.GetConnectionString(_connectionId))
             ?? throw new Exception($"Missing Connection String at {_connectionId}");
-        DbName = _config["DatabaseName"];
+        DbName = mongoDbSettings["DatabaseName"];
         _db = Client.GetDatabase(DbName);
 
         // GENERAL

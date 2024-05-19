@@ -1,13 +1,11 @@
 ﻿@page "/"
-@* @using StreamWorks.Twitch.Api *@
 
 @rendermode InteractiveServer
 
 @inject AuthenticationStateProvider authProvider
+@inject IStreamWorksUserData userData
 @inject UserManager<StreamWorksUserModel> UserManager
 @inject IdentityUserAccessor UserAccessor
-
-@* @inject TwitchApi api *@
 
 <PageTitle>Home</PageTitle>
 
@@ -19,25 +17,22 @@ Welcome to your new app.
 <AuthorizeView Policy="Admin">
     @if (loggedInUser is not null)
     {
-        <h4></h4>
-        <h3>@loggedInUser?.User?.Identity?.Name</h3>
+        <h4>@loggedInUser.Id</h4>
+        <h3>@loggedInUser.UserName</h3>
 
-        <ul>
-            @foreach (var identity in loggedInUser.User.Identities)
+       <ul>
+            @foreach (var logins in loggedInUser.Logins)
             {
                 <li>
                     <ul>
                         <li>
-                            <h4>@identity.Name / @identity.Label</h4>
+                            <h4>@logins.LoginProvider</h4>
                         </li>
                         <li>
-                            @identity.AuthenticationType
+                            @logins.ProviderKey
                         </li>
                         <li>
-                            Is Authenticated? : @identity.IsAuthenticated
-                        </li>
-                        <li>
-                            @identity.RoleClaimType
+                            @logins.ProviderDisplayName
                         </li>
                     </ul>
                 </li>
@@ -45,19 +40,30 @@ Welcome to your new app.
         </ul>
 
         <ul>
-            @foreach (var claim in loggedInUser.User.Claims)
-            {
-                <li>
-                    @claim.Issuer / @claim.Value / @claim.Type
-                </li>
+            @if (loggedInUserAuthState is not null) {
+                @foreach (var claim in loggedInUserAuthState?.User.Claims)
+                {
+                    <li>
+                        @claim.Issuer / @claim.Value / @claim.Type
+                    </li>
+                }
             }
         </ul>
 
-    }
-</AuthorizeView>
+        <ul>
+            @foreach (var role in loggedInUser.Roles)
+            {
+                <li>
+                    @role
+                </li>
+            }
+        </ul>
+    } 
+    </AuthorizeView>
 
 @code {
-    AuthenticationState? loggedInUser;
+    AuthenticationState? loggedInUserAuthState;
+    StreamWorksUserModel? loggedInUser;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -68,6 +74,9 @@ Welcome to your new app.
         // {
         //     loggedInUser = await UserAccessor.GetRequiredUserAsync(HttpContext);
         // }
-        loggedInUser = await authProvider.GetAuthenticationStateAsync();
+        loggedInUserAuthState = await authProvider.GetAuthenticationStateAsync();
+        loggedInUser = await authProvider.GetUserFromAuth(userData);
     }
+
+
 }
