@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("StreamWorks.TwitchLibrary")]
+[assembly: AssemblyTitle("StreamWorks.ApiLibrary.Twitch")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("StreamWorks.TwitchLibrary")]
+[assembly: AssemblyProduct("StreamWorks.ApiLibrary.Twitch")]
 [assembly: AssemblyCopyright("Copyright ©  2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("fdff5706-d3c5-45b2-a670-dfcbc512c576")]
+[assembly: Guid("636c8d27-2c77-4ec5-9277-9772288f27c2")]
 
 // Version information for an assembly consists of the following four values:
 //

@@ -1,4 +1,4 @@
-namespace StreamWorks.Twitch.Api;
+namespace StreamWorks.Api;
 
 public class WeatherForecast
 {

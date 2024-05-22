@@ -1,0 +1,6 @@
+@StreamWorks.Api_HostAddress = http://localhost:5219
+
+GET {{StreamWorks.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

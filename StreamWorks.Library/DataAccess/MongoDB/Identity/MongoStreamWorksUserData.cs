@@ -1,6 +1,8 @@
-﻿using MongoDB.Bson;
+﻿using Microsoft.AspNetCore.Components.Authorization;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Serializers;
 using StreamWorks.Library.Models.Users.Identity;
+using System.Security.Claims;
 
 namespace StreamWorks.Library.DataAccess.MongoDB.Identity;
 public class MongoStreamWorksUserData : IStreamWorksUserData
@@ -27,7 +29,9 @@ public class MongoStreamWorksUserData : IStreamWorksUserData
             Console.WriteLine("GetUser: Id was empty.");
             return null;
 
-        } else {
+        }
+        else
+        {
             Guid objectIdGuid = Guid.Parse(id); // Convert the objectId string to a Guid
             var filter = Builders<StreamWorksUserModel>.Filter.Eq(u => u.Id, objectIdGuid); // Compare the Guids
             var results = await _users.FindAsync(filter);
@@ -36,20 +40,27 @@ public class MongoStreamWorksUserData : IStreamWorksUserData
     }
 
     // Search by the Users ID we get from AzureUserAccess
-    public async Task<StreamWorksUserModel> GetUserFromAuthentication(string objectId)
+    public async Task<StreamWorksUserModel> GetUserFromAuthentication(Guid objectId)
     {
+        var filter = Builders<StreamWorksUserModel>.Filter.Eq(u => u.Id, objectId); // Compare the Guids
+        var results = await _users.FindAsync(filter);
+        return results.FirstOrDefault();    
+    }
+
+    public async Task<StreamWorksUserModel> GetUserFromPrincipal(ClaimsPrincipal principal)
+    {
+        var objectId = principal.Claims.Where(c => c.Type.Contains("user_id")).FirstOrDefault()?.Value;
         if (string.IsNullOrEmpty(objectId))
-        {
-            // TODO: Implement better logging and handle better than just returning Null
-            Console.WriteLine("GetUserFromAuthentication: objectId was empty.");
-            return null;
+        { 
+            return null; 
         }
-        else
+        else 
         {
-            Guid objectIdGuid = Guid.Parse(objectId); // Convert the objectId string to a Guid
-            var filter = Builders<StreamWorksUserModel>.Filter.Eq(u => u.Id, objectIdGuid); // Compare the Guids
-            var results = await _users.FindAsync(filter);
-            return results.FirstOrDefault();
+            Guid objectIdGuid = Guid.Parse(objectId);
+            var filter = Builders<StreamWorksUserModel>.Filter.Eq(u => u.Id, objectIdGuid);
+            var result = await _users.FindAsync(filter);
+
+            return result.First();
         }
     }
 

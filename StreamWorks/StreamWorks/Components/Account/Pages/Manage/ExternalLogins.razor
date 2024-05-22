@@ -2,6 +2,7 @@
 
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
+@using System.Security.Claims
 
 @inject UserManager<StreamWorksUserModel> UserManager
 @inject SignInManager<StreamWorksUserModel> SignInManager
@@ -163,8 +164,10 @@
         {
             Console.WriteLine("Error: Could not load external login info.", HttpContext);
         }
-        //tokenInfo = await UserManager.GetAuthenticationTokenAsync(user, "TwitchLogin", "access_token");
-        externalLoginInfo = externalResult;
+        else
+        {
+            externalLoginInfo = externalResult;
+        }
 
         if (HttpMethods.IsGet(HttpContext.Request.Method) && Action == LinkLoginCallbackAction)
         {
@@ -207,11 +210,14 @@
                 await UserManager.SetAuthenticationTokenAsync(
                     user, 
                     externalLoginInfo.LoginProvider, 
-                    externalLoginInfo.AuthenticationTokens.First().Name, 
-                    externalLoginInfo.AuthenticationTokens.First().Value
+                    token.Name,
+                    token.Value
                 );
-                Console.WriteLine($"Token Set: {externalLoginInfo.AuthenticationTokens.First().Name} / {externalLoginInfo.AuthenticationTokens.First().Value}");
+                Console.WriteLine($"Token Set: {token.Name} / {token.Value}");
             }
+
+            // Console.WriteLine(externalLoginInfo.LoginProvider);
+            // externalLoginInfo.AuthenticationProperties?.Items.ToList().ForEach(i => Console.WriteLine(i.Key));
         }
 
         // Clear the existing external cookie to ensure a clean login process

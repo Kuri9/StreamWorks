@@ -23,10 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\StreamWorks.ApiLibrary.Twitch\StreamWorks.ApiLibrary.Twitch.csproj" />
+    <ProjectReference Include="..\..\StreamWorks.Api\StreamWorks.Api.csproj" />
     <ProjectReference Include="..\..\StreamWorks.Library\StreamWorks.Library.csproj" />
-    <ProjectReference Include="..\..\StreamWorks.Twitch.Api\StreamWorks.Twitch.Api.csproj" />
-    <ProjectReference Include="..\..\StreamWorks.Twitch.Events\StreamWorks.Twitch.Events.csproj" />
-    <ProjectReference Include="..\..\StreamWorks.TwitchLibrary\StreamWorks.TwitchLibrary.csproj" />
     <ProjectReference Include="..\StreamWorks.Client\StreamWorks.Client.csproj" />
     <PackageReference Include="AspNet.Security.OAuth.Twitch" Version="8.0.0" />
     <PackageReference Include="AspNetCore.Identity.MongoDbCore" Version="3.1.2" />
@@ -38,6 +37,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" />
+    <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
     <PackageReference Include="TwitchLib.Api" Version="3.9.0" />
     <PackageReference Include="TwitchLib.Client" Version="3.3.1" />
     <PackageReference Include="TwitchLib.EventSub.Core" Version="2.5.2" />
@@ -48,7 +48,7 @@
     <Folder Include="Components\Account\Pages\Roles\" />
     <Folder Include="Components\Twitch\" />
     <Folder Include="Components\Pages\TwitchPages\" />
-    <Folder Include="Helpers\Twitch\" />
+    <Folder Include="Api\" />
     <Folder Include="wwwroot\css\" />
   </ItemGroup>
 

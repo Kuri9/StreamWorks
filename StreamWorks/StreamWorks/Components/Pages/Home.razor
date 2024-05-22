@@ -1,11 +1,17 @@
 ﻿@page "/"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication
 
+@* Fires OnInitilaize 2x and secondtime doesnt get user from HttpContext *@
 @rendermode InteractiveServer
 
-@inject AuthenticationStateProvider authProvider
-@inject IStreamWorksUserData userData
+@inject AuthenticationStateProvider AuthProvider
 @inject UserManager<StreamWorksUserModel> UserManager
+@inject SignInManager<StreamWorksUserModel> SignInManager
+@inject NavigationManager NavManager
 @inject IdentityUserAccessor UserAccessor
+@inject IStreamWorksUserData userData
+@inject IConfiguration config
 
 <PageTitle>Home</PageTitle>
 
@@ -39,7 +45,7 @@ Welcome to your new app.
             }
         </ul>
 
-        <ul>
+@*         <ul>
             @if (loggedInUserAuthState is not null) {
                 @foreach (var claim in loggedInUserAuthState?.User.Claims)
                 {
@@ -48,7 +54,7 @@ Welcome to your new app.
                     </li>
                 }
             }
-        </ul>
+        </ul> *@
 
         <ul>
             @foreach (var role in loggedInUser.Roles)
@@ -59,24 +65,84 @@ Welcome to your new app.
             }
         </ul>
     } 
+
+    <h2>Twitch Connection Data</h2>
+    <Button class="btn btn-dark" @onclick="SetTwitchConnectionData">Set Twitch Connection Data</Button>
+
     </AuthorizeView>
 
 @code {
-    AuthenticationState? loggedInUserAuthState;
-    StreamWorksUserModel? loggedInUser;
+    private StreamWorksUserModel loggedInUser = default!;
+    private ClaimsPrincipal? loggedInUserAuthState;
+
+    TwitchConnectionModel twitchConnectionData = new();
+    IList<Claim> claims = new List<Claim>();
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    private HttpContext? HttpContext { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        // if (HttpContext is not null)
-        // {
-        //     loggedInUser = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        // }
-        loggedInUserAuthState = await authProvider.GetAuthenticationStateAsync();
-        loggedInUser = await authProvider.GetUserFromAuth(userData);
+        if (AuthProvider is not null)
+        {
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            loggedInUserAuthState = authState.User;
+
+            foreach (var identity in loggedInUserAuthState.Identities)
+            {
+                identity.Claims.ToList().ForEach(c => Console.WriteLine(c.Value));
+            }
+            if (authState.User is not null)
+            {
+                loggedInUser = await AuthProvider.GetUserFromAuth(userData);
+            }
+        }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+        }
+    }
+
+    public async Task SetTwitchConnectionData()
+    {
+        if (loggedInUser is null)
+        {
+            if (AuthProvider is not null)
+            {
+                var authState = await AuthProvider.GetAuthenticationStateAsync();
+                loggedInUserAuthState = authState.User;
+
+                foreach (var identity in loggedInUserAuthState.Identities)
+                {
+                    identity.Claims.ToList().ForEach(c => Console.WriteLine(c.Value));
+                }
+                
+                loggedInUser = await AuthProvider.GetUserFromAuth(userData);
+            }
+        }
+
+        var refreshToken = loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value;
+
+        if (refreshToken is not null)
+        {
+            twitchConnectionData.ClientId = config["Twitch:ClientId"];
+            Console.WriteLine($"Client ID: {twitchConnectionData.ClientId}");
+
+            twitchConnectionData.ClientSecret = config["Twitch:ClientSecret"];
+            Console.WriteLine($"Client Secret: {twitchConnectionData.ClientSecret}");
+
+            twitchConnectionData.RedirectUri = NavManager.Uri.ToString();
+            Console.WriteLine($"Redirect URI: {twitchConnectionData.RedirectUri}");
+
+            twitchConnectionData.Scopes = [];
+            
+            twitchConnectionData.RefreshToken = refreshToken;
+            Console.WriteLine($"Refresh Token: {twitchConnectionData.RefreshToken}");
+        };
+    }
 
 }

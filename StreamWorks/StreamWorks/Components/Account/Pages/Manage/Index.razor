@@ -23,8 +23,13 @@
                 <label for="username" class="form-label">Username</label>
             </div>
             <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.DisplayName" class="form-control" placeholder="Please choose your Display Name" />
+                <label for="display-name" class="form-label">Display Name</label>
+                <ValidationMessage For="() => Input.DisplayName" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
-                <label for="phone-number" class="form-label">Phone number</label>
+                <label for="phone-number" class="form-label">Phone Number</label>
                 <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
             </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
@@ -35,6 +40,7 @@
 @code {
     private StreamWorksUserModel user = default!;
     private string? username;
+    private string? displayName;
     private string? phoneNumber;
 
     [CascadingParameter]
@@ -47,13 +53,24 @@
     {
         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
         username = await UserManager.GetUserNameAsync(user);
+        displayName ??= user.DisplayName;
         phoneNumber = await UserManager.GetPhoneNumberAsync(user);
 
+        Input.DisplayName ??= displayName;
         Input.PhoneNumber ??= phoneNumber;
     }
 
     private async Task OnValidSubmitAsync()
     {
+        if (Input.DisplayName != displayName)
+        {
+            user.DisplayName = Input.DisplayName;
+            var setDisplayNameResult = await UserManager.UpdateAsync(user);
+            if (!setDisplayNameResult.Succeeded)
+            {
+                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set display name.", HttpContext);
+            }
+        }
         if (Input.PhoneNumber != phoneNumber)
         {
             var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
@@ -69,8 +86,11 @@
 
     private sealed class InputModel
     {
+        [Display(Name = "Display Name")]
+        public string? DisplayName { get; set; }
+
         [Phone]
-        [Display(Name = "Phone number")]
+        [Display(Name = "Phone Number")]
         public string? PhoneNumber { get; set; }
     }
 }

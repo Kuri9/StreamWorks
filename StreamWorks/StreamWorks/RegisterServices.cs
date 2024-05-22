@@ -1,21 +1,12 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.JsonWebTokens;
 using StreamWorks.Helpers.OIDC;
-using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
-using TwitchLib.EventSub.Websockets.Extensions;
 using static TwitchLib.Api.Core.Common.Helpers;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
-using AspNet.Security.OAuth.Twitch;
-using static System.Net.WebRequestMethods;
-using StreamWorks.Twitch.Api;
-using StreamWorks.Library.DataAccess;
-using StreamWorks.Library.Models.Users.Identity;
+using TwitchLib.Api;
+using System.Security.Claims;
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
 
 namespace StreamWorks;
 
@@ -36,6 +27,15 @@ public static class RegisterServices
         builder.Services.AddScoped<IdentityRedirectManager>();
         builder.Services.AddScoped<AuthenticationStateProvider, PersistingAuthenticationStateProvider>();
         builder.Services.ConfigureCookieOidcRefresh(CookieAuthenticationDefaults.AuthenticationScheme, IdentityConstants.ExternalScheme);
+
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("Admin", policy =>
+            {
+                //policy.RequireClaim("jobTitle", "Admin");
+                policy.RequireRole("Administrator");
+            });
+        });
 
         builder.Services.Configure<IdentityOptions>(options =>
         {
@@ -129,24 +129,24 @@ public static class RegisterServices
            .AddBearerToken(TwitchAuthenticationDefaults.AuthenticationScheme);
            //.AddIdentityCookies();
 
-        builder.Services.AddAuthorization(options =>
-        {
-            options.AddPolicy("Admin", policy =>
-            {
-                //policy.RequireClaim("jobTitle", "Admin");
-                policy.RequireRole("Administrator");
-            });
-        });
-
         builder.Services.AddSingleton<IEmailSender<StreamWorksUserModel>, IdentityNoOpEmailSender>();
-        builder.Services.AddHttpContextAccessor();
+
+        //builder.Services.AddHttpContextAccessor();
+        builder.Services.AddHttpClient();
+        builder.Services.AddHttpClient("twitchApi", config => { 
+            config.BaseAddress = new Uri("https://api.twitch.tv/helix/");
+            config.DefaultRequestHeaders.Add("Client-ID", builder.Configuration["Twitch:ClientId"]!);
+        });
 
         builder.Services.AddBlazorBootstrap();
 
-        //builder.Services.AddSingleton<TwitchApi>();
+        builder.Services.AddSingleton<TwitchAPI>();
 
         // Common Data Services
         builder.Services.AddSingleton<IDbConnection, DbConnection>();
         builder.Services.AddSingleton<IStreamWorksUserData, MongoStreamWorksUserData>();
+
+        // Twitch Data Services
+        builder.Services.AddSingleton<IDbConnection, DbConnection>();
     }
 }
