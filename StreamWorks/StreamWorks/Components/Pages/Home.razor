@@ -1,6 +1,10 @@
 ﻿@page "/"
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
+@using StreamWorks.Api.Twitch.Controllers.User
+@using StreamWorks.Api.Twitch.Models.User
+@using System.Net.Http.Headers
+@using TwitchLib.Api
 
 @* Fires OnInitilaize 2x and secondtime doesnt get user from HttpContext *@
 @rendermode InteractiveServer
@@ -12,6 +16,8 @@
 @inject IdentityUserAccessor UserAccessor
 @inject IStreamWorksUserData userData
 @inject IConfiguration config
+@inject IHttpClientFactory clientFactory
+@inject TwitchUserController twitchInternalApi  
 
 <PageTitle>Home</PageTitle>
 
@@ -21,7 +27,7 @@ Welcome to your new app.
 
 
 <AuthorizeView Policy="Admin">
-    @if (loggedInUser is not null)
+@*     @if (loggedInUser is not null)
     {
         <h4>@loggedInUser.Id</h4>
         <h3>@loggedInUser.UserName</h3>
@@ -45,7 +51,7 @@ Welcome to your new app.
             }
         </ul>
 
-@*         <ul>
+         <ul>
             @if (loggedInUserAuthState is not null) {
                 @foreach (var claim in loggedInUserAuthState?.User.Claims)
                 {
@@ -54,7 +60,7 @@ Welcome to your new app.
                     </li>
                 }
             }
-        </ul> *@
+        </ul>
 
         <ul>
             @foreach (var role in loggedInUser.Roles)
@@ -64,16 +70,25 @@ Welcome to your new app.
                 </li>
             }
         </ul>
-    } 
+    }  *@
 
     <h2>Twitch Connection Data</h2>
     <Button class="btn btn-dark" @onclick="SetTwitchConnectionData">Set Twitch Connection Data</Button>
+
+    @if (twitchUserData is not null)
+    {
+        @twitchUserData.DisplayName
+        @twitchUserData.BroadcasterType
+        @twitchUserData.Description
+    }
 
     </AuthorizeView>
 
 @code {
     private StreamWorksUserModel loggedInUser = default!;
     private ClaimsPrincipal? loggedInUserAuthState;
+    private TwitchAPI? twitchApi;
+    private GetUserDataModel? twitchUserData;
 
     TwitchConnectionModel twitchConnectionData = new();
     IList<Claim> claims = new List<Claim>();
@@ -120,7 +135,7 @@ Welcome to your new app.
                 {
                     identity.Claims.ToList().ForEach(c => Console.WriteLine(c.Value));
                 }
-                
+
                 loggedInUser = await AuthProvider.GetUserFromAuth(userData);
             }
         }
@@ -139,10 +154,24 @@ Welcome to your new app.
             Console.WriteLine($"Redirect URI: {twitchConnectionData.RedirectUri}");
 
             twitchConnectionData.Scopes = [];
-            
+
             twitchConnectionData.RefreshToken = refreshToken;
             Console.WriteLine($"Refresh Token: {twitchConnectionData.RefreshToken}");
         };
+
+        var client = clientFactory.CreateClient("Twitch");
+
+        var name = "enocinoco";
+        var accessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
+        var clientId = twitchConnectionData.ClientId;
+
+        // Call API as a test
+        var result = await twitchInternalApi.GetTwitchUserData(name, accessToken, clientId);
+        
+        if (result is not null)
+        {
+            twitchUserData = result;
+        }
     }
 
 }

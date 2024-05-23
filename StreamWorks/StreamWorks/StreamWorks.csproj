@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\StreamWorks.Api.Twitch\StreamWorks.Api.Twitch.csproj" />
     <ProjectReference Include="..\..\StreamWorks.ApiLibrary.Twitch\StreamWorks.ApiLibrary.Twitch.csproj" />
     <ProjectReference Include="..\..\StreamWorks.Api\StreamWorks.Api.csproj" />
     <ProjectReference Include="..\..\StreamWorks.Library\StreamWorks.Library.csproj" />

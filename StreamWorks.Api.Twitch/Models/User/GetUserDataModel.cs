@@ -19,5 +19,5 @@ public class GetUserDataModel
     public string? ProfileImageUrl { get; set; }
     public string? Type { get; set; }
     [JsonPropertyName("view_count")]
-    public int ViewCount { get; set; }
+    public long ViewCount { get; set; }
 }

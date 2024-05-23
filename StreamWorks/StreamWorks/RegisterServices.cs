@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication;
 using TwitchLib.Api;
 using System.Security.Claims;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
+using StreamWorks.Api.Twitch.Controllers.User;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace StreamWorks;
 
@@ -141,6 +143,7 @@ public static class RegisterServices
         builder.Services.AddBlazorBootstrap();
 
         builder.Services.AddSingleton<TwitchAPI>();
+        builder.Services.AddSingleton<TwitchUserController>();
 
         // Common Data Services
         builder.Services.AddSingleton<IDbConnection, DbConnection>();
@@ -148,5 +151,8 @@ public static class RegisterServices
 
         // Twitch Data Services
         builder.Services.AddSingleton<IDbConnection, DbConnection>();
+
+        
+
     }
 }
