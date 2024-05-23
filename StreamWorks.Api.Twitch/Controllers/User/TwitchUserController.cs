@@ -2,8 +2,12 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using StreamWorks.Api.Twitch.Models.User;
+using StreamWorks.ApiLibrary.Twitch.Models.Config;
+using StreamWorks.ApiLibrary.Twitch.Models.Users;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using TwitchLib.Api;
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using TwitchLib.Api.Interfaces;
 
 namespace StreamWorks.Api.Twitch.Controllers.User;
@@ -21,10 +25,10 @@ public class TwitchUserController : ControllerBase
     }
 
     [HttpGet(Name = "GetTwitchUsers")]
-    public async Task<IActionResult> GetTwitchUserData(string id, string accessCode, string clientId)
+    public async Task<ActionResult<GetUserDataModel>> GetTwitchUserData(string id, string accessCode, string clientId)
     {
-        _twitchApi.Settings.ClientId = clientId;
         _twitchApi.Settings.AccessToken = accessCode;
+        _twitchApi.Settings.ClientId = clientId;
 
         try
         {
@@ -49,7 +53,7 @@ public class TwitchUserController : ControllerBase
                 ViewCount = user.Users[0].ViewCount
             };
 
-            IActionResult result = Ok(userdata);
+            ActionResult result = Ok(userdata);
 
             return result;
         }
@@ -59,4 +63,38 @@ public class TwitchUserController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
+
+    //[HttpGet(Name = "RefreshTwitchAuth")]
+    //public async Task<ActionResult<TwitchAccessDataModel>> RefreshTwitchAuth(TwitchConnectionModel connectionModel)
+    //{
+    //    try
+    //    {
+    //        _twitchApi.Settings.ClientId = connectionModel.ClientId;
+    //        _twitchApi.Settings.Secret = connectionModel.ClientSecret;
+
+    //        var token = await _twitchApi.Auth.RefreshAuthTokenAsync(connectionModel.RefreshToken,
+    //            _twitchApi.Settings.Secret = connectionModel.ClientSecret);
+
+    //        if (token is null)
+    //        {
+    //            return BadRequest();
+    //        }
+
+    //        TwitchAccessDataModel accessData = new( )
+    //        {
+    //            AccessToken = token.AccessToken,
+    //            ExpiresIn = token.ExpiresIn,
+    //            RefreshToken = token.RefreshToken,
+    //        };
+
+    //        ActionResult result = Ok(accessData);
+
+    //        return result;
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(ex, "Error refreshing Twitch auth token");
+    //        return StatusCode(StatusCodes.Status500InternalServerError);
+    //    }   
+    //}
 }

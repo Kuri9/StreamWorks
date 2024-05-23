@@ -17,12 +17,13 @@ public static class TwitchSignInHelpers
         return $"https://id.twitch.tv/oauth2/authorize?client_id={connectionModel.ClientId}&redirect_uri={connectionModel.RedirectUri}&response_type=code&scope={scopesString}";
     }
 
-    public static async Task HandleTwitch400Error(StreamWorksUserModel user, TwitchConnectionModel connectionModel)
+    public static async Task<TwitchAccessDataModel> HandleTwitch400Error(StreamWorksUserModel user, TwitchConnectionModel connectionModel)
     {
         // Probably a better way to handle this than a Try Catch inside a Try Catch, but it works for now.
         try
         {
             var result = await RefreshTwitchToken(connectionModel);
+
             if (result is not null)
             {
                 if (user.TwitchAccessData is not null)
@@ -34,12 +35,13 @@ public static class TwitchSignInHelpers
                     userData.ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(result.ExpiresIn);
 
                     user.TwitchAccessData = userData;
+
+                    return userData;
                 }
                 else
                 {
                     throw new Exception("User Twitch Access Data is null.");
                 }
-
             }
             else { throw new Exception("RefreshTwitchTokenReult was null"); }
         }
@@ -53,6 +55,8 @@ public static class TwitchSignInHelpers
                 if (result is not null)
                 {
                     user.TwitchAccessData = result;
+
+                    return result;
                 }
                 else { throw new Exception("GetTwitchAccessDataAsync was null"); }
             }
@@ -62,6 +66,21 @@ public static class TwitchSignInHelpers
             }
 
             Console.WriteLine("Couldn't get an Access Token. All attempts failed.");
+            return null;
+        }
+    }
+
+    public static async Task UpdateUserTokens(StreamWorksUserModel user, UserManager<StreamWorksUserModel> userManager, TwitchAccessDataModel twitchAccessDataModel)
+    {
+        try
+        {
+            await userManager.SetAuthenticationTokenAsync(user, "TwitchLogin", "access_token", twitchAccessDataModel.AccessToken);
+            await userManager.SetAuthenticationTokenAsync(user, "TwitchLogin", "refresh_token", twitchAccessDataModel.RefreshToken);
+            await userManager.SetAuthenticationTokenAsync(user, "TwitchLogin", "expires_at", twitchAccessDataModel.ExpiresAt.ToString());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to update user tokens: {ex.Message}");
         }
     }
 
@@ -99,6 +118,7 @@ public static class TwitchSignInHelpers
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             { "content-type", "application/json" },
+
             { "authorization", string.Concat("Bearer ", authToken) },
         });
 

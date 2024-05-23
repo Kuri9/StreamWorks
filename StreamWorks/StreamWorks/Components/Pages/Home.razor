@@ -4,6 +4,7 @@
 @using StreamWorks.Api.Twitch.Controllers.User
 @using StreamWorks.Api.Twitch.Models.User
 @using System.Net.Http.Headers
+@using StreamWorks.Helpers.Twitch
 @using TwitchLib.Api
 
 @* Fires OnInitilaize 2x and secondtime doesnt get user from HttpContext *@
@@ -17,6 +18,7 @@
 @inject IStreamWorksUserData userData
 @inject IConfiguration config
 @inject IHttpClientFactory clientFactory
+@inject TwitchAPI twitchApi;
 @inject TwitchUserController twitchInternalApi  
 
 <PageTitle>Home</PageTitle>
@@ -73,7 +75,7 @@ Welcome to your new app.
     }  *@
 
     <h2>Twitch Connection Data</h2>
-    <Button class="btn btn-dark" @onclick="SetTwitchConnectionData">Set Twitch Connection Data</Button>
+    <Button class="btn btn-dark" @onclick="SetupTwitchUser">Setup Twitch User</Button>
 
     @if (twitchUserData is not null)
     {
@@ -87,7 +89,6 @@ Welcome to your new app.
 @code {
     private StreamWorksUserModel loggedInUser = default!;
     private ClaimsPrincipal? loggedInUserAuthState;
-    private TwitchAPI? twitchApi;
     private GetUserDataModel? twitchUserData;
 
     TwitchConnectionModel twitchConnectionData = new();
@@ -122,7 +123,7 @@ Welcome to your new app.
         }
     }
 
-    public async Task SetTwitchConnectionData()
+    public async Task SetupTwitchUser()
     {
         if (loggedInUser is null)
         {
@@ -140,6 +141,17 @@ Welcome to your new app.
             }
         }
 
+        SetTwitchConnectionData();
+        var name = "enocinoco";
+        var accessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
+        var clientId = twitchConnectionData.ClientId;
+
+        // Call API as a test
+        await GetTwitchUserData(name, accessToken, clientId);
+    }
+
+    private void SetTwitchConnectionData()
+    {
         var refreshToken = loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value;
 
         if (refreshToken is not null)
@@ -158,20 +170,52 @@ Welcome to your new app.
             twitchConnectionData.RefreshToken = refreshToken;
             Console.WriteLine($"Refresh Token: {twitchConnectionData.RefreshToken}");
         };
+    }
 
-        var client = clientFactory.CreateClient("Twitch");
+    private async Task RefreshTwitchToken()
+    {
+        var refreshedToken = await twitchApi.Auth.RefreshAuthTokenAsync(twitchConnectionData.RefreshToken,
+                twitchApi.Settings.Secret = twitchConnectionData.ClientSecret);
 
-        var name = "enocinoco";
-        var accessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
-        var clientId = twitchConnectionData.ClientId;
-
-        // Call API as a test
-        var result = await twitchInternalApi.GetTwitchUserData(name, accessToken, clientId);
-        
-        if (result is not null)
+        if (refreshedToken is not null)
         {
-            twitchUserData = result;
+            try
+            {
+                var expiresAt = DateTimeOffset.Now.AddSeconds(refreshedToken.ExpiresIn).ToString();
+
+                await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "access_token", refreshedToken.AccessToken);
+                await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "refresh_token", refreshedToken.RefreshToken);
+                await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "expires_at", expiresAt);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to update user tokens: {ex.Message}");
+            }
+
+            // var updatedLogin = await TwitchSignInHelpers.HandleTwitch400Error(loggedInUser, twitchConnectionData);
+            //await TwitchSignInHelpers.UpdateUserTokens(loggedInUser, UserManager, connection);
         }
     }
 
+    private async Task GetTwitchUserData(string name, string accessToken, string clientId)
+    {
+        // Call API as a test
+        try
+        {
+            var result = await twitchInternalApi.GetTwitchUserData(name, accessToken, clientId);
+            if (result is not null)
+            {
+                twitchUserData = result.Value;
+            }
+            else
+            {
+                Console.WriteLine("Failed to get User Data. Refreshing token!");
+                await RefreshTwitchToken();
+            }
+        }
+        catch
+        {
+            Console.WriteLine("Failed to get Twitch User Data");
+        }
+    }
 }
