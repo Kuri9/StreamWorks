@@ -64,37 +64,5 @@ public class TwitchUserController : ControllerBase
         }
     }
 
-    //[HttpGet(Name = "RefreshTwitchAuth")]
-    //public async Task<ActionResult<TwitchAccessDataModel>> RefreshTwitchAuth(TwitchConnectionModel connectionModel)
-    //{
-    //    try
-    //    {
-    //        _twitchApi.Settings.ClientId = connectionModel.ClientId;
-    //        _twitchApi.Settings.Secret = connectionModel.ClientSecret;
 
-    //        var token = await _twitchApi.Auth.RefreshAuthTokenAsync(connectionModel.RefreshToken,
-    //            _twitchApi.Settings.Secret = connectionModel.ClientSecret);
-
-    //        if (token is null)
-    //        {
-    //            return BadRequest();
-    //        }
-
-    //        TwitchAccessDataModel accessData = new( )
-    //        {
-    //            AccessToken = token.AccessToken,
-    //            ExpiresIn = token.ExpiresIn,
-    //            RefreshToken = token.RefreshToken,
-    //        };
-
-    //        ActionResult result = Ok(accessData);
-
-    //        return result;
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _logger.LogError(ex, "Error refreshing Twitch auth token");
-    //        return StatusCode(StatusCodes.Status500InternalServerError);
-    //    }   
-    //}
 }

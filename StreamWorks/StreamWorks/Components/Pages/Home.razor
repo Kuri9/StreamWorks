@@ -203,7 +203,7 @@ Welcome to your new app.
         try
         {
             var result = await twitchInternalApi.GetTwitchUserData(name, accessToken, clientId);
-            if (result is not null)
+            if (result.Value is not null)
             {
                 twitchUserData = result.Value;
             }
