@@ -120,10 +120,9 @@ public static class RegisterServices
                    AuthScopes.Helix_User_Read_Subscriptions,
                    AuthScopes.Helix_moderator_Manage_Chat_Messages,
                ];
-               scopes
-                   .Select(AuthScopesToString)
-                   .ToList()
-               .ForEach(twitchOptions.Scope.Add);
+               scopes.Select(AuthScopesToString)
+                     .ToList()
+                     .ForEach(twitchOptions.Scope.Add);
 
                //twitchOptions.AuthorizationEndpoint = "/Account/Manage/ExternalLogins";
                twitchOptions.SaveTokens = true;
@@ -150,9 +149,10 @@ public static class RegisterServices
         builder.Services.AddSingleton<IStreamWorksUserData, MongoStreamWorksUserData>();
 
         // Twitch Data Services
-        builder.Services.AddSingleton<IDbConnection, DbConnection>();
+        builder.Services.AddSingleton<ITwitchSignInHelpers, TwitchSignInHelpers>();
+        //builder.Services.AddSingleton<IDbConnection, DbConnection>();
 
-        
+
 
     }
 }

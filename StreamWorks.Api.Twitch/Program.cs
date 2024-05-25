@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using TwitchLib.Api;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -31,6 +28,14 @@ builder.Services.AddHttpClient("Twitch", client =>
     //client.DefaultRequestHeaders.Add("Client-ID", "YOUR_CLIENT");
 });
 
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+          new[] { "application/octet-stream" });
+});
+
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -43,7 +48,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+app.UseResponseCompression();
 
 app.MapControllers();
+app.MapHub<TwitchApiHub>("/TwitchApiHub");
 
 app.Run();

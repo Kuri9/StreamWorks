@@ -132,6 +132,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Config\TwitchConnectionModel.cs" />
+    <Compile Include="Models\Config\TwitchScope.cs" />
     <Compile Include="Models\Users\TwitchAccessDataModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

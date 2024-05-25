@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿
+using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNetCore.Mvc;
 using StreamWorks.Api.Twitch.Models.User;
 using StreamWorks.ApiLibrary.Twitch.Models.Config;
@@ -16,28 +16,28 @@ namespace StreamWorks.Api.Twitch.Controllers.User;
 public class TwitchUserController : ControllerBase
 {
     private readonly ILogger<TwitchUserController> _logger;
+    private readonly IConfiguration _config;
+    private HubConnection? hubConnection;
     private readonly TwitchAPI _twitchApi;
 
-    public TwitchUserController(ILogger<TwitchUserController> logger, TwitchAPI api)
+    public TwitchUserController(ILogger<TwitchUserController> logger, IConfiguration config, TwitchAPI api)
     {
         _logger = logger;
+        _config = config;
         _twitchApi = api;
+
+        _twitchApi.Settings.ClientId = _config["Twitch:ClientId"];
+        _twitchApi.Settings.Secret = _config["Twitch:ClientSecret"];
     }
 
     [HttpGet(Name = "GetTwitchUsers")]
-    public async Task<ActionResult<GetUserDataModel>> GetTwitchUserData(string id, string accessCode, string clientId)
+    public async Task<ActionResult<GetUserDataModel>> GetTwitchUserData(string id, string accessCode)
     {
         _twitchApi.Settings.AccessToken = accessCode;
-        _twitchApi.Settings.ClientId = clientId;
 
         try
         {
             var user = await _twitchApi.Helix.Users.GetUsersAsync(logins: new List<string> { id });
-
-            if (user.Users.Length == 0)
-            {
-                return BadRequest();
-            }
 
             var userdata = new GetUserDataModel
             {
@@ -52,17 +52,15 @@ public class TwitchUserController : ControllerBase
                 Type = user.Users[0].Type,
                 ViewCount = user.Users[0].ViewCount
             };
-
+ 
             ActionResult result = Ok(userdata);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user data from Twitch");
-            return StatusCode(StatusCodes.Status500InternalServerError);
+            _logger.LogError(ex, $"Error getting user data from Twitch. Error Code: {ex.HResult}");
+            return StatusCode(ex.HResult);
         }
     }
-
-
 }

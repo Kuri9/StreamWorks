@@ -19,6 +19,7 @@
 @inject IConfiguration config
 @inject IHttpClientFactory clientFactory
 @inject TwitchAPI twitchApi;
+@inject ITwitchSignInHelpers twitchSignInHelpers
 @inject TwitchUserController twitchInternalApi  
 
 <PageTitle>Home</PageTitle>
@@ -147,7 +148,8 @@ Welcome to your new app.
         var clientId = twitchConnectionData.ClientId;
 
         // Call API as a test
-        await GetTwitchUserData(name, accessToken, clientId);
+        await GetTwitchUserData(name, accessToken);
+        
     }
 
     private void SetTwitchConnectionData()
@@ -191,18 +193,15 @@ Welcome to your new app.
             {
                 Console.WriteLine($"Failed to update user tokens: {ex.Message}");
             }
-
-            // var updatedLogin = await TwitchSignInHelpers.HandleTwitch400Error(loggedInUser, twitchConnectionData);
-            //await TwitchSignInHelpers.UpdateUserTokens(loggedInUser, UserManager, connection);
         }
     }
 
-    private async Task GetTwitchUserData(string name, string accessToken, string clientId)
+    private async Task GetTwitchUserData(string name, string accessToken)
     {
         // Call API as a test
         try
         {
-            var result = await twitchInternalApi.GetTwitchUserData(name, accessToken, clientId);
+            var result = await twitchInternalApi.GetTwitchUserData(name, accessToken);
             if (result.Value is not null)
             {
                 twitchUserData = result.Value;
@@ -213,7 +212,7 @@ Welcome to your new app.
                 await RefreshTwitchToken();
             }
         }
-        catch
+        catch (Exception ex)
         {
             Console.WriteLine("Failed to get Twitch User Data");
         }
