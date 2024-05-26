@@ -9,6 +9,10 @@ using System.Security.Claims;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using StreamWorks.Api.Twitch.Controllers.User;
 using Microsoft.Extensions.DependencyInjection;
+using StreamWorks.Connections;
+using TwitchLib.EventSub.Websockets;
+using TwitchLib.EventSub.Websockets.Extensions;
+using Microsoft.AspNetCore.ResponseCompression;
 
 namespace StreamWorks;
 
@@ -23,6 +27,11 @@ public static class RegisterServices
 
         builder.Services.AddMemoryCache();
         builder.Services.AddRazorPages();
+        builder.Services.AddResponseCompression(options =>
+        {
+            options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+            new[] { "application/octet-stream" });
+        });
 
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddScoped<IdentityUserAccessor>();
@@ -149,10 +158,8 @@ public static class RegisterServices
         builder.Services.AddSingleton<IStreamWorksUserData, MongoStreamWorksUserData>();
 
         // Twitch Data Services
+        builder.Services.AddTwitchLibEventSubWebsockets();
+        builder.Services.AddHostedService<TwitchEventSubConnection>();
         builder.Services.AddScoped<ITwitchSignInHelpers, TwitchSignInHelpers>();
-        //builder.Services.AddSingleton<IDbConnection, DbConnection>();
-
-
-
     }
 }

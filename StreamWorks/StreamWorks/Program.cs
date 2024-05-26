@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using StreamWorks;
 using StreamWorks.Components;
 using StreamWorks.Components.Account;
+using StreamWorks.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,5 +43,7 @@ app.MapRazorComponents<App>()
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
 //app.MapGroup("/authentication").MapLoginAndLogout();
+
+app.MapHub<TwitchHub>("/TwitchHub");
 
 app.Run();

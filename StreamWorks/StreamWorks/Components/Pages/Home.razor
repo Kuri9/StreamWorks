@@ -1,6 +1,8 @@
 ﻿@page "/"
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.SignalR.Client
+@using StreamWorks.Api.Twitch.Connections
 @using StreamWorks.Api.Twitch.Controllers.User
 @using StreamWorks.Api.Twitch.Models.User
 @using System.Net.Http.Headers
@@ -22,6 +24,7 @@
 @inject TwitchAPI twitchApi;
 @inject ITwitchSignInHelpers twitchSignInHelpers
 @inject TwitchUserController twitchInternalApi  
+@* @implements IAsyncDisposable *@
 
 <PageTitle>Home</PageTitle>
 
@@ -52,7 +55,10 @@ Welcome to your new app.
 
     private int tryCount = 3;
     private bool isRefreshingToken = false;
+    private string ClientId = "";
+    private string AccessToken = "";
 
+    private HubConnection? twitchHub;
     TwitchConnectionModel twitchConnectionData = new();
     IList<Claim> claims = new List<Claim>();
 
@@ -61,7 +67,12 @@ Welcome to your new app.
 
     protected override async Task OnInitializedAsync()
     {
+        twitchHub = new HubConnectionBuilder()
+            .WithUrl(NavManager.ToAbsoluteUri("/twitchhub"))
+            .WithAutomaticReconnect()
+            .Build();
 
+        await twitchHub.StartAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -92,12 +103,18 @@ Welcome to your new app.
 
         SetTwitchConnectionData();
         var name = "enocinoco";
-        var accessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
-        var clientId = twitchConnectionData.ClientId;
+        AccessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
+        ClientId = twitchConnectionData.ClientId;
 
         // Call API as a test
-        await GetTwitchUserData(name, accessToken);
+        var completed = await GetTwitchUserData(name, AccessToken);
 
+        if (completed)
+        {
+            // Setup EventSub with data after testing
+            Console.WriteLine("Setting up EventSub");
+            await twitchHub.SendAsync("SetupConnectionRequest", AccessToken);
+        }
     }
 
     private void SetTwitchConnectionData()
@@ -144,7 +161,7 @@ Welcome to your new app.
         }
     }
 
-    private async Task GetTwitchUserData(string name, string accessToken)
+    private async Task<bool> GetTwitchUserData(string name, string accessToken)
     {
         while (tryCount > 0)
         {
@@ -175,7 +192,7 @@ Welcome to your new app.
                 }
 
                 tryCount = 3;
-                return;
+                return true;
             }
             else
             {
@@ -189,5 +206,9 @@ Welcome to your new app.
                 isRefreshingToken = false;
             }
         }
+
+        return false;
     }
+
+    
 }
