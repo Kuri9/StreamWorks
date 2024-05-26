@@ -6,6 +6,7 @@
 @using System.Net.Http.Headers
 @using StreamWorks.Helpers.Twitch
 @using TwitchLib.Api
+@using TwitchLib.Api.Helix.Models.Users.GetUsers
 
 @* Fires OnInitilaize 2x and secondtime doesnt get user from HttpContext *@
 @rendermode InteractiveServer
@@ -30,67 +31,27 @@ Welcome to your new app.
 
 
 <AuthorizeView Policy="Admin">
-@*     @if (loggedInUser is not null)
-    {
-        <h4>@loggedInUser.Id</h4>
-        <h3>@loggedInUser.UserName</h3>
-
-       <ul>
-            @foreach (var logins in loggedInUser.Logins)
-            {
-                <li>
-                    <ul>
-                        <li>
-                            <h4>@logins.LoginProvider</h4>
-                        </li>
-                        <li>
-                            @logins.ProviderKey
-                        </li>
-                        <li>
-                            @logins.ProviderDisplayName
-                        </li>
-                    </ul>
-                </li>
-            }
-        </ul>
-
-         <ul>
-            @if (loggedInUserAuthState is not null) {
-                @foreach (var claim in loggedInUserAuthState?.User.Claims)
-                {
-                    <li>
-                        @claim.Issuer / @claim.Value / @claim.Type
-                    </li>
-                }
-            }
-        </ul>
-
-        <ul>
-            @foreach (var role in loggedInUser.Roles)
-            {
-                <li>
-                    @role
-                </li>
-            }
-        </ul>
-    }  *@
 
     <h2>Twitch Connection Data</h2>
     <Button class="btn btn-dark" @onclick="SetupTwitchUser">Setup Twitch User</Button>
 
-    @if (twitchUserData is not null)
+    @if (twitchUserData is not null && twitchUserData.Count() > 0)
     {
-        @twitchUserData.DisplayName
-        @twitchUserData.BroadcasterType
-        @twitchUserData.Description
+        <h3>@twitchUserData.First().DisplayName</h3>
+        <p>@twitchUserData.First().BroadcasterType</p>
+        <p>@twitchUserData.First().Description</p>
     }
 
-    </AuthorizeView>
+</AuthorizeView>
 
 @code {
     private StreamWorksUserModel loggedInUser = default!;
     private ClaimsPrincipal? loggedInUserAuthState;
-    private GetUserDataModel? twitchUserData;
+    private List<GetUserDataModel>? twitchUserData = new();
+    private GetUsersResponse? getUserResponse;
+
+    private int tryCount = 3;
+    private bool isRefreshingToken = false;
 
     TwitchConnectionModel twitchConnectionData = new();
     IList<Claim> claims = new List<Claim>();
@@ -100,27 +61,14 @@ Welcome to your new app.
 
     protected override async Task OnInitializedAsync()
     {
-        if (AuthProvider is not null)
-        {
-            var authState = await AuthProvider.GetAuthenticationStateAsync();
-            loggedInUserAuthState = authState.User;
 
-            foreach (var identity in loggedInUserAuthState.Identities)
-            {
-                identity.Claims.ToList().ForEach(c => Console.WriteLine(c.Value));
-            }
-            if (authState.User is not null)
-            {
-                loggedInUser = await AuthProvider.GetUserFromAuth(userData);
-            }
-        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-
+            await SetupTwitchUser();
         }
     }
 
@@ -149,7 +97,7 @@ Welcome to your new app.
 
         // Call API as a test
         await GetTwitchUserData(name, accessToken);
-        
+
     }
 
     private void SetTwitchConnectionData()
@@ -198,23 +146,48 @@ Welcome to your new app.
 
     private async Task GetTwitchUserData(string name, string accessToken)
     {
-        // Call API as a test
-        try
+        while (tryCount > 0)
         {
-            var result = await twitchInternalApi.GetTwitchUserData(name, accessToken);
-            if (result.Value is not null)
+            tryCount--;
+            getUserResponse = await twitchInternalApi.GetTwitchUserData(name, accessToken);
+            await Task.Delay(1000);
+
+            if (getUserResponse is not null)
             {
-                twitchUserData = result.Value;
+                if (getUserResponse.Users.Count() > 0)
+                {
+                    foreach (var user in getUserResponse.Users)
+                    {
+                        var userData = new GetUserDataModel();
+
+                        userData.DisplayName = user.DisplayName;
+                        userData.BroadcasterType = user.BroadcasterType;
+                        userData.Description = user.Description;
+
+                        twitchUserData?.Add(userData);
+                    }
+                    Console.WriteLine($"User Data: {twitchUserData?.First().DisplayName}");
+                    StateHasChanged();
+                }
+                else
+                {
+                    Console.WriteLine("Result didn't contain any Users");
+                }
+
+                tryCount = 3;
+                return;
             }
             else
             {
+                isRefreshingToken = true;
                 Console.WriteLine("Failed to get User Data. Refreshing token!");
-                await RefreshTwitchToken();
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Failed to get Twitch User Data");
+
+            if (isRefreshingToken)
+            {
+                await twitchSignInHelpers.RefreshTwitchToken(loggedInUser, twitchConnectionData.RefreshToken);
+                isRefreshingToken = false;
+            }
         }
     }
 }

@@ -10,21 +10,47 @@ public static class AuthenticationProviderHelpers
 {
     /// <summary>
     /// Extends the AuthenticationStateProvider by adding a way to look up a user based on their
-    /// objectidentifier from the Azure User database based on the loggedin users details.
+    /// AuthenticationState. 
     /// </summary>
     /// <param name="provider"></param>
     /// <param name="userData"></param>
-    /// <returns>objectId - User Id from Azure AD B2C</returns>
+    /// <returns>StreamWorksUserModel of the currently Authorized User</returns>
 
     public static async Task<StreamWorksUserModel> GetUserFromAuth(
         this AuthenticationStateProvider provider,
         IStreamWorksUserData userData)
     {
-        var authState = await provider.GetAuthenticationStateAsync();
-        string objectId = authState?.User.Claims.FirstOrDefault(c => c.Type.Contains("user_id"))?.Value;
-        // var result = await userData.GetUserFromAuthentication(objectId);
-        var result = await userData.GetUser(objectId);
-        return result;
+        AuthenticationState authState = await provider.GetAuthenticationStateAsync();
+        StreamWorksUserModel userResult = new();
+        string userId = "";
+
+        if (authState?.User == null)
+        {
+            Console.WriteLine("No user found in authState. Need to login.");
+            return userResult;
+
+        } else
+        {
+            try
+            {
+                userId = authState?.User.Claims.FirstOrDefault(c => c.Type.Contains("user_id")).Value;
+            }
+            catch (Exception ex)
+            {
+
+                Console.WriteLine($"Failed to get user_id: {ex.Message}");
+            }
+            try
+            {
+                userResult = await userData.GetUser(userId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to get user: {ex.Message}");
+            }
+        }
+        
+        return userResult;
     }
 
     /// <summary>

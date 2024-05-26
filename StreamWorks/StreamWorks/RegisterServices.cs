@@ -149,7 +149,7 @@ public static class RegisterServices
         builder.Services.AddSingleton<IStreamWorksUserData, MongoStreamWorksUserData>();
 
         // Twitch Data Services
-        builder.Services.AddSingleton<ITwitchSignInHelpers, TwitchSignInHelpers>();
+        builder.Services.AddScoped<ITwitchSignInHelpers, TwitchSignInHelpers>();
         //builder.Services.AddSingleton<IDbConnection, DbConnection>();
 
 

@@ -51,7 +51,7 @@ namespace StreamWorks.ApiLibrary.Twitch.Models.Config
 
             foreach (var scope in twitchScopes)
             {
-                scopes.Add(scope.ToString());
+                Scopes.Add(scope.ToString());
             }
         }
     }

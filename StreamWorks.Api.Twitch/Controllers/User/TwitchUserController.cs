@@ -31,7 +31,7 @@ public class TwitchUserController : ControllerBase
     }
 
     [HttpGet(Name = "GetTwitchUsers")]
-    public async Task<ActionResult<GetUserDataModel>> GetTwitchUserData(string id, string accessCode)
+    public async Task<GetUsersResponse> GetTwitchUserData(string id, string accessCode)
     {
         _twitchApi.Settings.AccessToken = accessCode;
 
@@ -39,28 +39,29 @@ public class TwitchUserController : ControllerBase
         {
             var user = await _twitchApi.Helix.Users.GetUsersAsync(logins: new List<string> { id });
 
-            var userdata = new GetUserDataModel
-            {
-                BroadcasterType = user.Users[0].BroadcasterType,
-                CreatedAt = user.Users[0].CreatedAt,
-                Description = user.Users[0].Description,
-                DisplayName = user.Users[0].DisplayName,
-                Id = user.Users[0].Id,
-                Login = user.Users[0].Login,
-                OfflineImageUrl = user.Users[0].OfflineImageUrl,
-                ProfileImageUrl = user.Users[0].ProfileImageUrl,
-                Type = user.Users[0].Type,
-                ViewCount = user.Users[0].ViewCount
-            };
+            //var userdata = new GetUserDataModel
+            //{
+            //    BroadcasterType = user.Users[0].BroadcasterType,
+            //    CreatedAt = user.Users[0].CreatedAt,
+            //    Description = user.Users[0].Description,
+            //    DisplayName = user.Users[0].DisplayName,
+            //    Id = user.Users[0].Id,
+            //    Login = user.Users[0].Login,
+            //    OfflineImageUrl = user.Users[0].OfflineImageUrl,
+            //    ProfileImageUrl = user.Users[0].ProfileImageUrl,
+            //    Type = user.Users[0].Type,
+            //    ViewCount = user.Users[0].ViewCount
+            //};
  
-            ActionResult result = Ok(userdata);
+            //ActionResult result = Ok(user);
 
-            return result;
+            return user;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Error getting user data from Twitch. Error Code: {ex.HResult}");
-            return StatusCode(ex.HResult);
+            //return StatusCode(ex.HResult);
+            return null;
         }
     }
 }
