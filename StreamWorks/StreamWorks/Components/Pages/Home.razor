@@ -2,13 +2,15 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.SignalR.Client
-@using StreamWorks.Api.Twitch.Connections
+@using StreamWorks.Api.Twitch.Controllers.EventSubs
 @using StreamWorks.Api.Twitch.Controllers.User
 @using StreamWorks.Api.Twitch.Models.User
 @using System.Net.Http.Headers
 @using StreamWorks.Helpers.Twitch
 @using TwitchLib.Api
+@using TwitchLib.Api.Helix.Models.EventSub
 @using TwitchLib.Api.Helix.Models.Users.GetUsers
+@using TwitchLib.EventSub.Core.SubscriptionTypes.Channel
 
 @* Fires OnInitilaize 2x and secondtime doesnt get user from HttpContext *@
 @rendermode InteractiveServer
@@ -23,7 +25,8 @@
 @inject IHttpClientFactory clientFactory
 @inject TwitchAPI twitchApi;
 @inject ITwitchSignInHelpers twitchSignInHelpers
-@inject TwitchUserController twitchInternalApi  
+@inject TwitchUserController twitchInternalUserApi  
+@inject TwitchEventSubController twitchInternalEventApi
 @* @implements IAsyncDisposable *@
 
 <PageTitle>Home</PageTitle>
@@ -36,13 +39,34 @@ Welcome to your new app.
 <AuthorizeView Policy="Admin">
 
     <h2>Twitch Connection Data</h2>
-    <Button class="btn btn-dark" @onclick="SetupTwitchUser">Setup Twitch User</Button>
 
-    @if (twitchUserData is not null && twitchUserData.Count() > 0)
+    <Button class="btn btn-dark" @onclick="GetEventSubscriptions">Get Subscriptions List</Button>
+
+    <div class="row">
+        <div class="col">
+            @if (twitchUserData is not null && twitchUserData.Count() > 0)
+            {
+                <h3>@twitchUserData.First().DisplayName</h3>
+                <h4>@twitchUserData.First().Id</h4>
+                <p>@twitchUserData.First().BroadcasterType</p>
+                <p>@twitchUserData.First().Description</p>
+            }
+        </div>
+    </div>
+
+    @if (eventSubSubscriptions is not null)
     {
-        <h3>@twitchUserData.First().DisplayName</h3>
-        <p>@twitchUserData.First().BroadcasterType</p>
-        <p>@twitchUserData.First().Description</p>
+         <div class="row">
+            <div class="col">
+                <h2>Subscription Info</h2>
+                <h4>@eventSubSubscriptions.TotalCost Points out of @eventSubSubscriptions.MaxTotalCost Points Used</h4>
+                <h3>Current Subscriptions</h3>
+                @foreach (var subscription in eventSubSubscriptions?.Subscriptions)
+                {
+                    subscriptions.Add(subscription);
+                }    
+            </div>
+        </div>   
     }
 
 </AuthorizeView>
@@ -58,9 +82,14 @@ Welcome to your new app.
     private string ClientId = "";
     private string AccessToken = "";
 
+    private string userId = "158740154";
+
     private HubConnection? twitchHub;
     TwitchConnectionModel twitchConnectionData = new();
     IList<Claim> claims = new List<Claim>();
+
+    private GetEventSubSubscriptionsResponse? eventSubSubscriptions;
+    private List<EventSubSubscription> subscriptions = new();
 
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
@@ -71,6 +100,16 @@ Welcome to your new app.
             .WithUrl(NavManager.ToAbsoluteUri("/twitchhub"))
             .WithAutomaticReconnect()
             .Build();
+
+        twitchHub.On<ChannelChatMessage>("ChatMessageReceived", (message) => 
+        { 
+            Console.WriteLine($"Message: {message.Message}"); 
+        });
+
+        twitchHub.On<GetEventSubSubscriptionsResponse>("GetSubscribedEvents", (subscriptionData) =>
+        {
+            eventSubSubscriptions = subscriptionData;
+        });
 
         await twitchHub.StartAsync();
     }
@@ -102,7 +141,7 @@ Welcome to your new app.
         }
 
         SetTwitchConnectionData();
-        var name = "enocinoco";
+        var name = "kuri9";
         AccessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
         ClientId = twitchConnectionData.ClientId;
 
@@ -114,6 +153,7 @@ Welcome to your new app.
             // Setup EventSub with data after testing
             Console.WriteLine("Setting up EventSub");
             await twitchHub.SendAsync("SetupConnectionRequest", AccessToken);
+            await twitchHub.SendAsync("StartServiceRequest");
         }
     }
 
@@ -166,7 +206,8 @@ Welcome to your new app.
         while (tryCount > 0)
         {
             tryCount--;
-            getUserResponse = await twitchInternalApi.GetTwitchUserData(name, accessToken);
+
+            getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
             await Task.Delay(1000);
 
             if (getUserResponse is not null)
@@ -178,6 +219,7 @@ Welcome to your new app.
                         var userData = new GetUserDataModel();
 
                         userData.DisplayName = user.DisplayName;
+                        userData.Id = user.Id;
                         userData.BroadcasterType = user.BroadcasterType;
                         userData.Description = user.Description;
 
@@ -202,7 +244,8 @@ Welcome to your new app.
 
             if (isRefreshingToken)
             {
-                await twitchSignInHelpers.RefreshTwitchToken(loggedInUser, twitchConnectionData.RefreshToken);
+                await twitchSignInHelpers.RefreshTwitchToken(twitchConnectionData.RefreshToken);
+                await Task.Delay(2000);
                 isRefreshingToken = false;
             }
         }
@@ -210,5 +253,10 @@ Welcome to your new app.
         return false;
     }
 
-    
+    private async Task GetEventSubscriptions()
+    {
+        // await twitchHub.SendAsync("SubscriptionsRequest");
+        // StateHasChanged();
+        eventSubSubscriptions = await twitchInternalEventApi.GetEventSubSubscriptions(userId, ClientId, AccessToken);
+    }
 }

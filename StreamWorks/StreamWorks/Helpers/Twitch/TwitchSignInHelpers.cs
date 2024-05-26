@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using StreamWorks.ApiLibrary.Twitch.Models.Config;
@@ -15,12 +16,18 @@ public class TwitchSignInHelpers : ITwitchSignInHelpers
     private readonly IConfiguration _config;
     private readonly TwitchAPI _twitchApi;
     private readonly UserManager<StreamWorksUserModel> _userManager;
-    public TwitchSignInHelpers(IConfiguration config, UserManager<StreamWorksUserModel> userManager, TwitchAPI twitchApi)
+    private readonly AuthenticationStateProvider _authProvider;
+    private readonly IStreamWorksUserData UserData;
+    private StreamWorksUserModel loggedInUser = new();
+
+    public TwitchSignInHelpers(IConfiguration config, UserManager<StreamWorksUserModel> userManager, AuthenticationStateProvider authProvider, IStreamWorksUserData userData, TwitchAPI twitchApi)
     {
         _config = config;
         _userManager = userManager;
-        _twitchApi = twitchApi;
+        _authProvider = authProvider;
+        UserData = userData;
 
+        _twitchApi = twitchApi;
         _twitchApi.Settings.ClientId = _config["Twitch:ClientId"];
         _twitchApi.Settings.Secret = _config["Twitch:ClientSecret"];
     }
@@ -32,8 +39,13 @@ public class TwitchSignInHelpers : ITwitchSignInHelpers
         return $"https://id.twitch.tv/oauth2/authorize?client_id={connectionModel.ClientId}&redirect_uri={connectionModel.RedirectUri}&response_type=code&scope={scopesString}";
     }
 
-    public async Task RefreshTwitchToken(StreamWorksUserModel user, string refreshToken)
+    public async Task RefreshTwitchToken(string refreshToken)
     {
+        if (_authProvider is not null)
+        {
+            loggedInUser = await _authProvider.GetUserFromAuth(UserData);
+        }
+
         var refreshedToken = await _twitchApi.Auth.RefreshAuthTokenAsync(refreshToken, _twitchApi.Settings.Secret);
 
         if (refreshedToken is not null)
@@ -42,9 +54,9 @@ public class TwitchSignInHelpers : ITwitchSignInHelpers
             {
                 var expiresAt = DateTimeOffset.Now.AddSeconds(refreshedToken.ExpiresIn).ToString();
 
-                await _userManager.SetAuthenticationTokenAsync(user, "TwitchLogin", "access_token", refreshedToken.AccessToken);
-                await _userManager.SetAuthenticationTokenAsync(user, "TwitchLogin", "refresh_token", refreshedToken.RefreshToken);
-                await _userManager.SetAuthenticationTokenAsync(user, "TwitchLogin", "expires_at", expiresAt);
+                await _userManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "access_token", refreshedToken.AccessToken);
+                await _userManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "refresh_token", refreshedToken.RefreshToken);
+                await _userManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "expires_at", expiresAt);
             }
             catch (Exception ex)
             {

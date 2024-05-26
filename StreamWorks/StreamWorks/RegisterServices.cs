@@ -13,6 +13,7 @@ using StreamWorks.Connections;
 using TwitchLib.EventSub.Websockets;
 using TwitchLib.EventSub.Websockets.Extensions;
 using Microsoft.AspNetCore.ResponseCompression;
+using StreamWorks.Api.Twitch.Controllers.EventSubs;
 
 namespace StreamWorks;
 
@@ -152,6 +153,7 @@ public static class RegisterServices
 
         builder.Services.AddSingleton<TwitchAPI>();
         builder.Services.AddSingleton<TwitchUserController>();
+        builder.Services.AddSingleton<TwitchEventSubController>();
 
         // Common Data Services
         builder.Services.AddSingleton<IDbConnection, DbConnection>();

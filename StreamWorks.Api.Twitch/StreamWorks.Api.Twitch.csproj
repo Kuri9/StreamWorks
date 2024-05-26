@@ -21,4 +21,8 @@
     <ProjectReference Include="..\StreamWorks.ApiLibrary.Twitch\StreamWorks.ApiLibrary.Twitch.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Connections\" />
+  </ItemGroup>
+
 </Project>
