@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 using StreamWorks.Hubs;
 using Microsoft.AspNetCore.Components;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
+using StreamWorks.Api.Twitch.Controllers.EventSubs;
 
 namespace StreamWorks.Connections;
 
@@ -16,6 +17,7 @@ public class TwitchEventSubConnection : IHostedService
     private readonly IConfiguration Config;
     private IHubContext<TwitchHub> TwitchHubContext;
     private CancellationToken CancellationToken;
+    private TwitchEventSubController TwitchInternalEventApi;
 
     private readonly EventSubWebsocketClient EventSubWebsocketClient;
     private TwitchAPI api = new();
@@ -32,14 +34,16 @@ public class TwitchEventSubConnection : IHostedService
         ILogger<TwitchEventSubConnection> logger,
         IConfiguration config, 
         IHubContext<TwitchHub> twitchHubContext, 
-        EventSubWebsocketClient eventSubWebsocketClient
+        EventSubWebsocketClient eventSubWebsocketClient,
+        TwitchEventSubController twitchInternalEventApi
         )
     {
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         Config = config ?? throw new ArgumentNullException(nameof(config));
         TwitchHubContext = twitchHubContext ?? throw new ArgumentNullException(nameof(twitchHubContext));
         EventSubWebsocketClient = eventSubWebsocketClient ?? throw new ArgumentNullException(nameof(eventSubWebsocketClient));
-        
+        TwitchInternalEventApi = twitchInternalEventApi ?? throw new ArgumentNullException(nameof(twitchInternalEventApi));
+
         // SETUP THE API
         api.Settings.AccessToken = "";
         api.Settings.ClientId = Config["Twitch:ClientId"];
@@ -101,6 +105,9 @@ public class TwitchEventSubConnection : IHostedService
     {
         AccessToken = accessToken;
         api.Settings.AccessToken = AccessToken;
+
+        Console.WriteLine($"Setting Access Token: {AccessToken}");
+
         Console.WriteLine("TwitchEventSubConnection setup complete.");
     }
 
@@ -113,6 +120,7 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnWebsocketConnected(object sender, WebsocketConnectedArgs e)
     {
         Logger.LogInformation($"Websocket {EventSubWebsocketClient.SessionId} connected!");
+        Console.WriteLine($"Setting Subscriptions: Access Token: {api.Settings.AccessToken}");
 
         if (!e.IsRequestedReconnect)
         {
@@ -175,6 +183,8 @@ public class TwitchEventSubConnection : IHostedService
             Console.WriteLine($"Trying Chat Message!");
             try
             {
+                //await TwitchInternalEventApi.GetChatEventSubscription(userId, broadcasterId, EventSubWebsocketClient.SessionId, AccessToken);
+
                 await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
                     "channel.chat.message",
                     "1",

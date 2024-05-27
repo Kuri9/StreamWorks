@@ -126,40 +126,63 @@ Welcome to your new app.
     {
         if (loggedInUser is null)
         {
+            Console.WriteLine($"No logged in user..");
+
             if (AuthProvider is not null)
             {
+                Console.WriteLine($"AuthProvider ready!");
+
                 var authState = await AuthProvider.GetAuthenticationStateAsync();
-                loggedInUserAuthState = authState.User;
 
-                foreach (var identity in loggedInUserAuthState.Identities)
+                if (authState.User.Identity is not null  && authState.User.Identity.IsAuthenticated == true)
                 {
-                    identity.Claims.ToList().ForEach(c => Console.WriteLine(c.Value));
-                }
+                    loggedInUserAuthState = authState.User;
 
-                loggedInUser = await AuthProvider.GetUserFromAuth(userData);
+                    foreach (var identity in loggedInUserAuthState.Identities)
+                    {
+                        identity.Claims.ToList().ForEach(c => Console.WriteLine(c.Value));
+                    }
+
+                    loggedInUser = await AuthProvider.GetUserFromAuth(userData);
+                    Console.WriteLine($"Current LoggedInUser: {loggedInUser.UserName}");
+                }
+                else
+                {
+                    Console.WriteLine($"Please login..");
+                    return;
+                }
             }
         }
 
-        SetTwitchConnectionData();
-        var name = "kuri9";
-        AccessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
-        ClientId = twitchConnectionData.ClientId;
-
-        // Call API as a test
-        var completed = await GetTwitchUserData(name, AccessToken);
-
-        if (completed)
+        if (loggedInUser?.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() > 0)
         {
-            // Setup EventSub with data after testing
-            Console.WriteLine("Setting up EventSub");
-            await twitchHub.SendAsync("SetupConnectionRequest", AccessToken);
-            await twitchHub.SendAsync("StartServiceRequest");
+            Console.WriteLine($"Setting Twitch Connection");
+
+            SetTwitchConnectionData();
+            var name = "kuri9";
+            AccessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
+
+            Console.WriteLine($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
+
+            ClientId = twitchConnectionData.ClientId;
+
+            // Call API as a test
+            var completed = await GetTwitchUserData(name, AccessToken);
+
+            if (completed)
+            {
+                // Setup EventSub with data after testing
+                Console.WriteLine("Setting up EventSub");
+                await twitchHub.SendAsync("SetupConnectionRequest", AccessToken);
+                await twitchHub.SendAsync("StartServiceRequest");
+            }
         }
     }
 
     private void SetTwitchConnectionData()
     {
         var refreshToken = loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value;
+        Console.WriteLine($"Refresh Token Check and Set: {refreshToken}");
 
         if (refreshToken is not null)
         {
@@ -176,23 +199,33 @@ Welcome to your new app.
 
             twitchConnectionData.RefreshToken = refreshToken;
             Console.WriteLine($"Refresh Token: {twitchConnectionData.RefreshToken}");
+        }
+        else
+        {
+            Console.WriteLine($"Refresh Token was null!");
         };
     }
 
     private async Task RefreshTwitchToken()
     {
+        Console.WriteLine($"Starting Refresh Token...");
+
         var refreshedToken = await twitchApi.Auth.RefreshAuthTokenAsync(twitchConnectionData.RefreshToken,
                 twitchApi.Settings.Secret = twitchConnectionData.ClientSecret);
 
         if (refreshedToken is not null)
         {
+            Console.WriteLine($"Refresh Token Response not null!");
             try
             {
                 var expiresAt = DateTimeOffset.Now.AddSeconds(refreshedToken.ExpiresIn).ToString();
+                Console.WriteLine($"Received Token: {refreshedToken.AccessToken}");
 
                 await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "access_token", refreshedToken.AccessToken);
                 await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "refresh_token", refreshedToken.RefreshToken);
                 await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "expires_at", expiresAt);
+
+                Console.WriteLine($"Current LoggedInUser Token: {loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value}");
             }
             catch (Exception ex)
             {
@@ -203,8 +236,11 @@ Welcome to your new app.
 
     private async Task<bool> GetTwitchUserData(string name, string accessToken)
     {
+        Console.WriteLine("Getting Twitch User Data...");
+
         while (tryCount > 0)
         {
+            Console.WriteLine($"Current Try: {tryCount}");
             tryCount--;
 
             getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
@@ -212,8 +248,12 @@ Welcome to your new app.
 
             if (getUserResponse is not null)
             {
+                Console.WriteLine($"Response not null!");
+
                 if (getUserResponse.Users.Count() > 0)
                 {
+                    Console.WriteLine($"User Count is greater than 0!");
+
                     foreach (var user in getUserResponse.Users)
                     {
                         var userData = new GetUserDataModel();
@@ -242,9 +282,14 @@ Welcome to your new app.
                 Console.WriteLine("Failed to get User Data. Refreshing token!");
             }
 
-            if (isRefreshingToken)
+            if (isRefreshingToken == true)
             {
-                await twitchSignInHelpers.RefreshTwitchToken(twitchConnectionData.RefreshToken);
+                Console.WriteLine($"Trying Token Refresh....");
+
+                await RefreshTwitchToken();
+                //await twitchSignInHelpers.RefreshTwitchToken(loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value);
+
+                Console.WriteLine($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
                 await Task.Delay(2000);
                 isRefreshingToken = false;
             }

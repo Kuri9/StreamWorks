@@ -43,16 +43,22 @@ public class TwitchSignInHelpers : ITwitchSignInHelpers
     {
         if (_authProvider is not null)
         {
+            Console.WriteLine($"Getting logged in User...");
             loggedInUser = await _authProvider.GetUserFromAuth(UserData);
+            Console.WriteLine($"Logged in User: {loggedInUser.UserName}");
         }
 
+        Console.WriteLine($"Refreshing Token....");
         var refreshedToken = await _twitchApi.Auth.RefreshAuthTokenAsync(refreshToken, _twitchApi.Settings.Secret);
 
         if (refreshedToken is not null)
         {
+            Console.WriteLine($"Response not null!");
             try
             {
                 var expiresAt = DateTimeOffset.Now.AddSeconds(refreshedToken.ExpiresIn).ToString();
+
+                Console.WriteLine($"Setting New Access Token: {refreshedToken.AccessToken}");
 
                 await _userManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "access_token", refreshedToken.AccessToken);
                 await _userManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "refresh_token", refreshedToken.RefreshToken);
