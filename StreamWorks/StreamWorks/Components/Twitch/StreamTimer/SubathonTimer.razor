@@ -9,8 +9,11 @@
 @using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers
 @using StreamWorks.Library.Models.Users.Twitch.Widgets.Timers
 @using StreamWorks.Models.Widgets.Timers
+@using TwitchLib.EventSub.Core.SubscriptionTypes.Channel
 @implements IDisposable
 @inherits ComponentBase
+
+@inject ILogger<SubathonTimer> Logger
 @inject IConfiguration config
 @inject IStreamWorksUserData userData
 @inject IStreamWorksTimerData timerConfig
@@ -124,13 +127,11 @@
     //Remove Time
     //Set base values for all the times
     //Save the data
-    private HubConnection? hubConnection;
+    private HubConnection? twitchHub;
     private List<StreamTimerModel>? allTimerData;
     private StreamTimerModel? timerData;
     private CreateStreamTimerModel updatedTimerModel = new();
     private Offcanvas? timerEditOffcanvas;
-
-    private HubConnection? twitchHub;
 
     private Timer _timer = null!;
     private int secondsToRun = 0;
@@ -173,38 +174,47 @@
     {
         loggedInUser = await authProvider.GetUserFromAuth(userData);
 
-        hubConnection = new HubConnectionBuilder()
+        twitchHub = new HubConnectionBuilder()
         .WithUrl(navManager.ToAbsoluteUri("/twitchhub"))
         .WithAutomaticReconnect()
         .Build();
 
-        hubConnection.On<int>("Tick", newTime =>
+        twitchHub.On<ChannelChatMessage>("ChatMessageReceived", (message) =>
         {
-            currentTime = newTime;
-            tickCount += 1;
-            InvokeAsync(StateHasChanged);
+            Logger.LogInformation($"Message Received: {message.Message.Text}");
+            if (message.Message.Text == "!timer 5")
+            {
+                AddTimeTwitch(500);
+            }
         });
 
-        hubConnection.On<int, string>("TimerSet", (time, message) =>
-        {
-            currentTime = time;
-            lastSystemMessage = message;
-            InvokeAsync(StateHasChanged);
-        });
+        // twitchHub.On<int>("Tick", newTime =>
+        // {
+        //     currentTime = newTime;
+        //     tickCount += 1;
+        //     InvokeAsync(StateHasChanged);
+        // });
 
-        hubConnection.On<string>("TimerStarted", message =>
-        {
-            lastSystemMessage = message;
-            InvokeAsync(StateHasChanged);
-        });
+        // twitchHub.On<int, string>("TimerSet", (time, message) =>
+        // {
+        //     currentTime = time;
+        //     lastSystemMessage = message;
+        //     InvokeAsync(StateHasChanged);
+        // });
 
-        hubConnection.On<string>("TimerStopped", message =>
-        {
-            lastSystemMessage = message;
-            InvokeAsync(StateHasChanged);
-        });
+        // twitchHub.On<string>("TimerStarted", message =>
+        // {
+        //     lastSystemMessage = message;
+        //     InvokeAsync(StateHasChanged);
+        // });
 
-        await hubConnection.StartAsync();
+        // twitchHub.On<string>("TimerStopped", message =>
+        // {
+        //     lastSystemMessage = message;
+        //     InvokeAsync(StateHasChanged);
+        // });
+
+        await twitchHub.StartAsync();
 
         // Set Timer
         _timer = new Timer(1000);
@@ -386,7 +396,15 @@
 
         secondsToRun += addTime;
         Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
-        StateHasChanged();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void AddTimeTwitch(int time)
+    {
+        addTime = time;
+        secondsToRun += addTime;
+        Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+        InvokeAsync(StateHasChanged);
     }
 
     public void AddTimeYoutube(string youtubeEvent)
@@ -418,18 +436,18 @@
         // currentTime = startTime;
         // streamTimer.SetTimer(1000);
         // streamTimer.OnTick += TickHandler;
-        if (hubConnection is not null)
+        if (twitchHub is not null)
         {
-            await hubConnection.SendAsync("SetTimer");
+            await twitchHub.SendAsync("SetTimer");
         }
     }
 
     public async Task StartHubTimer()
     {
         //streamTimer.StartTimer();
-        if (hubConnection is not null)
+        if (twitchHub is not null)
         {
-            await hubConnection.SendAsync("StartTimer");
+            await twitchHub.SendAsync("StartTimer");
         }
     }
 
