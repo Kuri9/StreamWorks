@@ -27,9 +27,9 @@ public class TwitchEventSubConnection : IHostedService
     private string AccessToken = "";
 
     // Enoci ID 103139699
-    private string broadcasterId = "158740154";
-    private string moderatorId = "158740154";
-    private string userId = "158740154";
+    private string BroadcasterId = "";
+    private string ModeratorId = "";
+    private string UserId = "";
 
     public TwitchEventSubConnection(
         ILogger<TwitchEventSubConnection> logger,
@@ -58,9 +58,9 @@ public class TwitchEventSubConnection : IHostedService
         .Build();
 
         // SETUP SIGNALR HUB CONNECTION EVENTS
-        twitchHub.On<string>("SetupConnection", async (accessToken) =>
+        twitchHub.On<string, string, string>("SetupConnection", async (accessToken, userId, broadcasterId) =>
         {
-            await SetupConnection(accessToken);
+            await SetupConnection(accessToken, userId, broadcasterId);
         });
 
         twitchHub.On("StartService", async () =>
@@ -102,10 +102,13 @@ public class TwitchEventSubConnection : IHostedService
         await EventSubWebsocketClient.DisconnectAsync();
     }
 
-    public async Task SetupConnection(string accessToken)
+    public async Task SetupConnection(string accessToken, string twitchUserId, string broadcasterId ="")
     {
         AccessToken = accessToken;
         api.Settings.AccessToken = AccessToken;
+        UserId = twitchUserId;
+        ModeratorId = twitchUserId;
+        BroadcasterId = broadcasterId;
 
         Logger.LogInformation($"Setting Access Token: {AccessToken}");
         Logger.LogInformation("TwitchEventSubConnection setup complete.");
@@ -132,7 +135,7 @@ public class TwitchEventSubConnection : IHostedService
                     "stream.online",
                     "1",
                     new Dictionary<string, string> {
-                                    { "broadcaster_user_id", broadcasterId }
+                                    { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId
@@ -159,8 +162,8 @@ public class TwitchEventSubConnection : IHostedService
                     "channel.follow",
                     "2",
                     new Dictionary<string, string> {
-                        { "broadcaster_user_id", broadcasterId },
-                        { "moderator_user_id", moderatorId }
+                        { "broadcaster_user_id", BroadcasterId },
+                        { "moderator_user_id", ModeratorId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId
@@ -187,8 +190,8 @@ public class TwitchEventSubConnection : IHostedService
                     "channel.chat.message",
                     "1",
                     new Dictionary<string, string> {
-                                    { "broadcaster_user_id", broadcasterId },
-                                    { "user_id", userId }
+                                    { "broadcaster_user_id", BroadcasterId },
+                                    { "user_id", UserId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId

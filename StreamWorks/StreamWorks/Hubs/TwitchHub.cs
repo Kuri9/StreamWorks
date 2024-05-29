@@ -7,9 +7,9 @@ namespace StreamWorks.Hubs;
 
 public class TwitchHub: Hub
 {
-    public Task SetupConnectionRequest(string accessToken)
+    public Task SetupConnectionRequest(string accessToken, string userId, string broadcasterId)
     {
-        return Clients.All.SendAsync("SetupConnection", accessToken);
+        return Clients.All.SendAsync("SetupConnection", accessToken, userId, broadcasterId);
     }
 
     public Task StartServiceRequest()

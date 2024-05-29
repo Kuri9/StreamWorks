@@ -97,7 +97,8 @@ Welcome to your new app.
     private string ClientId = "";
     private string AccessToken = "";
 
-    private string userId = "158740154";
+    private string UserId = "";
+    private string? BroadcasterId = "";
 
     private List<ChannelChatMessage>? twitchMessageList = new();
     private List<string>? twitchMessages = new();
@@ -191,14 +192,22 @@ Welcome to your new app.
             ClientId = twitchConnectionData.ClientId;
 
             // Call API as a test
-            var completed = await GetTwitchUserData(name, AccessToken);
-
-            if (completed)
+            if (AccessToken is not null)
             {
-                // Setup EventSub with data after testing
-                Logger.LogInformation("Setting up EventSub");
-                await twitchHub.SendAsync("SetupConnectionRequest", AccessToken);
-                await twitchHub.SendAsync("StartServiceRequest");
+                var completed = await GetTwitchUserData(name, AccessToken);
+
+                if (completed)
+                {
+                    // Setup EventSub with data after testing
+                    Logger.LogInformation("Setting up EventSub");
+
+                    await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
+                    await twitchHub.SendAsync("StartServiceRequest");
+                }
+            }
+            else
+            {
+                Logger.LogWarning($"Access Token was null!");
             }
         }
     }
@@ -207,6 +216,12 @@ Welcome to your new app.
     {
         var refreshToken = loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value;
         Logger.LogInformation($"Refresh Token Check and Set: {refreshToken}");
+
+        UserId = loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").First().ProviderKey;
+        Logger.LogInformation($"User Twitch ID is: {UserId}");
+
+        BroadcasterId = config["Twitch:DefaultBroadcaster"];
+        Logger.LogInformation($"Twitch BroadcasterID is: {BroadcasterId}");
 
         if (refreshToken is not null)
         {
@@ -334,7 +349,7 @@ Welcome to your new app.
     {
         // await twitchHub.SendAsync("SubscriptionsRequest");
         // StateHasChanged();
-        eventSubSubscriptions = await twitchInternalEventApi.GetEventSubSubscriptions(userId, ClientId, AccessToken);
+        eventSubSubscriptions = await twitchInternalEventApi.GetEventSubSubscriptions(UserId, ClientId, AccessToken);
     }
 
     private void AddTwitchMessage(ChannelChatMessage message)
