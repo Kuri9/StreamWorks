@@ -8,7 +8,7 @@ namespace StreamWorks.Library.DataAccess.MongoDB.Identity;
 public class MongoStreamWorksUserData : IStreamWorksUserData
 {
     private readonly IMongoCollection<StreamWorksUserModel> _users;
-    public MongoStreamWorksUserData(IDbConnection db)
+    public MongoStreamWorksUserData(IDbUserConnection db)
     {
         _users = db.StreamWorksUserModelCollection;
     }

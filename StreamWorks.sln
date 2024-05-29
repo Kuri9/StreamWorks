@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamWorks.ApiLibrary.Twit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Api", "StreamWorks.Api\StreamWorks.Api.csproj", "{85442B4E-8979-43C4-9D35-727B0E5CAC0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamWorks.Api.Twitch", "StreamWorks.Api.Twitch\StreamWorks.Api.Twitch.csproj", "{04D7AF74-509F-4480-912A-72B19B8DB59B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Api.Twitch", "StreamWorks.Api.Twitch\StreamWorks.Api.Twitch.csproj", "{04D7AF74-509F-4480-912A-72B19B8DB59B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

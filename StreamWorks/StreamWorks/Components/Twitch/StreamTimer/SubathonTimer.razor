@@ -1,0 +1,477 @@
+﻿@page "/twitch-tools/sub-timer"
+@* @using SuperShivaUI.Components.StreamServices *@
+@rendermode InteractiveServer
+@* @attribute [Authorize(Policy = "Admin")] *@
+
+@using System.Timers
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.AspNetCore.SignalR.Client
+@using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers
+@using StreamWorks.Library.Models.Users.Twitch.Widgets.Timers
+@using StreamWorks.Models.Widgets.Timers
+@implements IDisposable
+@inherits ComponentBase
+@inject IConfiguration config
+@inject IStreamWorksUserData userData
+@inject IStreamWorksTimerData timerConfig
+@inject AuthenticationStateProvider authProvider
+@inject NavigationManager navManager
+@inject ProtectedSessionStorage sessionStorage
+
+<h3>SubathonTimer</h3>
+
+<div class="row m-3">
+    <div class="col-8">
+        <div class="sub-timer">
+            <h2>@Time</h2>
+        </div>
+        <h4>@lastSystemMessage</h4>
+        <h5>@tickCount</h5>
+    </div>
+
+    <div class="col-4">
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <button class="btn btn-dark" @onclick="StartTimer">Start</button>
+            <button class="btn btn-dark" @onclick="StopTimer">Stop</button>
+            <button class="btn btn-light" @onclick="ResetTimer">Set</button>
+            <button class="btn btn-warning" @onclick="ShowOffcanvasAsync">Edit Timer Settings</button>
+        </div>
+
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <div>
+                <span>@twitchFollowEventCount</span>
+                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchFollowEvent))">Twitch Follow</button>
+            </div>
+            <div>
+                <span>@twitchTier1EventCount</span>
+                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier1Event))">Tier 1 Twitch Sub</button>
+            </div>
+            <div>
+                <span>@twitchTier2EventCount</span>
+                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier2Event))">Tier 2 Twitch Sub</button>
+            </div>
+            <div>
+                <span>@twitchTier3EventCount</span>
+                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier3Event))">Tier 3 Twitch Sub</button>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <div>
+                <span>@youtubeLikeEventCount</span>
+                <button class="btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeLikeEvent))">1 Youtube Like</button>
+            </div>
+            <div>
+                <span>@youtubeSubEventCount</span>
+                <button class="btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeSubEvent))">1 Youtube Subscribe</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<Offcanvas @ref="timerEditOffcanvas" Placement="Placement.End">
+    <HeaderTemplate>
+        <h5 class="offcanvas-title" id="offcanvasTimerData">Edit Timer Times</h5>
+    </HeaderTemplate>
+    <BodyTemplate>
+        <div>
+            Edit timer data here.
+        </div>
+        <div class="mb-3">
+
+            <EditForm Model="updatedTimerModel" OnSubmit="UpdateTimer">
+                <div class="form-group">
+                    <label class="form-control" for="startingTime">Set Starting Time</label>
+                    <InputNumber id="startingTime" class="form-control" @bind-Value="updatedTimerModel.StartingTime" />
+
+                    <label class="form-control" for="totalCount">Show Total Counts?</label>
+                    <InputCheckbox id="totalCount" class="form-control" @bind-Value="updatedTimerModel.ShowTotalCounts" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-control" for="twitchFollowTime">Time Per Twitch Follow</label>
+                    <InputNumber id="twitchFollowTime" class="form-control" @bind-Value="updatedTimerModel.TwitchFollowTime" />
+
+                    <label class="form-control" for="twitchTier1Time">Time Per Twitch Tier 1 Sub</label>
+                    <InputNumber id="twitchTier1Time" class="form-control" @bind-Value="updatedTimerModel.TwitchTier1Time" />
+
+                    <label class="form-control" for="twitchTier2Time">Time Per Twitch Tier 2 Sub</label>
+                    <InputNumber id="twitchTier2Time" class="form-control" @bind-Value="updatedTimerModel.TwitchTier2Time" />
+
+                    <label class="form-control" for="twitchTier3Time">Time Per Twitch Tier 3 Sub</label>
+                    <InputNumber id="twitchTier3Time" class="form-control" @bind-Value="updatedTimerModel.TwitchTier3Time" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-control" for="youtubeLikeTime">Time Per Youtube Like</label>
+                    <InputNumber id="youtubeLikeTime" class="form-control" @bind-Value="updatedTimerModel.YouTubeLikeTime" />
+
+                    <label class="form-control" for="youtubeSubTime">Time Per Youtube Subscribe</label>
+                    <InputNumber id="youtubeSubTime" class="form-control" @bind-Value="updatedTimerModel.YouTubeSubTime" />
+                </div>
+
+                <button class="btn btn-outline-primary mt-3" action="submit" @onclick="HideOffcanvasAsync">Update Timer</button>
+            </EditForm>
+        </div>
+    </BodyTemplate>
+</Offcanvas>
+
+@code {
+    private StreamWorksUserModel loggedInUser = default!;
+
+    //TODO
+    //Set Start Time
+    //Remove Time
+    //Set base values for all the times
+    //Save the data
+    private HubConnection? hubConnection;
+    private List<StreamTimerModel>? allTimerData;
+    private StreamTimerModel? timerData;
+    private CreateStreamTimerModel updatedTimerModel = new();
+    private Offcanvas? timerEditOffcanvas;
+
+    private HubConnection? twitchHub;
+
+    private Timer _timer = null!;
+    private int secondsToRun = 0;
+
+    private int startingTime;
+    private int currentTime;
+    private string? lastSystemMessage;
+    private int tickCount = 0;
+    private bool firstRun;
+    private int addTime = 0;
+
+    // Twitch
+    private string twitchFollowEvent = "TwitchFollow";
+    private int twitchFollowEventCount;
+    private int twitchFollowTime;
+    private string twitchTier1Event = "TwitchTier1";
+    private int twitchTier1EventCount;
+    private int twitchTier1Time;
+    private string twitchTier2Event = "TwitchTier2";
+    private int twitchTier2EventCount;
+    private int twitchTier2Time;
+    private string twitchTier3Event = "TwitchTier3";
+    private int twitchTier3EventCount;
+    private int twitchTier3Time;
+
+    // Youtube
+    private string youTubeLikeEvent = "YoutubeLike";
+    private int youtubeLikeEventCount;
+    private int youTubeLikeTime;
+    private string youTubeSubEvent = "YoutubeSubscribe";
+    private int youtubeSubEventCount;
+    private int youTubeSubTime;
+
+    protected string Time { get; set; } = "00:00:00";
+
+    [Parameter]
+    public EventCallback TimerEnded { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        loggedInUser = await authProvider.GetUserFromAuth(userData);
+
+        hubConnection = new HubConnectionBuilder()
+        .WithUrl(navManager.ToAbsoluteUri("/twitchhub"))
+        .WithAutomaticReconnect()
+        .Build();
+
+        hubConnection.On<int>("Tick", newTime =>
+        {
+            currentTime = newTime;
+            tickCount += 1;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<int, string>("TimerSet", (time, message) =>
+        {
+            currentTime = time;
+            lastSystemMessage = message;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("TimerStarted", message =>
+        {
+            lastSystemMessage = message;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string>("TimerStopped", message =>
+        {
+            lastSystemMessage = message;
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+
+        // Set Timer
+        _timer = new Timer(1000);
+        _timer.Elapsed += OnTickEvent;
+        _timer.AutoReset = true;
+
+        // Initialize Timer
+        await InitializeTimer();
+    }
+
+    private async Task ShowOffcanvasAsync()
+    {
+        await timerEditOffcanvas?.ShowAsync();
+    }
+
+    private async Task HideOffcanvasAsync()
+    {
+        await timerEditOffcanvas?.HideAsync();
+    }
+
+    public async Task InitializeTimer()
+    {
+        var result = await timerConfig.GetTimerDataByUserId(loggedInUser.Id);
+        if (result is null || result.Count() < 1)
+        {
+            timerData = new();
+            timerData.UserId = loggedInUser.Id;
+            timerData.CurrentTime = 0;
+            timerData.TimerTitle = "Default Title";
+            await CreateTimer();
+        }
+        else
+        {
+            timerData = result.FirstOrDefault();
+        }
+
+        UpdateTimerSettings(true);
+    }
+
+    public void StartTimer()
+    {
+        if (firstRun)
+        {
+            secondsToRun = startingTime;
+            firstRun = false;
+        }
+
+        if (secondsToRun > 0)
+        {
+            Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+            StateHasChanged();
+            _timer.Start();
+        }
+    }
+
+    public void StopTimer()
+    {
+        _timer.Stop();
+
+    }
+
+    public void UpdateTimerSettings(bool fullUpdate = false)
+    {
+        startingTime = timerData.StartingTime;
+        updatedTimerModel.StartingTime = timerData.StartingTime;
+        updatedTimerModel.ShowTotalCounts = timerData.ShowTotalCounts;
+
+        // Twitch
+        twitchFollowTime = timerData.TwitchFollowTime;
+        twitchTier1Time = timerData.TwitchTier1Time;
+        twitchTier2Time = timerData.TwitchTier2Time;
+        twitchTier3Time = timerData.TwitchTier3Time;
+
+        // Twitch
+        updatedTimerModel.TwitchFollowTime = timerData.TwitchFollowTime;
+        updatedTimerModel.TwitchTier1Time = timerData.TwitchTier1Time;
+        updatedTimerModel.TwitchTier2Time = timerData.TwitchTier2Time;
+        updatedTimerModel.TwitchTier3Time = timerData.TwitchTier3Time;
+
+        // Youtube
+        youTubeLikeTime = timerData.YouTubeLikeTime;
+        youTubeSubTime = timerData.YouTubeSubTime;
+
+        updatedTimerModel.YouTubeLikeTime = timerData.YouTubeLikeTime;
+        updatedTimerModel.YouTubeSubTime = timerData.YouTubeSubTime;
+
+        if (fullUpdate)
+        {
+            currentTime = timerData.CurrentTime;
+
+            if (timerData.ShowTotalCounts == true)
+            {
+                twitchFollowEventCount = timerData.TotalTwitchFollowEventCount;
+                twitchTier1EventCount = timerData.TotalTwitchTier1EventCount;
+                twitchTier2EventCount = timerData.TotalTwitchTier2EventCount;
+                twitchTier3EventCount = timerData.TotalTwitchTier3EventCount;
+
+                youtubeLikeEventCount = timerData.TotalYoutubeLikeEventCount;
+                youtubeSubEventCount = timerData.TotalYoutubeSubEventCount;
+            }
+            else
+            {
+                twitchFollowEventCount = 0;
+                twitchTier1EventCount = 0;
+                twitchTier2EventCount = 0;
+                twitchTier3EventCount = 0;
+
+                youtubeLikeEventCount = 0;
+                youtubeSubEventCount = 0;
+            }
+
+            secondsToRun = startingTime;
+            Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+            StateHasChanged();
+        }
+    }
+
+    public void ResetTimer()
+    {
+        _timer.Stop();
+        secondsToRun = startingTime;
+        Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+        StateHasChanged();
+    }
+
+    private async void OnTickEvent(object? sender, ElapsedEventArgs e)
+    {
+        secondsToRun--;
+
+        await InvokeAsync(() =>
+        {
+            Time = TimeSpan.FromSeconds(secondsToRun).ToString();
+            StateHasChanged();
+        });
+
+        if (secondsToRun <= 0)
+        {
+            _timer.Stop();
+            await TimerEnded.InvokeAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_timer is not null)
+        {
+            _timer.Dispose();
+        }
+    }
+
+    public void AddTimeTwitch(string twitchEvent)
+    {
+        switch (twitchEvent)
+        {
+            case "TwitchFollow":
+                twitchFollowEventCount++;
+                addTime = twitchFollowTime;
+                break;
+
+            case "TwitchTier1":
+                twitchTier1EventCount++;
+                addTime = twitchTier1Time;
+                break;
+
+            case "TwitchTier2":
+                twitchTier2EventCount++;
+                addTime = twitchTier2Time;
+                break;
+
+            case "TwitchTier3":
+                twitchTier3EventCount++;
+                addTime = twitchTier3Time;
+                break;
+
+            default:
+                addTime = 300;
+                break;
+        }
+
+        secondsToRun += addTime;
+        Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+        StateHasChanged();
+    }
+
+    public void AddTimeYoutube(string youtubeEvent)
+    {
+        switch (youtubeEvent)
+        {
+            case "YoutubeLike":
+                youtubeLikeEventCount++;
+                addTime = youTubeLikeTime;
+                break;
+
+            case "YoutubeSubscribe":
+                youtubeSubEventCount++;
+                addTime = youTubeSubTime;
+                break;
+
+            default:
+                addTime = 300;
+                break;
+        }
+
+        secondsToRun += addTime;
+        Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+        StateHasChanged();
+    }
+
+    public async Task SetHubTimer()
+    {
+        // currentTime = startTime;
+        // streamTimer.SetTimer(1000);
+        // streamTimer.OnTick += TickHandler;
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SetTimer");
+        }
+    }
+
+    public async Task StartHubTimer()
+    {
+        //streamTimer.StartTimer();
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("StartTimer");
+        }
+    }
+
+    private void TickHandler()
+    {
+        currentTime -= 1000;
+        tickCount += 1;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void TimerEndedCallback()
+    {
+
+    }
+
+    private async Task CreateTimer()
+    {
+        await timerConfig.CreateTimerData(timerData);
+    }
+
+    private async Task UpdateTimer()
+    {
+        timerData.StartingTime = updatedTimerModel.StartingTime;
+        timerData.ShowTotalCounts = updatedTimerModel.ShowTotalCounts;
+
+        // Twitch
+        timerData.TwitchFollowTime = updatedTimerModel.TwitchFollowTime;
+        timerData.TwitchTier1Time = updatedTimerModel.TwitchTier1Time;
+        timerData.TwitchTier2Time = updatedTimerModel.TwitchTier2Time;
+        timerData.TwitchTier3Time = updatedTimerModel.TwitchTier3Time;
+
+        // Youtube
+        timerData.YouTubeLikeTime = updatedTimerModel.YouTubeLikeTime;
+        timerData.YouTubeSubTime = updatedTimerModel.YouTubeSubTime;
+
+        await SaveTimer();
+
+        UpdateTimerSettings();
+    }
+
+    private async Task SaveTimer()
+    {
+        await timerConfig.UpdateTimerData(timerData);
+    }
+}

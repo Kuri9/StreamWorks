@@ -14,6 +14,8 @@ using TwitchLib.EventSub.Websockets;
 using TwitchLib.EventSub.Websockets.Extensions;
 using Microsoft.AspNetCore.ResponseCompression;
 using StreamWorks.Api.Twitch.Controllers.EventSubs;
+using StreamWorks.Library.DataAccess;
+using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers;
 
 namespace StreamWorks;
 
@@ -64,11 +66,11 @@ public static class RegisterServices
             options.ClaimsIdentity.EmailClaimType = "user_email";
         });
 
-        var mongoDbSettings = builder.Configuration.GetSection("MongoDbConfig");
+        var mongoDbSettings = builder.Configuration.GetSection("MongoDbUserConfig");
         builder.Services.AddIdentity<StreamWorksUserModel, StreamWorksRoleModel>()
         .AddMongoDbStores<StreamWorksUserModel, StreamWorksRoleModel, Guid>
         (
-            mongoDbSettings.GetConnectionString("MongoDB"),
+            mongoDbSettings.GetConnectionString("MongoDBUsers"),
             mongoDbSettings.GetSection("DatabaseName").Value
         );
 
@@ -160,12 +162,16 @@ public static class RegisterServices
         builder.Services.AddSingleton<TwitchEventSubController>();
 
         // Common Data Services
-        builder.Services.AddSingleton<IDbConnection, DbConnection>();
+        builder.Services.AddSingleton<IDbUserConnection, DbUserConnection>();
         builder.Services.AddSingleton<IStreamWorksUserData, MongoStreamWorksUserData>();
+        builder.Services.AddSingleton<IDbStreamWorksConnection, DbStreamWorksConnection>();
 
         // Twitch Data Services
         builder.Services.AddTwitchLibEventSubWebsockets();
         builder.Services.AddHostedService<TwitchEventSubConnection>();
         builder.Services.AddScoped<ITwitchSignInHelpers, TwitchSignInHelpers>();
+
+        // Widgets
+        builder.Services.AddScoped<IStreamWorksTimerData, MongoStreamWorksTimerData>();
     }
 }

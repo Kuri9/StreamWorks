@@ -1,7 +1,7 @@
 ﻿using StreamWorks.Library.Models.Users.Identity;
 
 namespace StreamWorks.Library.DataAccess;
-public interface IDbConnection
+public interface IDbUserConnection
 {
     MongoClient Client { get; }
     string DbName { get; }

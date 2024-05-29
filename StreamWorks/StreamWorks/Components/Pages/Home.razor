@@ -28,7 +28,8 @@
 @inject ITwitchSignInHelpers twitchSignInHelpers
 @inject TwitchUserController twitchInternalUserApi  
 @inject TwitchEventSubController twitchInternalEventApi
-@* @implements IAsyncDisposable *@
+
+@implements IAsyncDisposable
 
 <PageTitle>Home</PageTitle>
 
@@ -72,11 +73,11 @@ Welcome to your new app.
         <div class="row">
             <div class="col">
                 <h3>Chat Messages</h3>
-                @if (twitchMessages is not null && twitchMessages.Count() > 0)
+                @if (twitchMessages is not null)
                 {
                     @foreach (var message in twitchMessages)
                     {
-                        <p>@message.Key: @message.Value</p>
+                        <p>@message</p>
                     }
                 }
             </div>
@@ -98,7 +99,9 @@ Welcome to your new app.
 
     private string userId = "158740154";
 
-    private Dictionary<string, string>? twitchMessages = new();
+    private List<ChannelChatMessage>? twitchMessageList = new();
+    private List<string>? twitchMessages = new();
+    private ChannelChatMessage twitchMessage = new();
 
     private HubConnection? twitchHub;
     TwitchConnectionModel twitchConnectionData = new();
@@ -122,7 +125,7 @@ Welcome to your new app.
         twitchHub.On<ChannelChatMessage>("ChatMessageReceived", (message) => 
         { 
             Logger.LogInformation($"Message on Home Page: From {message.ChatterUserName} : {message.Message.Text}");
-            AddTwitchMessage(message.ChatterUserName, message.Message.Text);
+            AddTwitchMessage(message);
         });
 
         twitchHub.On<GetEventSubSubscriptionsResponse>("GetSubscribedEvents", (subscriptionData) =>
@@ -255,6 +258,14 @@ Welcome to your new app.
         }
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        if (twitchHub is not null)
+        {
+            await twitchHub.DisposeAsync();
+        }
+    }
+
     private async Task<bool> GetTwitchUserData(string name, string accessToken)
     {
         Logger.LogInformation("Getting Twitch User Data...");
@@ -326,14 +337,11 @@ Welcome to your new app.
         eventSubSubscriptions = await twitchInternalEventApi.GetEventSubSubscriptions(userId, ClientId, AccessToken);
     }
 
-    private void Dispose()
+    private void AddTwitchMessage(ChannelChatMessage message)
     {
-        twitchHub.DisposeAsync();
-    }
-
-    private void AddTwitchMessage(string user, string message)
-    {
-        twitchMessages?.Add(user, message);
+        twitchMessageList?.Add(message);
+        var encodedMessage = $"{message.ChatterUserName}: {message.Message.Text}";
+        twitchMessages?.Add(encodedMessage);
         InvokeAsync(StateHasChanged);
     }
 }

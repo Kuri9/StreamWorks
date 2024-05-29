@@ -1,14 +1,14 @@
 ﻿using StreamWorks.Library.Models.Users.Identity;
 
 namespace StreamWorks.Library.DataAccess;
-public class DbConnection : IDbConnection
+public class DbUserConnection : IDbUserConnection
 {
     // Create a single connection that will stay open at all times. 
     // Can change to a Scoped Singleton after to make seperate connections for multiple users if needed.
     private readonly IConfiguration _config;
     private readonly IMongoDatabase _db;
-    private string _connectionGroup = "MongoDbConfig";
-    private string _connectionId = "MongoDB";
+    private string _connectionGroup = "MongoDbUserConfig";
+    private string _connectionId = "MongoDBUsers";
 
     public MongoClient Client { get; private set; }
     public string DbName { get; private set; }
@@ -28,7 +28,7 @@ public class DbConnection : IDbConnection
 
     //public IMongoCollection<StreamTimerModel> StreamTimerCollection { get; private set; }
 
-    public DbConnection(IConfiguration config)
+    public DbUserConnection(IConfiguration config)
     {
         _config = config;
 

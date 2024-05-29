@@ -50,7 +50,6 @@
     <Folder Include="Components\Account\Pages\Roles\" />
     <Folder Include="Components\Pages\TwitchPages\" />
     <Folder Include="Api\" />
-    <Folder Include="Components\Twitch\StreamTimer\" />
     <Folder Include="wwwroot\css\" />
   </ItemGroup>
 
