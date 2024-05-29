@@ -1,14 +1,17 @@
 ﻿
 using Microsoft.AspNet.SignalR.Client;
+//using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
+using StreamWorks.Api.Twitch.Helpers;
 using StreamWorks.Api.Twitch.Models.User;
 using StreamWorks.ApiLibrary.Twitch.Models.Config;
 using StreamWorks.ApiLibrary.Twitch.Models.Users;
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
-using TwitchLib.Api.Interfaces;
+
 
 namespace StreamWorks.Api.Twitch.Controllers.User;
 [Route("api/[controller]")]
@@ -17,8 +20,13 @@ public class TwitchUserController : ControllerBase
 {
     private readonly ILogger<TwitchUserController> _logger;
     private readonly IConfiguration _config;
+    //private IHttpClientFactory _clientFactory; 
+
     private HubConnection? hubConnection;
     private readonly TwitchAPI _twitchApi;
+    //private string ReturnAuthTokenUrl = "https://localhost:5001/api/TwitchUser";
+    //private string ReturnAccessTokenUrl = "https://localhost:5001/api/TwitchUser/GetTwitchAccessToken";
+
 
     public TwitchUserController(ILogger<TwitchUserController> logger, IConfiguration config, TwitchAPI api)
     {
@@ -29,6 +37,24 @@ public class TwitchUserController : ControllerBase
         _twitchApi.Settings.ClientId = _config["Twitch:ClientId"];
         _twitchApi.Settings.Secret = _config["Twitch:ClientSecret"];
     }
+
+    //[HttpPost(Name = "GetTwitchAuthToken")]
+    //public void GetTwitchAuthToken()
+    //{
+    //    var authTokenUrl = TwitchApiHelpers.CreateTwitchUrl(_config["Twitch:ClientId"], ReturnAuthTokenUrl);
+
+    //    HttpContent content = new StringContent("");
+    //    var url = authTokenUrl.GetValueOrDefault("url");
+
+    //    _clientFactory.CreateClient().PostAsync(url, content);
+    //}
+
+    //[HttpPost(Name = "GetTwitchAccessToken")]
+    //public void GetTwitchAccessToken()
+    //{
+    //    //TwitchApiHelpers.CreateTwitchUrl(_config["Twitch:ClientId"], );
+    //}
+
 
     [HttpGet(Name = "GetTwitchUsers")]
     public async Task<GetUsersResponse> GetTwitchUserData(string id, string accessCode)

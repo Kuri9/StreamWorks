@@ -15,6 +15,7 @@
 @* Fires OnInitilaize 2x and secondtime doesnt get user from HttpContext *@
 @rendermode InteractiveServer
 
+@inject ILogger<Home> Logger
 @inject AuthenticationStateProvider AuthProvider
 @inject UserManager<StreamWorksUserModel> UserManager
 @inject SignInManager<StreamWorksUserModel> SignInManager
@@ -67,6 +68,19 @@ Welcome to your new app.
                 }    
             </div>
         </div>   
+
+        <div class="row">
+            <div class="col">
+                <h3>Chat Messages</h3>
+                @if (twitchMessages is not null && twitchMessages.Count() > 0)
+                {
+                    @foreach (var message in twitchMessages)
+                    {
+                        <p>@message.Key: @message.Value</p>
+                    }
+                }
+            </div>
+        </div>
     }
 
 </AuthorizeView>
@@ -83,6 +97,8 @@ Welcome to your new app.
     private string AccessToken = "";
 
     private string userId = "158740154";
+
+    private Dictionary<string, string>? twitchMessages = new();
 
     private HubConnection? twitchHub;
     TwitchConnectionModel twitchConnectionData = new();
@@ -101,15 +117,20 @@ Welcome to your new app.
             .WithAutomaticReconnect()
             .Build();
 
+        // TWITCH HUB ACTIONS ==============>>
+        // Twitch Chat Message Received
         twitchHub.On<ChannelChatMessage>("ChatMessageReceived", (message) => 
         { 
-            Console.WriteLine($"Message: {message.Message}"); 
+            Logger.LogInformation($"Message on Home Page: From {message.ChatterUserName} : {message.Message.Text}");
+            AddTwitchMessage(message.ChatterUserName, message.Message.Text);
         });
 
         twitchHub.On<GetEventSubSubscriptionsResponse>("GetSubscribedEvents", (subscriptionData) =>
         {
             eventSubSubscriptions = subscriptionData;
         });
+
+        // =================================>>
 
         await twitchHub.StartAsync();
     }
@@ -144,11 +165,11 @@ Welcome to your new app.
                     }
 
                     loggedInUser = await AuthProvider.GetUserFromAuth(userData);
-                    Console.WriteLine($"Current LoggedInUser: {loggedInUser.UserName}");
+                    Logger.LogInformation($"Current LoggedInUser: {loggedInUser.UserName}");
                 }
                 else
                 {
-                    Console.WriteLine($"Please login..");
+                    Logger.LogError($"Please login..");
                     return;
                 }
             }
@@ -156,13 +177,13 @@ Welcome to your new app.
 
         if (loggedInUser?.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() > 0)
         {
-            Console.WriteLine($"Setting Twitch Connection");
+            Logger.LogInformation($"Setting Twitch Connection");
 
             SetTwitchConnectionData();
             var name = "kuri9";
             AccessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
 
-            Console.WriteLine($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
+            Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
 
             ClientId = twitchConnectionData.ClientId;
 
@@ -172,7 +193,7 @@ Welcome to your new app.
             if (completed)
             {
                 // Setup EventSub with data after testing
-                Console.WriteLine("Setting up EventSub");
+                Logger.LogInformation("Setting up EventSub");
                 await twitchHub.SendAsync("SetupConnectionRequest", AccessToken);
                 await twitchHub.SendAsync("StartServiceRequest");
             }
@@ -182,65 +203,65 @@ Welcome to your new app.
     private void SetTwitchConnectionData()
     {
         var refreshToken = loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value;
-        Console.WriteLine($"Refresh Token Check and Set: {refreshToken}");
+        Logger.LogInformation($"Refresh Token Check and Set: {refreshToken}");
 
         if (refreshToken is not null)
         {
             twitchConnectionData.ClientId = config["Twitch:ClientId"];
-            Console.WriteLine($"Client ID: {twitchConnectionData.ClientId}");
+            Logger.LogInformation($"Client ID: {twitchConnectionData.ClientId}");
 
             twitchConnectionData.ClientSecret = config["Twitch:ClientSecret"];
-            Console.WriteLine($"Client Secret: {twitchConnectionData.ClientSecret}");
+            Logger.LogInformation($"Client Secret: {twitchConnectionData.ClientSecret}");
 
             twitchConnectionData.RedirectUri = NavManager.Uri.ToString();
-            Console.WriteLine($"Redirect URI: {twitchConnectionData.RedirectUri}");
+            Logger.LogInformation($"Redirect URI: {twitchConnectionData.RedirectUri}");
 
             twitchConnectionData.Scopes = [];
 
             twitchConnectionData.RefreshToken = refreshToken;
-            Console.WriteLine($"Refresh Token: {twitchConnectionData.RefreshToken}");
+            Logger.LogInformation($"Refresh Token: {twitchConnectionData.RefreshToken}");
         }
         else
         {
-            Console.WriteLine($"Refresh Token was null!");
+            Logger.LogError($"Refresh Token was null!");
         };
     }
 
     private async Task RefreshTwitchToken()
     {
-        Console.WriteLine($"Starting Refresh Token...");
+        Logger.LogInformation($"Starting Refresh Token...");
 
         var refreshedToken = await twitchApi.Auth.RefreshAuthTokenAsync(twitchConnectionData.RefreshToken,
                 twitchApi.Settings.Secret = twitchConnectionData.ClientSecret);
 
         if (refreshedToken is not null)
         {
-            Console.WriteLine($"Refresh Token Response not null!");
+            Logger.LogInformation($"Refresh Token Response not null!");
             try
             {
                 var expiresAt = DateTimeOffset.Now.AddSeconds(refreshedToken.ExpiresIn).ToString();
-                Console.WriteLine($"Received Token: {refreshedToken.AccessToken}");
+                Logger.LogInformation($"Received Token: {refreshedToken.AccessToken}");
 
                 await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "access_token", refreshedToken.AccessToken);
                 await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "refresh_token", refreshedToken.RefreshToken);
                 await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "expires_at", expiresAt);
 
-                Console.WriteLine($"Current LoggedInUser Token: {loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value}");
+                Logger.LogInformation($"Current LoggedInUser Token: {loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to update user tokens: {ex.Message}");
+                Logger.LogError($"Failed to update user tokens: {ex.Message}");
             }
         }
     }
 
     private async Task<bool> GetTwitchUserData(string name, string accessToken)
     {
-        Console.WriteLine("Getting Twitch User Data...");
+        Logger.LogInformation("Getting Twitch User Data...");
 
         while (tryCount > 0)
         {
-            Console.WriteLine($"Current Try: {tryCount}");
+            Logger.LogWarning($"Current Try: {tryCount}");
             tryCount--;
 
             getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
@@ -248,11 +269,11 @@ Welcome to your new app.
 
             if (getUserResponse is not null)
             {
-                Console.WriteLine($"Response not null!");
+                Logger.LogInformation($"Response not null!");
 
                 if (getUserResponse.Users.Count() > 0)
                 {
-                    Console.WriteLine($"User Count is greater than 0!");
+                    Logger.LogInformation($"User Count is greater than 0!");
 
                     foreach (var user in getUserResponse.Users)
                     {
@@ -265,12 +286,12 @@ Welcome to your new app.
 
                         twitchUserData?.Add(userData);
                     }
-                    Console.WriteLine($"User Data: {twitchUserData?.First().DisplayName}");
+                    Logger.LogInformation($"User Data: {twitchUserData?.First().DisplayName}");
                     StateHasChanged();
                 }
                 else
                 {
-                    Console.WriteLine("Result didn't contain any Users");
+                    Logger.LogError("Result didn't contain any Users");
                 }
 
                 tryCount = 3;
@@ -279,17 +300,17 @@ Welcome to your new app.
             else
             {
                 isRefreshingToken = true;
-                Console.WriteLine("Failed to get User Data. Refreshing token!");
+                Logger.LogError("Failed to get User Data. Refreshing token!");
             }
 
             if (isRefreshingToken == true)
             {
-                Console.WriteLine($"Trying Token Refresh....");
+                Logger.LogWarning($"Trying Token Refresh....");
 
                 await RefreshTwitchToken();
                 //await twitchSignInHelpers.RefreshTwitchToken(loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value);
 
-                Console.WriteLine($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
+                Logger.LogInformation($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
                 await Task.Delay(2000);
                 isRefreshingToken = false;
             }
@@ -303,5 +324,16 @@ Welcome to your new app.
         // await twitchHub.SendAsync("SubscriptionsRequest");
         // StateHasChanged();
         eventSubSubscriptions = await twitchInternalEventApi.GetEventSubSubscriptions(userId, ClientId, AccessToken);
+    }
+
+    private void Dispose()
+    {
+        twitchHub.DisposeAsync();
+    }
+
+    private void AddTwitchMessage(string user, string message)
+    {
+        twitchMessages?.Add(user, message);
+        InvokeAsync(StateHasChanged);
     }
 }

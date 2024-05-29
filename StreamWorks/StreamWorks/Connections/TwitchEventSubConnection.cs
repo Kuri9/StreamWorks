@@ -8,6 +8,7 @@ using StreamWorks.Hubs;
 using Microsoft.AspNetCore.Components;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using StreamWorks.Api.Twitch.Controllers.EventSubs;
+using Google.Protobuf.WellKnownTypes;
 
 namespace StreamWorks.Connections;
 
@@ -92,7 +93,7 @@ public class TwitchEventSubConnection : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         CancellationToken = cancellationToken;
-        Console.WriteLine("TwitchEventSubConnection has started.");
+        Logger.LogInformation("TwitchEventSubConnection has started.");
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -106,26 +107,25 @@ public class TwitchEventSubConnection : IHostedService
         AccessToken = accessToken;
         api.Settings.AccessToken = AccessToken;
 
-        Console.WriteLine($"Setting Access Token: {AccessToken}");
-
-        Console.WriteLine("TwitchEventSubConnection setup complete.");
+        Logger.LogInformation($"Setting Access Token: {AccessToken}");
+        Logger.LogInformation("TwitchEventSubConnection setup complete.");
     }
 
     public async Task StartService()
     {
-        Console.WriteLine("Starting Service...");
+        Logger.LogInformation("Starting Service...");
         await EventSubWebsocketClient.ConnectAsync();
     }
 
     private async Task OnWebsocketConnected(object sender, WebsocketConnectedArgs e)
     {
         Logger.LogInformation($"Websocket {EventSubWebsocketClient.SessionId} connected!");
-        Console.WriteLine($"Setting Subscriptions: Access Token: {api.Settings.AccessToken}");
+        Logger.LogInformation($"Setting Subscriptions: Access Token: {api.Settings.AccessToken}");
 
         if (!e.IsRequestedReconnect)
         {
             // Subscribe to Topics
-            Console.WriteLine($"Trying Stream Online!");
+            Logger.LogInformation($"Trying Stream Online!");
             try
             {
                 await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
@@ -140,7 +140,7 @@ public class TwitchEventSubConnection : IHostedService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Online Subscription Failed:  {ex.ToString()}");
+                Logger.LogError($"Online Subscription Failed:  {ex.ToString()}");
 
                 if (ex.Message.Contains("already exists"))
                 {
@@ -152,7 +152,7 @@ public class TwitchEventSubConnection : IHostedService
                 }
             }
 
-            Console.WriteLine($"Trying Channel Follow!");
+            Logger.LogInformation($"Trying Channel Follow!");
             try
             {
                 await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
@@ -168,7 +168,7 @@ public class TwitchEventSubConnection : IHostedService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Chat Message Subscription Failed:  {ex.ToString()}");
+                Logger.LogError($"Chat Message Subscription Failed:  {ex.ToString()}");
 
                 if (ex.Message.Contains("already exists"))
                 {
@@ -180,11 +180,9 @@ public class TwitchEventSubConnection : IHostedService
                 }
             }
 
-            Console.WriteLine($"Trying Chat Message!");
+            Logger.LogInformation($"Trying Chat Message!");
             try
             {
-                //await TwitchInternalEventApi.GetChatEventSubscription(userId, broadcasterId, EventSubWebsocketClient.SessionId, AccessToken);
-
                 await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
                     "channel.chat.message",
                     "1",
@@ -198,7 +196,7 @@ public class TwitchEventSubConnection : IHostedService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Chat Message Subscription Failed:  {ex.ToString()}");
+                Logger.LogError($"Chat Message Subscription Failed:  {ex.ToString()}");
 
                 if (ex.Message.Contains("already exists"))
                 {
@@ -254,6 +252,6 @@ public class TwitchEventSubConnection : IHostedService
         var eventData = e.Notification.Payload.Event;
         await twitchHub.SendAsync("RecievedChatMessage", eventData);
 
-        Logger.LogInformation($"{eventData.ChatterUserName} typed {eventData.Message}");
+        Logger.LogInformation($"{eventData.ChatterUserName} typed {eventData.Message.Text}");
     }
 }
