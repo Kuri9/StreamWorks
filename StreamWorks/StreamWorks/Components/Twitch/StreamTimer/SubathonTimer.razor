@@ -143,6 +143,8 @@
     private bool firstRun;
     private int addTime = 0;
 
+    private string? TimeFormat = @"dd\:hh\:mm\:ss";
+
     // Twitch
     private string twitchFollowEvent = "TwitchFollow";
     private int twitchFollowEventCount;
@@ -254,6 +256,11 @@
         UpdateTimerSettings(true);
     }
 
+    public string SetTime()
+    {
+        return TimeSpan.FromSeconds(secondsToRun).ToString(TimeFormat);
+    }
+
     public void StartTimer()
     {
         if (firstRun)
@@ -264,7 +271,7 @@
 
         if (secondsToRun > 0)
         {
-            Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+            Time = SetTime();
             StateHasChanged();
             _timer.Start();
         }
@@ -327,7 +334,7 @@
             }
 
             secondsToRun = startingTime;
-            Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+            Time = SetTime();
             StateHasChanged();
         }
     }
@@ -336,7 +343,7 @@
     {
         _timer.Stop();
         secondsToRun = startingTime;
-        Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+        Time = SetTime();
         StateHasChanged();
     }
 
@@ -346,7 +353,7 @@
 
         await InvokeAsync(() =>
         {
-            Time = TimeSpan.FromSeconds(secondsToRun).ToString();
+            Time = SetTime();
             StateHasChanged();
         });
 
@@ -395,7 +402,7 @@
         }
 
         secondsToRun += addTime;
-        Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+        Time = SetTime();
         InvokeAsync(StateHasChanged);
     }
 
@@ -403,7 +410,7 @@
     {
         addTime = time;
         secondsToRun += addTime;
-        Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+        Time = SetTime();
         InvokeAsync(StateHasChanged);
     }
 
@@ -427,7 +434,7 @@
         }
 
         secondsToRun += addTime;
-        Time = TimeSpan.FromSeconds(secondsToRun).ToString(@"hh\:mm\:ss");
+        Time = SetTime();
         StateHasChanged();
     }
 
@@ -460,7 +467,7 @@
 
     private void TimerEndedCallback()
     {
-
+        Logger.LogInformation("Timer Ended");
     }
 
     private async Task CreateTimer()
@@ -490,6 +497,9 @@
 
     private async Task SaveTimer()
     {
-        await timerConfig.UpdateTimerData(timerData);
+        if (timerData is not null)
+        {
+            await timerConfig.UpdateTimerData(timerData);
+        }
     }
 }
