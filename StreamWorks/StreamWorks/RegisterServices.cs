@@ -121,7 +121,7 @@ public static class RegisterServices
                //    AuthScopes.Helix_Channel_Read_VIPs,
                //    AuthScopes.Helix_User_Edit,
                //    AuthScopes.Helix_User_Edit_Broadcast,
-               //    AuthScopes.Helix_User_Edit_Follows,
+               //    AuthScopes.Helix_User_Edit_Follows,mn
                //    AuthScopes.Helix_User_Manage_BlockedUsers,
                //    AuthScopes.Helix_User_Manage_Chat_Color, 
                //    AuthScopes.Helix_User_Manage_Whispers,
@@ -136,6 +136,8 @@ public static class RegisterServices
                twitchOptions.Scope.Add("openid");
                twitchOptions.Scope.Add("user:read:chat");
                twitchOptions.Scope.Add("moderator:read:followers");
+               twitchOptions.Scope.Add("channel:read:subscriptions");
+               twitchOptions.Scope.Add("bits:read");
                //scopes.Select(AuthScopesToString)
                //      .ToList()
                //      .ForEach(twitchOptions.Scope.Add);

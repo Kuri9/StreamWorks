@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using StreamWorks.Api.Twitch.Controllers.EventSubs;
 using Google.Protobuf.WellKnownTypes;
+using TwitchLib.EventSub.Websockets.Core.EventArgs.Stream;
 
 namespace StreamWorks.Connections;
 
@@ -81,8 +82,24 @@ public class TwitchEventSubConnection : IHostedService
         EventSubWebsocketClient.WebsocketReconnected += OnWebsocketReconnected;
         EventSubWebsocketClient.ErrorOccurred += OnErrorOccurred;
 
+        EventSubWebsocketClient.StreamOnline += OnStreamOnline;
+        EventSubWebsocketClient.StreamOffline += OnStreamOffline;
+
         EventSubWebsocketClient.ChannelFollow += OnChannelFollow;
+
         EventSubWebsocketClient.ChannelChatMessage += OnChannelChatMessage;
+        //EventSubWebsocketClient.ChannelChatMessageDeleted += OnChannelChatMessageDeleted;
+        //EventSubWebsocketClient.ChannelChatNotification += OnChannelChatNotification;
+        //EventSubWebsocketClient.ChannelChatSettingsChanged += OnChannelChatSettingsChanged;
+
+        EventSubWebsocketClient.ChannelSubscribe += OnChannelSubscribe;
+        EventSubWebsocketClient.ChannelSubscriptionEnd += OnChannelSubscriptionEnd;
+        EventSubWebsocketClient.ChannelSubscriptionGift += OnChannelSubscriptionGift;
+        EventSubWebsocketClient.ChannelSubscriptionMessage += OnChannelSubscriptionMessage;
+
+        EventSubWebsocketClient.ChannelCheer += OnChannelCheer;
+
+        EventSubWebsocketClient.ChannelRaid += OnChannelRaid;
     }
 
     private async Task OnErrorOccurred(object sender, ErrorOccuredArgs e)
@@ -155,6 +172,34 @@ public class TwitchEventSubConnection : IHostedService
                 }
             }
 
+            Logger.LogInformation($"Trying Stream Offline!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "stream.offline",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId }
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Offilne Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Stream Offline subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            // FOLLOW EVENTS
             Logger.LogInformation($"Trying Channel Follow!");
             try
             {
@@ -183,6 +228,7 @@ public class TwitchEventSubConnection : IHostedService
                 }
             }
 
+            // CHAT EVENTS
             Logger.LogInformation($"Trying Chat Message!");
             try
             {
@@ -203,7 +249,256 @@ public class TwitchEventSubConnection : IHostedService
 
                 if (ex.Message.Contains("already exists"))
                 {
-                    Logger.LogWarning("Stream Online subscription already exists");
+                    Logger.LogWarning("Chat Message Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            Logger.LogInformation($"Trying Chat Message Deleted!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.chat.message_delete",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                                    { "user_id", UserId }
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Chat Message Deleted Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Chat Message Deleted Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            Logger.LogInformation($"Trying Channel Chat Notification!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.chat.notification",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                                    { "user_id", UserId }
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Channel Chat Notification Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Channel Chat Notification Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            Logger.LogInformation($"Trying Channel Chat Settings Changed Notification!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.chat_settings.update",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                                    { "user_id", UserId }
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Channel Chat Settings Changed Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Channel Chat Settings Changed Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            // SUBSCRIPTION EVENTS 
+            Logger.LogInformation($"Trying Channel Subscription Notification!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.subscribe",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Channel Subscriptions Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Channel Subscriptions Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            Logger.LogInformation($"Trying Channel Subscriptions Ended Notification!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.subscription.end",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Channel Subscriptions Ended Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Channel Subscriptions Ended Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            Logger.LogInformation($"Trying Channel Subscription Gift Notification!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.subscription.gift",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Channel Subscription Gift Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Channel Subscription Gift Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+            
+            Logger.LogInformation($"Trying Channel ReSubscription Message Notification!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.subscription.message",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Channel ReSubscription Message Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Channel ReSubscription Message Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            // CHEER EVENTS
+            Logger.LogInformation($"Trying Channel Cheer Notification!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.cheer",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Channel Cheer Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Channel Cheer Subscription already exists");
+                }
+                else if (ex.HResult == 401)
+                {
+                    Logger.LogWarning("Must refresh Token");
+                }
+            }
+
+            // RAID EVENTS
+            Logger.LogInformation($"Trying Channel Raid Message Notification!");
+            try
+            {
+                await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
+                    "channel.raid",
+                    "1",
+                    new Dictionary<string, string> {
+                                    { "broadcaster_user_id", BroadcasterId },
+                    },
+                    EventSubTransportMethod.Websocket,
+                    EventSubWebsocketClient.SessionId
+                    );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Channel Raid Subscription Failed:  {ex.ToString()}");
+
+                if (ex.Message.Contains("already exists"))
+                {
+                    Logger.LogWarning("Channel Raid Subscription already exists");
                 }
                 else if (ex.HResult == 401)
                 {
@@ -243,18 +538,103 @@ public class TwitchEventSubConnection : IHostedService
     }
 
     // ALL NON-CONNECTION RELATED EVENTS
+    private async Task OnStreamOnline(object sender, StreamOnlineArgs e)
+    {
+        var eventData = e.Notification.Payload.Event;
+        Logger.LogInformation($"{eventData.BroadcasterUserName} started thier stream.");
+    }
 
+    private async Task OnStreamOffline(object sender, StreamOfflineArgs e)
+    {
+        var eventData = e.Notification.Payload.Event;
+        Logger.LogInformation($"{eventData.BroadcasterUserName} ended their stream.");
+    }
+
+    // FOLLOWS
     private async Task OnChannelFollow(object sender, ChannelFollowArgs e)
     {
         var eventData = e.Notification.Payload.Event;
         Logger.LogInformation($"{eventData.UserName} followed {eventData.BroadcasterUserName} at {eventData.FollowedAt}");
     }
 
+    // MESSAGES
     private async Task OnChannelChatMessage(object sender, ChannelChatMessageArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        await twitchHub.SendAsync("RecievedChatMessage", eventData);
+        if (twitchHub is not null)
+        {
+            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+        }
 
         Logger.LogInformation($"{eventData.ChatterUserName} typed {eventData.Message.Text}");
+    }
+
+    // SUBSCRIPTIONS
+    private async Task OnChannelSubscribe(object sender, ChannelSubscribeArgs e)
+    {
+        var eventData = e.Notification.Payload.Event;
+        if (twitchHub is not null)
+        {
+            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+        }
+
+        Logger.LogInformation($"{eventData.UserName} subscribed to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
+    }
+
+    private async Task OnChannelSubscriptionEnd(object sender, ChannelSubscriptionEndArgs e)
+    {
+        var eventData = e.Notification.Payload.Event;
+        if (twitchHub is not null)
+        {
+            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+        }
+
+        Logger.LogInformation($"{eventData.UserName} unsubscribed from {eventData.BroadcasterUserName}: It was a Tier {eventData.Tier} Sub");
+    }
+
+    private async Task OnChannelSubscriptionGift(object sender, ChannelSubscriptionGiftArgs e)
+    {
+        var eventData = e.Notification.Payload.Event;
+        if (twitchHub is not null)
+        {
+            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+        }
+
+        Logger.LogInformation($"{eventData.UserName} gifted {eventData.BroadcasterUserName}'s channel a Tier {eventData.Tier} Sub");
+    }
+
+    private async Task OnChannelSubscriptionMessage(object sender, ChannelSubscriptionMessageArgs e)
+    {
+        var eventData = e.Notification.Payload.Event;
+        if (twitchHub is not null)
+        {
+            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+        }
+
+        Logger.LogInformation($"{eventData.UserName} sent a sub message to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
+    }
+
+    // CHEER
+    private async Task OnChannelCheer(object sender, ChannelCheerArgs e)
+    {
+        var eventData = e.Notification.Payload.Event;
+        if (twitchHub is not null)
+        {
+            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+        }
+
+        Logger.LogInformation($"{eventData.UserName} cheered {eventData.Bits} Bits to {eventData.BroadcasterUserName}");
+    }
+
+    // RAID
+    private async Task OnChannelRaid(object sender, ChannelRaidArgs e)
+    {
+        var eventData = e.Notification.Payload.Event;
+        if (twitchHub is not null)
+        {
+            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+        }
+
+        Logger.LogInformation($"{eventData.FromBroadcasterUserName} raided {eventData.ToBroadcasterUserName} with {eventData.Viewers} Viewers!");
     }
 }
