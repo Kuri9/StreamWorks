@@ -93,10 +93,13 @@ Welcome to your new app.
     private GetUsersResponse? getUserResponse;
 
     private int tryCount = 3;
-    private bool isRefreshingToken = false;
+    private bool mustRefreshToken = false;
+    private bool accessCodeValid = false;
+
     private string ClientId = "";
     private string AccessToken = "";
 
+    private string name = "kuri9";
     private string UserId = "";
     private string? BroadcasterId = "";
 
@@ -143,11 +146,76 @@ Welcome to your new app.
     {
         if (firstRender)
         {
-            await SetupTwitchUser();
+            await RunSetup();
         }
     }
 
-    public async Task SetupTwitchUser()
+    public async Task RunSetup()
+    {
+        // Check if user is logged in. Set loggedInUser if they are.
+        await CheckLoggedInUser();
+
+        if (loggedInUser?.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() >= 1)
+        {
+            // If the loggedInMember has a Twitch Login, set up the Twitch User
+            SetupTwitchUser();
+
+            // Then try connecting to API to test the Access Token
+            while (tryCount > 0)
+            {
+                Logger.LogWarning($"Current Try: {tryCount}");
+                tryCount--;
+
+                // Try to get the User Data from Twitch API
+                var result = await GetTwitchUserData(name, AccessToken);
+
+                // If we get the data, break the loop
+                if (result == true)
+                {
+                    accessCodeValid = true;
+                    Logger.LogInformation($"User Data Received: {twitchUserData?.First().DisplayName}");
+                    break;
+                } 
+                else if (result == false && mustRefreshToken == true)
+                {
+                    // If we don't get the data and must refresh token, try to refresh the token
+                    Logger.LogWarning($"Trying Token Refresh....");
+                    accessCodeValid = false;
+
+                    await RefreshTwitchToken();
+
+                    Logger.LogInformation($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
+
+                    if (loggedInUser?.Tokens is not null)
+                    {
+                        AccessToken = loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
+                        Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
+                    }
+
+                    mustRefreshToken = false;
+                }
+                else
+                {
+                    accessCodeValid = false;
+                    Logger.LogError("There was an error with the API call.");
+                    break;
+                }
+            }
+
+            // If we have the data, set up the Twitch API
+            tryCount = 3;
+            if (accessCodeValid == true)
+            {
+                await TwitchApiSetup();
+            }
+        }
+        else
+        {
+            Logger.LogError("This User doesn't have a Twitch account connected..");
+        }
+    }
+
+    public async Task CheckLoggedInUser()
     {
         if (loggedInUser is null)
         {
@@ -159,7 +227,7 @@ Welcome to your new app.
 
                 var authState = await AuthProvider.GetAuthenticationStateAsync();
 
-                if (authState.User.Identity is not null  && authState.User.Identity.IsAuthenticated == true)
+                if (authState.User.Identity is not null && authState.User.Identity.IsAuthenticated == true)
                 {
                     loggedInUserAuthState = authState.User;
 
@@ -178,37 +246,27 @@ Welcome to your new app.
                 }
             }
         }
+        else
+        {
+            Logger.LogInformation($"Current LoggedInUser: {loggedInUser.UserName}");
+        }
+    }
 
+    public void SetupTwitchUser()
+    {
         if (loggedInUser?.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() > 0)
         {
             Logger.LogInformation($"Setting Twitch Connection");
 
             SetTwitchConnectionData();
-            var name = "kuri9";
-            AccessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
 
-            Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
+            if (loggedInUser?.Tokens is not null)
+            {
+                AccessToken = loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
+                Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
+            }
 
             ClientId = twitchConnectionData.ClientId;
-
-            // Call API as a test
-            if (AccessToken is not null)
-            {
-                var completed = await GetTwitchUserData(name, AccessToken);
-
-                if (completed)
-                {
-                    // Setup EventSub with data after testing
-                    Logger.LogInformation("Setting up EventSub");
-
-                    await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
-                    await twitchHub.SendAsync("StartServiceRequest");
-                }
-            }
-            else
-            {
-                Logger.LogWarning($"Access Token was null!");
-            }
         }
     }
 
@@ -245,6 +303,51 @@ Welcome to your new app.
         };
     }
 
+    private async Task<bool> GetTwitchUserData(string name, string accessToken)
+    {
+        Logger.LogInformation("Getting Twitch User Data...");
+
+        getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
+        await Task.Delay(1000);
+
+        if (getUserResponse is not null)
+        {
+            Logger.LogInformation($"Response not null!");
+
+            if (getUserResponse.Users.Count() > 0)
+            {
+                Logger.LogInformation($"User Count is greater than 0!");
+
+                foreach (var user in getUserResponse.Users)
+                {
+                    var userData = new GetUserDataModel();
+
+                    userData.DisplayName = user.DisplayName;
+                    userData.Id = user.Id;
+                    userData.BroadcasterType = user.BroadcasterType;
+                    userData.Description = user.Description;
+
+                    twitchUserData?.Add(userData);
+                }
+                Logger.LogInformation($"User Data: {twitchUserData?.First().DisplayName}");
+                StateHasChanged();
+
+                return true;
+            }
+            else
+            {
+                Logger.LogError("Result didn't contain any Users");
+                return false;
+            }
+        }
+        else
+        {
+            mustRefreshToken = true;
+            Logger.LogError("Failed to get User Data. Refreshing token!");
+            return false;
+        }
+    }
+
     private async Task RefreshTwitchToken()
     {
         Logger.LogInformation($"Starting Refresh Token...");
@@ -273,76 +376,29 @@ Welcome to your new app.
         }
     }
 
+    public async Task TwitchApiSetup()
+    {
+        // Call API as a test
+        if (AccessToken is not null)
+        {
+            // Setup EventSub with data after testing
+            Logger.LogInformation("Setting up EventSub");
+
+            await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
+            await twitchHub.SendAsync("StartServiceRequest");
+        }
+        else
+        {
+            Logger.LogWarning($"Access Token was null!");
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (twitchHub is not null)
         {
             await twitchHub.DisposeAsync();
         }
-    }
-
-    private async Task<bool> GetTwitchUserData(string name, string accessToken)
-    {
-        Logger.LogInformation("Getting Twitch User Data...");
-
-        while (tryCount > 0)
-        {
-            Logger.LogWarning($"Current Try: {tryCount}");
-            tryCount--;
-
-            getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
-            await Task.Delay(1000);
-
-            if (getUserResponse is not null)
-            {
-                Logger.LogInformation($"Response not null!");
-
-                if (getUserResponse.Users.Count() > 0)
-                {
-                    Logger.LogInformation($"User Count is greater than 0!");
-
-                    foreach (var user in getUserResponse.Users)
-                    {
-                        var userData = new GetUserDataModel();
-
-                        userData.DisplayName = user.DisplayName;
-                        userData.Id = user.Id;
-                        userData.BroadcasterType = user.BroadcasterType;
-                        userData.Description = user.Description;
-
-                        twitchUserData?.Add(userData);
-                    }
-                    Logger.LogInformation($"User Data: {twitchUserData?.First().DisplayName}");
-                    StateHasChanged();
-                }
-                else
-                {
-                    Logger.LogError("Result didn't contain any Users");
-                }
-
-                tryCount = 3;
-                return true;
-            }
-            else
-            {
-                isRefreshingToken = true;
-                Logger.LogError("Failed to get User Data. Refreshing token!");
-            }
-
-            if (isRefreshingToken == true)
-            {
-                Logger.LogWarning($"Trying Token Refresh....");
-
-                await RefreshTwitchToken();
-                //await twitchSignInHelpers.RefreshTwitchToken(loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value);
-
-                Logger.LogInformation($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
-                await Task.Delay(2000);
-                isRefreshingToken = false;
-            }
-        }
-
-        return false;
     }
 
     private async Task GetEventSubscriptions()

@@ -26,10 +26,10 @@
 <div class="row m-3">
     <div class="col-8">
         <div class="sub-timer">
-            <h2>@Time</h2>
+            <h1>@Time</h1>
         </div>
-        <h4>@lastSystemMessage</h4>
-        <h5>@tickCount</h5>
+        <h4>Elapsed Time: @TimeElapsed</h4>
+        <h5>Total Time: @TotalTime</h5>
     </div>
 
     <div class="col-4">
@@ -146,45 +146,58 @@
     private Offcanvas? timerEditOffcanvas;
 
     private Timer _timer = null!;
-    private int secondsToRun = 0;
+    // Total time in seconds left for the timer to run, 
+    // Add or delete from here to update timer
+    private double secondsToRun = 0;
 
-    private int startingTime;
-    private int currentTime;
-    private int defaultTime = 300;
+    private double startingTime = 300;
+    private TimeSpan currentTime;
+
+    private double defaultTime = 300;
     private string? lastSystemMessage;
     private int tickCount = 0;
     private bool firstRun;
-    private int addTime = 0;
+    private double addTime = 0;
 
-    private string? TimeFormat = @"dd\:hh\:mm\:ss";
-    //private string? TimeFormat = @"dd\ Days hh\:mm\:ss";
+    private string? TimeNumFormat = @"dd\:hh\:mm\:ss";
+    private string? TimeCharFormat = @"d'd 'h'h 'm'm 's's'";
+    private string? CurrentTimeDisplayFormat;
+    //private string? TimeWordFormat = $"{timeSpan.Days} days, {timeSpan.Hours} hours, {timeSpan.Minutes} minutes, {timeSpan.Seconds} seconds";
 
     // Twitch
     private string twitchFollowEvent = "TwitchFollow";
     private int twitchFollowEventCount;
-    private int twitchFollowTime;
+    private double twitchFollowTime;
     private string twitchTier1Event = "TwitchTier1";
     private int twitchTier1EventCount;
-    private int twitchTier1Time;
+    private double twitchTier1Time;
     private string twitchTier2Event = "TwitchTier2";
     private int twitchTier2EventCount;
-    private int twitchTier2Time;
+    private double twitchTier2Time;
     private string twitchTier3Event = "TwitchTier3";
     private int twitchTier3EventCount;
-    private int twitchTier3Time;
+    private double twitchTier3Time;
 
     // Youtube
     private string youTubeLikeEvent = "YoutubeLike";
     private int youtubeLikeEventCount;
-    private int youTubeLikeTime;
+    private double youTubeLikeTime;
     private string youTubeSubEvent = "YoutubeSubscribe";
     private int youtubeSubEventCount;
-    private int youTubeSubTime;
+    private double youTubeSubTime;
 
-    protected string Time { get; set; } = "00:00:00";
+    protected TimeSpan Time { get; set; }
+    protected TimeSpan TotalTime { get; set; }
+
+    protected TimeSpan TimeLeft { get; set; }
+    protected TimeSpan TimeElapsed { get; set; }
+
+    protected TimeSpan LastSetTime { get; set; }
 
     [Parameter]
     public EventCallback TimerEnded { get; set; }
+
+    private string ErrorMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -253,33 +266,46 @@
 
     public async Task InitializeTimer()
     {
+        ErrorMessage = "";
+
+        // TODO: Select timer from a list +  Create a new timer button
         var result = await timerConfig.GetTimerDataByUserId(loggedInUser.Id);
+
+        // Initialize New Timer Data if no timers are found for the user
         if (result is null || result.Count() < 1)
         {
             timerData = new();
             timerData.UserId = loggedInUser.Id;
-            timerData.CurrentTime = 0;
+            timerData.CurrentTime = TimeSpan.FromSeconds(0);
             timerData.TimerTitle = "Default Title";
             await CreateTimer();
         }
         else
         {
+            // Fill in with first timer found
             timerData = result.FirstOrDefault();
         }
 
         UpdateTimerSettings(true);
     }
 
-    public string SetTime()
+    public TimeSpan SetTime()
     {
-        return TimeSpan.FromSeconds(secondsToRun).ToString(TimeFormat);
+        return TimeSpan.FromSeconds(secondsToRun);
     }
 
     public void StartTimer()
     {
+        ErrorMessage = "";
+
         if (firstRun)
         {
             secondsToRun = startingTime;
+
+            Time = SetTime();
+            TotalTime = SetTime();
+            TimeElapsed = TimeSpan.FromSeconds(0);
+
             firstRun = false;
         }
 
@@ -294,11 +320,16 @@
     public void StopTimer()
     {
         _timer.Stop();
-
     }
 
     public void UpdateTimerSettings(bool fullUpdate = false)
     {
+        if (timerData is null)
+        {
+            ErrorMessage = "Could not load Timer settings. Timer Data is null";
+            Logger.LogError("Timer Data is null");
+            return;
+        }
         startingTime = timerData.StartingTime;
         updatedTimerModel.StartingTime = timerData.StartingTime;
         updatedTimerModel.ShowTotalCounts = timerData.ShowTotalCounts;
@@ -324,7 +355,7 @@
 
         if (fullUpdate)
         {
-            currentTime = timerData.CurrentTime;
+            Time = timerData.CurrentTime;
 
             if (timerData.ShowTotalCounts == true)
             {
@@ -347,17 +378,36 @@
                 youtubeSubEventCount = 0;
             }
 
-            secondsToRun = startingTime;
-            Time = SetTime();
-            StateHasChanged();
+            if (timerData.IsCompleted == true || timerData.IsRunning == true || timerData.CurrentTime.TotalSeconds <= 0)
+            {
+                secondsToRun = startingTime;
+                Time = SetTime();
+                TotalTime = SetTime();
+                StateHasChanged();
+            }
+            else
+            {
+                secondsToRun = currentTime.TotalSeconds;
+                Time = SetTime();
+                TotalTime = SetTime();
+                StateHasChanged();
+            }
+
         }
     }
 
     public void ResetTimer()
     {
+        ErrorMessage = "";
+
         _timer.Stop();
+
         secondsToRun = startingTime;
+        
         Time = SetTime();
+        TotalTime = SetTime();
+        TimeElapsed = TimeSpan.FromSeconds(0);
+        
         StateHasChanged();
     }
 
@@ -368,6 +418,8 @@
         await InvokeAsync(() =>
         {
             Time = SetTime();
+            TimeElapsed = TotalTime - Time;
+
             StateHasChanged();
         });
 
@@ -417,6 +469,7 @@
 
         secondsToRun += addTime;
         Time = SetTime();
+        TotalTime += TimeSpan.FromSeconds(addTime);
         InvokeAsync(StateHasChanged);
     }
 
@@ -451,6 +504,7 @@
 
         secondsToRun += addTime;
         Time = SetTime();
+        TotalTime += TimeSpan.FromSeconds(addTime);
         InvokeAsync(StateHasChanged);
     }
 
@@ -459,6 +513,7 @@
         addTime = time;
         secondsToRun += addTime;
         Time = SetTime();
+        TotalTime += TimeSpan.FromSeconds(addTime);
         InvokeAsync(StateHasChanged);
     }
 
@@ -483,6 +538,7 @@
 
         secondsToRun += addTime;
         Time = SetTime();
+        TotalTime += TimeSpan.FromSeconds(addTime);
         StateHasChanged();
     }
 
@@ -507,6 +563,7 @@
 
         secondsToRun += addTime;
         Time = SetTime();
+        TotalTime += TimeSpan.FromSeconds(addTime);
         StateHasChanged();
     }
 
@@ -532,7 +589,7 @@
 
     private void TickHandler()
     {
-        currentTime -= 1000;
+        //currentTime -= 1000;
         tickCount += 1;
         InvokeAsync(StateHasChanged);
     }
@@ -544,13 +601,27 @@
 
     private async Task CreateTimer()
     {
+        if (timerData is null)
+        {
+            ErrorMessage = "Could not create Timer. Timer Data is null";
+            Logger.LogError("Timer Data is null");
+            return;
+        }
         await timerConfig.CreateTimerData(timerData);
     }
 
     private async Task UpdateTimer()
     {
+        if (timerData is null)
+        {
+            ErrorMessage = "Could not update Timer. Timer Data is null";
+            Logger.LogError("Timer Data is null");
+            return;
+        }
         timerData.StartingTime = updatedTimerModel.StartingTime;
         timerData.ShowTotalCounts = updatedTimerModel.ShowTotalCounts;
+        timerData.CurrentTime = Time;
+        timerData.TotalTime = TotalTime;
 
         // Twitch
         timerData.TwitchFollowTime = updatedTimerModel.TwitchFollowTime;

@@ -15,7 +15,7 @@ public class DbStreamWorksConnection : IDbStreamWorksConnection
     // GENERAL
 
     // STREAMWORKS COLLECTIONS
-    public string StreamTimerCollectionName { get; private set; } = "stream-timer";
+    public string StreamTimerCollectionName { get; private set; } = "Stream Timer";
 
     public IMongoCollection<StreamTimerModel> StreamTimerCollection { get; private set; }
 
