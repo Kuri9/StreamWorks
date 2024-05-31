@@ -42,7 +42,7 @@ Welcome to your new app.
 
     <h2>Twitch Connection Data</h2>
 
-    <Button class="btn btn-dark" @onclick="GetEventSubscriptions">Get Subscriptions List</Button>
+    <Button class="btn btn-dark" @onclick="RevokeTwitchToken">Revoke Twitch Token</Button>
 
     <div class="row">
         <div class="col">
@@ -396,6 +396,20 @@ Welcome to your new app.
         {
             Logger.LogWarning($"Access Token was null!");
         }
+    }
+
+    private async Task RevokeTwitchToken()
+    {
+        Logger.LogInformation("Revoking Twitch Token");
+        // https://id.twitch.tv/oauth2/revoke
+        await clientFactory.CreateClient().PostAsync("https://id.twitch.tv/oauth2/revoke",
+        new FormUrlEncodedContent(
+            new Dictionary<string, string>
+                {
+                    ["client_id"] = ClientId,
+                    ["token"] = AccessToken
+                }
+        ));
     }
 
     public async ValueTask DisposeAsync()

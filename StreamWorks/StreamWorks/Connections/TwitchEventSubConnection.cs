@@ -125,7 +125,8 @@ public class TwitchEventSubConnection : IHostedService
         api.Settings.AccessToken = AccessToken;
         UserId = twitchUserId;
         ModeratorId = twitchUserId;
-        BroadcasterId = broadcasterId;
+        BroadcasterId = twitchUserId;
+        //BroadcasterId = broadcasterId;
 
         Logger.LogInformation($"Setting Access Token: {AccessToken}");
         Logger.LogInformation("TwitchEventSubConnection setup complete.");
@@ -349,7 +350,7 @@ public class TwitchEventSubConnection : IHostedService
                     "channel.subscribe",
                     "1",
                     new Dictionary<string, string> {
-                                    { "broadcaster_user_id", BroadcasterId },
+                        { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId
@@ -376,7 +377,7 @@ public class TwitchEventSubConnection : IHostedService
                     "channel.subscription.end",
                     "1",
                     new Dictionary<string, string> {
-                                    { "broadcaster_user_id", BroadcasterId },
+                        { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId
@@ -403,7 +404,7 @@ public class TwitchEventSubConnection : IHostedService
                     "channel.subscription.gift",
                     "1",
                     new Dictionary<string, string> {
-                                    { "broadcaster_user_id", BroadcasterId },
+                        { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId
@@ -430,7 +431,7 @@ public class TwitchEventSubConnection : IHostedService
                     "channel.subscription.message",
                     "1",
                     new Dictionary<string, string> {
-                                    { "broadcaster_user_id", BroadcasterId },
+                        { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId
@@ -458,7 +459,7 @@ public class TwitchEventSubConnection : IHostedService
                     "channel.cheer",
                     "1",
                     new Dictionary<string, string> {
-                                    { "broadcaster_user_id", BroadcasterId },
+                        { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId
@@ -486,7 +487,7 @@ public class TwitchEventSubConnection : IHostedService
                     "channel.raid",
                     "1",
                     new Dictionary<string, string> {
-                                    { "broadcaster_user_id", BroadcasterId },
+                        { "to_broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
                     EventSubWebsocketClient.SessionId

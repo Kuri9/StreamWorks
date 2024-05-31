@@ -4,7 +4,7 @@
 @using Microsoft.AspNetCore.Identity
 @using System.Security.Claims
 
-@inject Logger<ExternalLogin> Logger
+@inject ILogger<ExternalLogin> Logger
 @inject UserManager<StreamWorksUserModel> UserManager
 @inject SignInManager<StreamWorksUserModel> SignInManager
 @inject IdentityUserAccessor UserAccessor
@@ -179,6 +179,7 @@
     private async Task OnSubmitAsync()
     {
         var result = await UserManager.RemoveLoginAsync(user, LoginProvider!, ProviderKey!);
+
         if (!result.Succeeded)
         {
             RedirectManager.RedirectToCurrentPageWithStatus("Error: The external login was not removed.", HttpContext);
