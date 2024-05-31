@@ -43,30 +43,42 @@
         <div class="d-grid gap-2 col-6 mx-auto">
             <div>
                 <span>@twitchFollowEventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchFollowEvent))">Twitch Follow</button>
+                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchFollowEvent))">+</button>
+                <span>Twitch Follow</span>
+                <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchFollowEvent))">-</button>
             </div>
             <div>
                 <span>@twitchTier1EventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier1Event))">Tier 1 Twitch Sub</button>
+                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier1Event))">+</button>
+                <span>Tier 1 Twitch Sub</span>
+                <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier1Event))">-</button>
             </div>
             <div>
                 <span>@twitchTier2EventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier2Event))">Tier 2 Twitch Sub</button>
+                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier2Event))">+</button>
+                <span>Tier 2 Twitch Sub</span>
+                <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier2Event))">-</button>
             </div>
             <div>
                 <span>@twitchTier3EventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier3Event))">Tier 3 Twitch Sub</button>
+                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier3Event))">+</button>
+                <span>Tier 3 Twitch Sub</span>
+                <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier3Event))">-</button>
             </div>
         </div>
 
         <div class="d-grid gap-2 col-6 mx-auto">
             <div>
                 <span>@youtubeLikeEventCount</span>
-                <button class="btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeLikeEvent))">1 Youtube Like</button>
+                <button class="btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeLikeEvent))">+</button>
+                <span>Youtube Like</span>
+                <button class="btn btn-danger" @onclick="(() => RemoveTimeYoutube(youTubeLikeEvent))">-</button>
             </div>
             <div>
                 <span>@youtubeSubEventCount</span>
-                <button class="btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeSubEvent))">1 Youtube Subscribe</button>
+                <button class="btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeSubEvent))">+</button>
+                <span>Youtube Subscribe</span>
+                <button class="btn btn-danger" @onclick="(() => RemoveTimeYoutube(youTubeSubEvent))">-</button>
             </div>
         </div>
     </div>
@@ -138,12 +150,14 @@
 
     private int startingTime;
     private int currentTime;
+    private int defaultTime = 300;
     private string? lastSystemMessage;
     private int tickCount = 0;
     private bool firstRun;
     private int addTime = 0;
 
     private string? TimeFormat = @"dd\:hh\:mm\:ss";
+    //private string? TimeFormat = @"dd\ Days hh\:mm\:ss";
 
     // Twitch
     private string twitchFollowEvent = "TwitchFollow";
@@ -397,7 +411,41 @@
                 break;
 
             default:
-                addTime = 300;
+                addTime = defaultTime;
+                break;
+        }
+
+        secondsToRun += addTime;
+        Time = SetTime();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void RemoveTimeTwitch(string twitchEvent)
+    {
+        switch (twitchEvent)
+        {
+            case "TwitchFollow":
+                twitchFollowEventCount--;
+                addTime = -(twitchFollowTime);
+                break;
+
+            case "TwitchTier1":
+                twitchTier1EventCount--;
+                addTime = -(twitchFollowTime);
+                break;
+
+            case "TwitchTier2":
+                twitchTier2EventCount--;
+                addTime = -(twitchFollowTime);
+                break;
+
+            case "TwitchTier3":
+                twitchTier3EventCount--;
+                addTime = -(twitchFollowTime);
+                break;
+
+            default:
+                addTime = -(defaultTime);
                 break;
         }
 
@@ -429,7 +477,31 @@
                 break;
 
             default:
-                addTime = 300;
+                addTime = defaultTime;
+                break;
+        }
+
+        secondsToRun += addTime;
+        Time = SetTime();
+        StateHasChanged();
+    }
+
+    public void RemoveTimeYoutube(string youtubeEvent)
+    {
+        switch (youtubeEvent)
+        {
+            case "YoutubeLike":
+                youtubeLikeEventCount--;
+                addTime = -(youTubeLikeTime);
+                break;
+
+            case "YoutubeSubscribe":
+                youtubeSubEventCount--;
+                addTime = -(youTubeSubTime);
+                break;
+
+            default:
+                addTime = -(defaultTime);
                 break;
         }
 
