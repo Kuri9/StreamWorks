@@ -89,9 +89,17 @@ public static class RegisterServices
            {
                twitchOptions.ClientId = builder.Configuration["Twitch:ClientId"]!;
                twitchOptions.ClientSecret = builder.Configuration["Twitch:ClientSecret"]!;
+               //twitchOptions.CallbackPath = "/signin-twitch";
+
                twitchOptions.ClaimActions.MapJsonKey("aud", "client_id", "string");
                twitchOptions.ClaimActions.MapJsonKey("preferred_username", "twitch_name", "string");
                twitchOptions.ClaimActions.MapJsonKey("picture", "twitch_picture", "url");
+
+               twitchOptions.Scope.Add("user:read:chat");
+               twitchOptions.Scope.Add("moderator:read:followers");
+               twitchOptions.Scope.Add("channel:read:subscriptions");
+               twitchOptions.Scope.Add("bits:read");
+               twitchOptions.Scope.Add("openid");
 
                // All the scopes to request Twitch for
                //AuthScopes[] scopes = [
@@ -133,16 +141,10 @@ public static class RegisterServices
                //    AuthScopes.Helix_moderator_Manage_Chat_Messages,
                //];
 
-               twitchOptions.Scope.Add("openid");
-               twitchOptions.Scope.Add("user:read:chat");
-               twitchOptions.Scope.Add("moderator:read:followers");
-               twitchOptions.Scope.Add("channel:read:subscriptions");
-               twitchOptions.Scope.Add("bits:read");
                //scopes.Select(AuthScopesToString)
                //      .ToList()
                //      .ForEach(twitchOptions.Scope.Add);
 
-               //twitchOptions.AuthorizationEndpoint = "/Account/Manage/ExternalLogins";
                twitchOptions.SaveTokens = true;
            })
            .AddBearerToken(TwitchAuthenticationDefaults.AuthenticationScheme);

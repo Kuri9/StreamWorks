@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Identity
 @using System.Security.Claims
 
+@inject Logger<ExternalLogin> Logger
 @inject UserManager<StreamWorksUserModel> UserManager
 @inject SignInManager<StreamWorksUserModel> SignInManager
 @inject IdentityUserAccessor UserAccessor
@@ -162,7 +163,7 @@
         ExternalLoginInfo? externalResult = await SignInManager.GetExternalLoginInfoAsync();
         if (externalResult is null)
         {
-            Console.WriteLine("Error: Could not load external login info.", HttpContext);
+            Logger.LogError("Error: Could not load external login info.", HttpContext);
         }
         else
         {
@@ -213,11 +214,9 @@
                     token.Name,
                     token.Value
                 );
-                Console.WriteLine($"Token Set: {token.Name} / {token.Value}");
-            }
 
-            // Console.WriteLine(externalLoginInfo.LoginProvider);
-            // externalLoginInfo.AuthenticationProperties?.Items.ToList().ForEach(i => Console.WriteLine(i.Key));
+                Logger.LogInformation($"Token Set: {token.Name} / {token.Value}");
+            }
         }
 
         // Clear the existing external cookie to ensure a clean login process

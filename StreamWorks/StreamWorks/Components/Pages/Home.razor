@@ -182,20 +182,25 @@ Welcome to your new app.
                     Logger.LogWarning($"Trying Token Refresh....");
                     accessCodeValid = false;
 
+                    // Try to refresh the Token
                     await RefreshTwitchToken();
 
                     Logger.LogInformation($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
 
+                    // If the token is not null, set the new token
                     if (loggedInUser?.Tokens is not null)
                     {
+
                         AccessToken = loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
                         Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
                     }
 
+                    // No more ned to refresh
                     mustRefreshToken = false;
                 }
                 else
                 {
+                    // Token is invalid
                     accessCodeValid = false;
                     Logger.LogError("There was an error with the API call.");
                     break;
