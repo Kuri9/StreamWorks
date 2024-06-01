@@ -30,10 +30,14 @@ public class StreamTimerModel : IStreamTimerModel
     public bool ShowTotalCounts { get; set; } = false;
 
     // Twitch
+
+    // ==> Follows
     public string TwitchFollowEvent { get; set; } = "TwitchFollow";
     public int TwitchFollowEventCount { get; set; }
     public int TotalTwitchFollowEventCount { get; set; }
     public double TwitchFollowTime { get; set; } = 300;
+
+    // ==> Subs
     public string TwitchTier1Event { get; set; } = "TwitchTier1";
     public int TwitchTier1EventCount { get; set; }
     public int TotalTwitchTier1EventCount { get; set; }
@@ -46,6 +50,27 @@ public class StreamTimerModel : IStreamTimerModel
     public int TwitchTier3EventCount { get; set; }
     public int TotalTwitchTier3EventCount { get; set; }
     public double TwitchTier3Time { get; set; } = 1000;
+
+    // ==> Sub Gifts
+    public string TwitchSubGiftEvent { get; set; } = "TwitchSubGift";
+    public int TwitchSubGiftEventCount { get; set; }
+    public int TwitchTotalSubGiftCount { get; set; }
+    public string TwitchTier1SubGiftEvent { get; set; } = "TwitchTier1SubGift";
+    public int TwitchTotalT1SubGiftCount { get; set; }
+    public double TwitchTier1SubGiftTime { get; set; } = 300;
+    public string TwitchTier2SubGiftEvent { get; set; } = "TwitchTier1SubGift";
+    public int TwitchTotalT2SubGiftCount { get; set; }
+    public double TwitchTier2SubGiftTime { get; set; } = 600;
+    public string TwitchTier3SubGiftEvent { get; set; } = "TwitchTier1SubGift";
+    public int TwitchTotalT3SubGiftCount { get; set; }
+    public double TwitchTier3SubGiftTime { get; set; } = 1000;
+    public double TwitchSubGiftTime { get; set; }
+
+    // ==> Cheers
+    public string TwitchCheerEvent { get; set; } = "TwitchCheer";
+    public int TwitchCheerEventCount { get; set; }
+    public double TwitchCheerTime { get; set; }
+    public int TwitchTotalCheerAmount { get; set; } = 1;
 
     // Youtube
     public string YouTubeLikeEvent { get; set; } = "YoutubeLike";

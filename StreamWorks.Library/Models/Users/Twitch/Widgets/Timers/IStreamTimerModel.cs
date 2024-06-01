@@ -39,6 +39,28 @@ public interface IStreamTimerModel
     string TwitchTier3Event { get; set; }
     int TwitchTier3EventCount { get; set; }
     double TwitchTier3Time { get; set; }
+
+    // ==> Sub Gifts
+    string TwitchSubGiftEvent { get; set; }
+    int TwitchSubGiftEventCount { get; set; }
+    int TwitchTotalSubGiftCount { get; set; }
+    string TwitchTier1SubGiftEvent { get; set; }
+    int TwitchTotalT1SubGiftCount { get; set; }
+    double TwitchTier1SubGiftTime { get; set; }
+    string TwitchTier2SubGiftEvent { get; set; }
+    int TwitchTotalT2SubGiftCount { get; set; }
+    double TwitchTier2SubGiftTime { get; set; }
+    string TwitchTier3SubGiftEvent { get; set; }
+    int TwitchTotalT3SubGiftCount { get; set; }
+    double TwitchTier3SubGiftTime { get; set; }
+    double TwitchSubGiftTime { get; set; }
+
+    // ==> Cheers
+    string TwitchCheerEvent { get; set; }
+    int TwitchCheerEventCount { get; set; }
+    double TwitchCheerTime { get; set; }
+    int TwitchTotalCheerAmount { get; set; }
+    
     Guid UserId { get; set; }
     string YouTubeLikeEvent { get; set; }
     int YoutubeLikeEventCount { get; set; }

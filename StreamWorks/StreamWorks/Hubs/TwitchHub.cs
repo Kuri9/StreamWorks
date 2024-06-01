@@ -34,7 +34,7 @@ public class TwitchHub: Hub
         return Clients.All.SendAsync("GetFollows", followData);
     }
 
-    public Task RecievedSubscription(GetEventSubSubscriptionsResponse subData)
+    public Task RecievedSubscription(ChannelSubscribe subData)
     {
         return Clients.All.SendAsync("GetSubscribedEvents", subData);
     }

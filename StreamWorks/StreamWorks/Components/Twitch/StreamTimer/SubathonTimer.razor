@@ -45,6 +45,9 @@
                 <span>Twitch Follow</span>
                 <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchFollowEvent))">-</button>
             </div>
+        </div>
+                
+        <div class="d-grid gap-2 col-6 mx-auto">
             <div>
                 <span>@twitchTier1EventCount</span>
                 <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier1Event))">+</button>
@@ -62,6 +65,43 @@
                 <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier3Event))">+</button>
                 <span>Tier 3 Twitch Sub</span>
                 <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier3Event))">-</button>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <h3>Total Sub Gift Events: @twitchSubGiftEventCount</h3>
+            <h4>Total Sub Gifts: @(twitchTotalT1SubGiftCount + twitchTotalT2SubGiftCount + twitchTotalT3SubGiftCount)</h4>
+
+            <InputNumber @bind-Value="SubGiftsToAdd" />
+            <div>
+                <span>@twitchTotalT1SubGiftCount</span>
+                <button class="btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier1SubGiftEvent, SubGiftsToAdd))">+</button>
+                <span>Tier 1 Twitch Sub Gift</span>
+                <button class="btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier1SubGiftEvent, SubGiftsToAdd))">-</button>
+            </div>
+            <div>
+                <span>@twitchTotalT2SubGiftCount</span>
+                <button class="btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier2SubGiftEvent, SubGiftsToAdd))">+</button>
+                <span>Tier 2 Twitch Sub Gift</span>
+                <button class="btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier2SubGiftEvent, SubGiftsToAdd))">-</button>
+            </div>
+            <div>
+                <span>@twitchTotalT3SubGiftCount</span>
+                <button class="btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier3SubGiftEvent, SubGiftsToAdd))">+</button>
+                <span>Tier 3 Twitch Sub Gift</span>
+                <button class="btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier3SubGiftEvent, SubGiftsToAdd))">-</button>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <h4>Cheer Total: @twitchTotalCheerAmount</h4>
+
+            <InputNumber @bind-Value="BitsToAdd" />
+            <div>
+                <span>@twitchCheerEventCount</span>
+                <button class="btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchCheerEvent, BitsToAdd))">+</button>
+                <span>Twitch Cheer</span>
+                <button class="btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchCheerEvent, BitsToAdd))">-</button>
             </div>
         </div>
 
@@ -88,7 +128,7 @@
     </HeaderTemplate>
     <BodyTemplate>
         <div>
-            Edit timer data here.
+            Edit timer data here. All times are in <strong>seconds</strong>!
         </div>
         <div class="mb-3">
 
@@ -104,7 +144,9 @@
                 <div class="form-group">
                     <label class="form-control" for="twitchFollowTime">Time Per Twitch Follow</label>
                     <InputNumber id="twitchFollowTime" class="form-control" @bind-Value="updatedTimerModel.TwitchFollowTime" />
+                </div>
 
+                <div class="form-group">
                     <label class="form-control" for="twitchTier1Time">Time Per Twitch Tier 1 Sub</label>
                     <InputNumber id="twitchTier1Time" class="form-control" @bind-Value="updatedTimerModel.TwitchTier1Time" />
 
@@ -113,6 +155,22 @@
 
                     <label class="form-control" for="twitchTier3Time">Time Per Twitch Tier 3 Sub</label>
                     <InputNumber id="twitchTier3Time" class="form-control" @bind-Value="updatedTimerModel.TwitchTier3Time" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-control" for="twitchTier1GiftTime">Time Per Twitch Tier 1 Gift Sub</label>
+                    <InputNumber id="twitchTier1GiftTime" class="form-control" @bind-Value="updatedTimerModel.TwitchTier1SubGiftTime" />
+
+                    <label class="form-control" for="twitchTier2GiftTime">Time Per Twitch Tier 2 Gift Sub</label>
+                    <InputNumber id="twitchTier2GiftTime" class="form-control" @bind-Value="updatedTimerModel.TwitchTier2SubGiftTime" />
+
+                    <label class="form-control" for="twitchTier3GiftTime">Time Per Twitch Tier 3 Gift Sub</label>
+                    <InputNumber id="twitchTier3GiftTime" class="form-control" @bind-Value="updatedTimerModel.TwitchTier3SubGiftTime" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-control" for="twitchCheerTime">Time Per Twitch Cheer: (1 Bit)</label>
+                    <InputNumber id="twitchCheerTime" class="form-control" @bind-Value="updatedTimerModel.TwitchCheerTime" />
                 </div>
 
                 <div class="form-group">
@@ -156,6 +214,8 @@
     private int tickCount = 0;
     private bool firstRun;
     private double addTime = 0;
+    private int SubGiftsToAdd = 0;
+    private int BitsToAdd = 0;
 
     private string? TimeNumFormat = @"dd\:hh\:mm\:ss";
     private string? TimeCharFormat = @"d'd 'h'h 'm'm 's's'";
@@ -166,15 +226,41 @@
     private string twitchFollowEvent = "TwitchFollow";
     private int twitchFollowEventCount;
     private double twitchFollowTime;
+
     private string twitchTier1Event = "TwitchTier1";
     private int twitchTier1EventCount;
     private double twitchTier1Time;
+
     private string twitchTier2Event = "TwitchTier2";
     private int twitchTier2EventCount;
     private double twitchTier2Time;
+
     private string twitchTier3Event = "TwitchTier3";
     private int twitchTier3EventCount;
     private double twitchTier3Time;
+
+    // Sub Gifts
+    private string twitchSubGiftEvent = "TwitchSubGift";
+    private int twitchSubGiftEventCount;
+    private int twitchTotalSubGiftCount;
+
+    private string twitchTier1SubGiftEvent = "TwitchTier1SubGift";
+    private int twitchTotalT1SubGiftCount;
+    private double twitchTier1SubGiftTime;
+
+    private string twitchTier2SubGiftEvent = "TwitchTier2SubGift";
+    private int twitchTotalT2SubGiftCount;
+    private double twitchTier2SubGiftTime;
+
+    private string twitchTier3SubGiftEvent = "TwitchTier3SubGift";
+    private int twitchTotalT3SubGiftCount;
+    private double twitchTier3SubGiftTime;
+
+    // Cheers
+    private string twitchCheerEvent = "TwitchCheer";
+    private int twitchCheerEventCount;
+    private double twitchCheerTime;
+    private int twitchTotalCheerAmount = 0;
 
     // Youtube
     private string youTubeLikeEvent = "YoutubeLike";
@@ -218,24 +304,60 @@
         twitchHub.On<ChannelFollow>("GetFollows", (follow) =>
         {
             Logger.LogInformation($"Follow Received: {follow.UserName} followed {follow.BroadcasterUserName}");
-            
+            if (follow is not null)
+            {
+                AddTimeTwitch(twitchFollowEvent);
+            }
         });
 
         twitchHub.On<ChannelSubscribe>("GetSubscribedEvents", (subscription) =>
         {
-            Logger.LogInformation($"Message Received: {subscription.UserName} sent a Tier {subscription.Tier} Sub");
+            Logger.LogInformation($"Message Received: {subscription.UserName} sent a Tier {subscription.Tier.ToString()} Sub");
 
+            if (subscription is not null && subscription.IsGift == false)
+            {
+                if (subscription.Tier == "1000")
+                {
+                    AddTimeTwitch(twitchTier1Event);
+                }
+                else if (subscription.Tier == "2000")
+                {
+                    AddTimeTwitch(twitchTier2Event);
+                }
+                else if (subscription.Tier == "3000")
+                {
+                    AddTimeTwitch(twitchTier3Event);
+                }
+            }
         });
 
         twitchHub.On<ChannelSubscriptionGift>("GetSubscriptionGifts", (subGift) =>
         {
-            Logger.LogInformation($"Message Received: {subGift.UserName} sent {subGift.Total} Sub Gift(s)");
-
+            Logger.LogInformation($"Message Received: {subGift.UserName} sent {subGift.Total} {subGift.Tier} Sub Gift(s)");
+            if (subGift is not null)
+            {
+                if (subGift.Tier == "1000")
+                {
+                    AddTimeWithAmountTwitch(twitchTier1SubGiftEvent, subGift.Total);
+                }
+                else if (subGift.Tier == "2000")
+                {
+                    AddTimeWithAmountTwitch(twitchTier2SubGiftEvent, subGift.Total);
+                }
+                else if (subGift.Tier == "3000")
+                {
+                    AddTimeWithAmountTwitch(twitchTier3SubGiftEvent, subGift.Total);
+                }
+            }
         });
 
         twitchHub.On<ChannelCheer>("GetCheers", (cheer) =>
         {
             Logger.LogInformation($"Message Received: {cheer.UserName} cheered {cheer.Bits} Bits");
+            if (cheer is not null && cheer.Bits > 0)
+            {
+                AddTimeWithAmountTwitch(twitchCheerEvent, cheer.Bits);
+            }
 
         });
 
@@ -356,17 +478,29 @@
         updatedTimerModel.StartingTime = timerData.StartingTime;
         updatedTimerModel.ShowTotalCounts = timerData.ShowTotalCounts;
 
-        // Twitch
+        // Twitch: Set Timer Data from Model
         twitchFollowTime = timerData.TwitchFollowTime;
         twitchTier1Time = timerData.TwitchTier1Time;
         twitchTier2Time = timerData.TwitchTier2Time;
         twitchTier3Time = timerData.TwitchTier3Time;
 
-        // Twitch
+        twitchTier1SubGiftTime = timerData.TwitchTier1SubGiftTime;
+        twitchTier2SubGiftTime = timerData.TwitchTier2SubGiftTime;
+        twitchTier3SubGiftTime = timerData.TwitchTier3SubGiftTime;
+
+        twitchCheerTime = timerData.TwitchCheerTime;
+
+        // Twitch: Set Data in Update Model
         updatedTimerModel.TwitchFollowTime = timerData.TwitchFollowTime;
         updatedTimerModel.TwitchTier1Time = timerData.TwitchTier1Time;
         updatedTimerModel.TwitchTier2Time = timerData.TwitchTier2Time;
         updatedTimerModel.TwitchTier3Time = timerData.TwitchTier3Time;
+
+        updatedTimerModel.TwitchTier1SubGiftTime = timerData.TwitchTier1SubGiftTime;
+        updatedTimerModel.TwitchTier2SubGiftTime = timerData.TwitchTier2SubGiftTime;
+        updatedTimerModel.TwitchTier3SubGiftTime = timerData.TwitchTier3SubGiftTime;
+
+        updatedTimerModel.TwitchCheerTime = timerData.TwitchCheerTime;
 
         // Youtube
         youTubeLikeTime = timerData.YouTubeLikeTime;
@@ -381,20 +515,39 @@
 
             if (timerData.ShowTotalCounts == true)
             {
+                // Set all the counts and Data based on the chosen Timer Data
                 twitchFollowEventCount = timerData.TotalTwitchFollowEventCount;
                 twitchTier1EventCount = timerData.TotalTwitchTier1EventCount;
                 twitchTier2EventCount = timerData.TotalTwitchTier2EventCount;
                 twitchTier3EventCount = timerData.TotalTwitchTier3EventCount;
+
+                twitchSubGiftEventCount = timerData.TwitchSubGiftEventCount;
+                twitchTotalSubGiftCount = timerData.TwitchTotalSubGiftCount;
+                twitchTotalT1SubGiftCount = timerData.TwitchTotalT1SubGiftCount;
+                twitchTotalT2SubGiftCount = timerData.TwitchTotalT2SubGiftCount;
+                twitchTotalT3SubGiftCount = timerData.TwitchTotalT3SubGiftCount;
+
+                twitchCheerEventCount = timerData.TwitchCheerEventCount;
+                twitchTotalCheerAmount = timerData.TwitchTotalCheerAmount;
 
                 youtubeLikeEventCount = timerData.TotalYoutubeLikeEventCount;
                 youtubeSubEventCount = timerData.TotalYoutubeSubEventCount;
             }
             else
             {
+                // If no Existing Timer Data exists, set all to 0
                 twitchFollowEventCount = 0;
                 twitchTier1EventCount = 0;
                 twitchTier2EventCount = 0;
                 twitchTier3EventCount = 0;
+
+                twitchSubGiftEventCount = 0;
+                twitchTotalSubGiftCount = 0;
+                twitchTotalT1SubGiftCount = 0;
+                twitchTotalT2SubGiftCount = 0;
+                twitchTotalT3SubGiftCount = 0;
+
+                twitchCheerEventCount = 0;
 
                 youtubeLikeEventCount = 0;
                 youtubeSubEventCount = 0;
@@ -425,11 +578,11 @@
         _timer.Stop();
 
         secondsToRun = startingTime;
-        
+
         Time = SetTime();
         TotalTime = SetTime();
         TimeElapsed = TimeSpan.FromSeconds(0);
-        
+
         StateHasChanged();
     }
 
@@ -462,31 +615,33 @@
 
     public void AddTimeTwitch(string twitchEvent)
     {
-        switch (twitchEvent)
+        if(twitchEvent == twitchFollowEvent)
         {
-            case "TwitchFollow":
-                twitchFollowEventCount++;
-                addTime = twitchFollowTime;
-                break;
-
-            case "TwitchTier1":
-                twitchTier1EventCount++;
-                addTime = twitchTier1Time;
-                break;
-
-            case "TwitchTier2":
-                twitchTier2EventCount++;
-                addTime = twitchTier2Time;
-                break;
-
-            case "TwitchTier3":
-                twitchTier3EventCount++;
-                addTime = twitchTier3Time;
-                break;
-
-            default:
-                addTime = defaultTime;
-                break;
+            twitchFollowEventCount++;
+            addTime = twitchFollowTime;
+        }
+        else if(twitchEvent == twitchTier1Event)
+        {
+            twitchTier1EventCount++;
+            addTime = twitchTier1Time;
+        }
+        else if(twitchEvent == twitchTier2Event)
+        {
+            twitchTier2EventCount++;
+            addTime = twitchTier2Time;
+        }
+        else if(twitchEvent == twitchTier3Event)
+        {
+            twitchTier3EventCount++;
+            addTime = twitchTier3Time;
+        }
+        else if (addTime < 0)
+        {
+            addTime *= -1;
+        }
+        else
+        {
+            Logger.LogError("Could not find Twitch Event");
         }
 
         secondsToRun += addTime;
@@ -495,33 +650,43 @@
         InvokeAsync(StateHasChanged);
     }
 
-    public void RemoveTimeTwitch(string twitchEvent)
+    public void AddTimeWithAmountTwitch(string twitchEvent, int amount = 0)
     {
-        switch (twitchEvent)
+        if (twitchEvent == twitchTier1SubGiftEvent)
         {
-            case "TwitchFollow":
-                twitchFollowEventCount--;
-                addTime = -(twitchFollowTime);
-                break;
+            twitchSubGiftEventCount++;
+            twitchTotalSubGiftCount += amount;
+            twitchTotalT1SubGiftCount += amount;
+            addTime = twitchTier1SubGiftTime * amount;
+        }
+        else if (twitchEvent == twitchTier2SubGiftEvent)
+        {
+            twitchSubGiftEventCount++;
+            twitchTotalSubGiftCount += amount;
+            twitchTotalT2SubGiftCount += amount;
+            addTime = twitchTier2SubGiftTime * amount;
+        }
+        else if (twitchEvent == twitchTier3SubGiftEvent)
+        {
+            twitchSubGiftEventCount++;
+            twitchTotalSubGiftCount += amount;
+            twitchTotalT3SubGiftCount += amount;
+            addTime = twitchTier3SubGiftTime * amount;
+        }
+        else if (twitchEvent == twitchCheerEvent)
+        {
+            twitchCheerEventCount++;
+            twitchTotalCheerAmount += amount;
+            addTime = twitchCheerTime * amount;
+        }
+        else
+        {
+            Logger.LogError("Could not find Twitch Event");
+        }
 
-            case "TwitchTier1":
-                twitchTier1EventCount--;
-                addTime = -(twitchFollowTime);
-                break;
-
-            case "TwitchTier2":
-                twitchTier2EventCount--;
-                addTime = -(twitchFollowTime);
-                break;
-
-            case "TwitchTier3":
-                twitchTier3EventCount--;
-                addTime = -(twitchFollowTime);
-                break;
-
-            default:
-                addTime = -(defaultTime);
-                break;
+        if (addTime < 0)
+        {
+            addTime *= -1;
         }
 
         secondsToRun += addTime;
@@ -536,6 +701,89 @@
         secondsToRun += addTime;
         Time = SetTime();
         TotalTime += TimeSpan.FromSeconds(addTime);
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void RemoveTimeTwitch(string twitchEvent)
+    {
+        if (twitchEvent == twitchFollowEvent)
+        {
+            twitchFollowEventCount--;
+            addTime = twitchFollowTime;
+        }
+        else if (twitchEvent == twitchTier1Event)
+        {
+            twitchTier1EventCount--;
+            addTime = twitchTier1Time;
+        }
+        else if (twitchEvent == twitchTier2Event)
+        {
+            twitchTier2EventCount--;
+            addTime = twitchTier2Time;
+        }
+        else if (twitchEvent == twitchTier3Event)
+        {
+            twitchTier3EventCount--;
+            addTime = twitchTier3Time;
+        }
+        else
+        {
+            Logger.LogError("Could not find Twitch Event");
+        }
+
+        if (addTime < 0)
+        {
+            addTime *= -1;
+        }
+
+        secondsToRun -= addTime;
+        Time = SetTime();
+        TotalTime -= TimeSpan.FromSeconds(addTime);
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void RemoveTimeWithAmountTwitch(string twitchEvent, int amount = 0)
+    {
+        if (twitchEvent == twitchTier1SubGiftEvent)
+        {
+            twitchSubGiftEventCount--;
+            twitchTotalSubGiftCount -= amount;
+            twitchTotalT1SubGiftCount -= amount;
+            addTime = (twitchTier1SubGiftTime * amount);
+        }
+        else if (twitchEvent == twitchTier2SubGiftEvent)
+        {
+            twitchSubGiftEventCount--;
+            twitchTotalSubGiftCount -= amount;
+            twitchTotalT2SubGiftCount -= amount;
+            addTime = (twitchTier2SubGiftTime * amount);
+        }
+        else if (twitchEvent == twitchTier3SubGiftEvent)
+        {
+            twitchSubGiftEventCount--;
+            twitchTotalSubGiftCount -= amount;
+            twitchTotalT3SubGiftCount -= amount;
+            addTime = (twitchTier3SubGiftTime * amount);
+        }
+        else if (twitchEvent == twitchCheerEvent)
+        {
+            twitchCheerEventCount--;
+            twitchTotalCheerAmount -= amount;
+            addTime = (twitchCheerTime * amount);
+        }
+        else
+        {
+            Logger.LogError("Could not find Twitch Event");
+        }
+
+        if (addTime <0)
+        {
+            addTime *= -1;
+        }
+
+        secondsToRun -= addTime;
+        Time = SetTime();
+        TotalTime -= TimeSpan.FromSeconds(addTime);
         InvokeAsync(StateHasChanged);
     }
 
@@ -650,6 +898,12 @@
         timerData.TwitchTier1Time = updatedTimerModel.TwitchTier1Time;
         timerData.TwitchTier2Time = updatedTimerModel.TwitchTier2Time;
         timerData.TwitchTier3Time = updatedTimerModel.TwitchTier3Time;
+
+        timerData.TwitchTier1SubGiftTime = updatedTimerModel.TwitchTier1SubGiftTime;
+        timerData.TwitchTier2SubGiftTime = updatedTimerModel.TwitchTier2SubGiftTime;
+        timerData.TwitchTier3SubGiftTime = updatedTimerModel.TwitchTier3SubGiftTime;
+
+        timerData.TwitchCheerTime = updatedTimerModel.TwitchCheerTime;
 
         // Youtube
         timerData.YouTubeLikeTime = updatedTimerModel.YouTubeLikeTime;
