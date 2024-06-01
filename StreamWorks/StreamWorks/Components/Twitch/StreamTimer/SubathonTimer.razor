@@ -19,106 +19,251 @@
 @inject NavigationManager navManager
 @inject ProtectedSessionStorage sessionStorage
 
-<h3>SubathonTimer</h3>
+<div class="page-title">
+    <h2>Subathon Timer</h2>
+</div>
 
 <div class="row m-3">
-    <div class="col-8">
-        <div class="sub-timer">
-            <h1>@Time</h1>
+    <div class="col-9">
+
+        <div class="row">
+            <div class="col-2">
+                <div class="btn-group-vertical timer-control-buttons">
+                    <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" @onclick="ToggleElapsedTimetAsync">Elapsed Time</Button>
+                    <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" @onclick="ToggleTotalTimeAsync">Total Time</Button>
+                    <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" @onclick="ToggleFormatTimeAsync">Format Time</Button>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 col-10 mx-auto mt-2">
+                <div class="row main-container">
+                    
+                    <div class="main-timer">
+                        <div class="main-timer">
+                            <h1 class="main-timer">@Time.ToString(TimeFormat)</h1>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2 align-content-center">
+                        <div class="col d-grid gap-2">
+
+                            <Collapse @ref="collapseElapsedTime">
+                                <Card Style="timer-card">
+                                    <CardBody>
+                                        <div class="timer elapsed-time-timer">Elapsed Time: @TimeElapsed</div>
+                                    </CardBody>
+                                </Card>
+                            </Collapse>
+                            <Collapse @ref="collapseTotalTime">
+                                <Card Style="timer-card">
+                                    <CardBody>
+                                        <div class="timer total-time-timer">Total Time: @TotalTime</div>
+                                    </CardBody>
+                                </Card>
+                            </Collapse>
+                            <Collapse @ref="collapseTimeFormat">
+                                <Card Style="timer-card">
+                                    <CardBody>
+                                        <h3>Choose Format</h3>
+                                        <div class="btn-group">
+                                            <Button Class="btn btn-secondary" @onclick="SetTimeFormatToClock">00:00:00:00 Format</Button>
+                                            <Button Class="btn btn-secondary" @onclick="SetTimeFormatToChar">00d 00h 00m 00s Format</Button>
+                                        </div>
+                                    </CardBody>
+                                </Card>
+                            </Collapse>
+
+                            @*                     
+                            <Accordion>
+                            <AccordionItem>
+                            <Content>
+                            <h4>Elapsed Time: @TimeElapsed</h4>
+                            </Content>
+                            </AccordionItem>
+                            <AccordionItem>
+                            <Content>
+                            <h5>Total Time: @TotalTime</h5>
+                            </Content>
+                            </AccordionItem>
+                            <AccordionItem>
+                            <Content>
+                            <h3>Choose Format</h3>
+                            <div class="btn-group">
+                            <Button Class="btn btn-secondary" @onclick="SetTimeFormatToClock">00:00:00:00 Format</Button>
+                            <Button Class="btn btn-secondary" @onclick="SetTimeFormatToChar">00d 00h 00m 00s Format</Button>
+                            </div>
+                            </Content>
+                            </AccordionItem>
+                            </Accordion> *@
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+
+            </div>
         </div>
-        <h4>Elapsed Time: @TimeElapsed</h4>
-        <h5>Total Time: @TotalTime</h5>
     </div>
 
-    <div class="col-4">
-        <div class="d-grid gap-2 col-6 mx-auto">
-            <button class="btn btn-dark" @onclick="StartTimer">Start</button>
-            <button class="btn btn-dark" @onclick="StopTimer">Stop</button>
-            <button class="btn btn-light" @onclick="ResetTimer">Set</button>
-            <button class="btn btn-warning" @onclick="ShowOffcanvasAsync">Edit Timer Settings</button>
-        </div>
+    @* All the buttons for controlling Timer *@
+    <div class="col-3 align-content-center">
+        <Accordion>
+            <AccordionItem>
+                <TitleTemplate>
+                    <div class="timer-accordian-title">
+                        <Icon Name="IconName.Gear" Class="me-1" />
+                        <span>Settings</span>
+                        <span>@twitchFollowEventCount</span>
+                    </div>
+                </TitleTemplate>
+                <Content>
+                        <div class="d-grid gap-2 mx-auto btn-group-vertical">
+                            <button class="btn btn-dark" @onclick="StartTimer">Start</button>
+                            <button class="btn btn-dark" @onclick="StopTimer">Stop</button>
+                            <button class="btn btn-light" @onclick="ResetTimer">Set</button>
+                            <button class="btn btn-warning" @onclick="ShowOffcanvasAsync">Edit Timer Settings</button>
+                        </div>
+                    </Content>
+            </AccordionItem>
 
-        <div class="d-grid gap-2 col-6 mx-auto">
-            <div>
-                <span>@twitchFollowEventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchFollowEvent))">+</button>
-                <span>Twitch Follow</span>
-                <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchFollowEvent))">-</button>
-            </div>
-        </div>
-                
-        <div class="d-grid gap-2 col-6 mx-auto">
-            <div>
-                <span>@twitchTier1EventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier1Event))">+</button>
-                <span>Tier 1 Twitch Sub</span>
-                <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier1Event))">-</button>
-            </div>
-            <div>
-                <span>@twitchTier2EventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier2Event))">+</button>
-                <span>Tier 2 Twitch Sub</span>
-                <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier2Event))">-</button>
-            </div>
-            <div>
-                <span>@twitchTier3EventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier3Event))">+</button>
-                <span>Tier 3 Twitch Sub</span>
-                <button class="btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier3Event))">-</button>
-            </div>
-        </div>
+            <AccordionItem>
+                <TitleTemplate>
+                    <div class="timer-accordian-title">
+                        <Icon Name="IconName.Twitch" Class="me-1" />
+                        <span>Twitch Events</span>
+                        <span>@twitchFollowEventCount</span>
+                    </div>
+                </TitleTemplate>
+                <Content>
+                    <div class="col-8">
+                        <div class="d-grid gap-2 mx-auto">
+                            <div class="input-layout-container">
+                                <span class="input-layout-item-a">@twitchFollowEventCount</span>
+                                <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(twitchFollowEvent))">+</button>
+                                <span class="input-layout-item-c">Twitch Follow</span>
+                                <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchFollowEvent))">-</button>
+                            </div>
+                        </div>
+                    </div>
+                </Content>
+            </AccordionItem>
+            
+            <AccordionItem>
+                <TitleTemplate>
+                    <div class="timer-accordian-title">
+                        <Icon Name="IconName.Share" Class="me-1" />
+                        <span>Twitch Subscriptions</span>
+                        <span>Total Subscriptions: @(twitchTier1EventCount + twitchTier2EventCount + twitchTier3EventCount)</span>
+                    </div>
+                </TitleTemplate>
+                <Content>
+                    <div class="d-grid gap-2 mx-auto">
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@twitchTier1EventCount</span>
+                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier1Event))">+</button>
+                            <span class="input-layout-item-c">Tier 1 Twitch Sub</span>
+                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier1Event))">-</button>
+                        </div>
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@twitchTier2EventCount</span>
+                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier2Event))">+</button>
+                            <span class="input-layout-item-c">Tier 2 Twitch Sub</span>
+                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier2Event))">-</button>
+                        </div>
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@twitchTier3EventCount</span>
+                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(twitchTier3Event))">+</button>
+                            <span class="input-layout-item-c">Tier 3 Twitch Sub</span>
+                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(twitchTier3Event))">-</button>
+                        </div>
+                    </div>
+                </Content>
+            </AccordionItem>
 
-        <div class="d-grid gap-2 col-6 mx-auto">
-            <h3>Total Sub Gift Events: @twitchSubGiftEventCount</h3>
-            <h4>Total Sub Gifts: @(twitchTotalT1SubGiftCount + twitchTotalT2SubGiftCount + twitchTotalT3SubGiftCount)</h4>
+            <AccordionItem>
+                <TitleTemplate>
+                    <div class="timer-accordian-title">
+                        <Icon Name="IconName.Gift" Class="me-1" />
+                        <span>Twitch Sub Gifts</span>
+                        <span>Total Sub Gift Events: @twitchSubGiftEventCount</span>
+                    </div>
+                </TitleTemplate>
+                <Content>
+                    <div class="d-grid gap-2 mx-auto">
+                        <h4>Total Sub Gifts: @(twitchTotalT1SubGiftCount + twitchTotalT2SubGiftCount + twitchTotalT3SubGiftCount)</h4>
 
-            <InputNumber @bind-Value="SubGiftsToAdd" />
-            <div>
-                <span>@twitchTotalT1SubGiftCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier1SubGiftEvent, SubGiftsToAdd))">+</button>
-                <span>Tier 1 Twitch Sub Gift</span>
-                <button class="btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier1SubGiftEvent, SubGiftsToAdd))">-</button>
-            </div>
-            <div>
-                <span>@twitchTotalT2SubGiftCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier2SubGiftEvent, SubGiftsToAdd))">+</button>
-                <span>Tier 2 Twitch Sub Gift</span>
-                <button class="btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier2SubGiftEvent, SubGiftsToAdd))">-</button>
-            </div>
-            <div>
-                <span>@twitchTotalT3SubGiftCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier3SubGiftEvent, SubGiftsToAdd))">+</button>
-                <span>Tier 3 Twitch Sub Gift</span>
-                <button class="btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier3SubGiftEvent, SubGiftsToAdd))">-</button>
-            </div>
-        </div>
+                        <InputNumber @bind-Value="SubGiftsToAdd" />
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@twitchTotalT1SubGiftCount</span>
+                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier1SubGiftEvent, SubGiftsToAdd))">+</button>
+                            <span class="input-layout-item-c">Tier 1 Twitch Sub Gift</span>
+                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier1SubGiftEvent, SubGiftsToAdd))">-</button>
+                        </div>
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@twitchTotalT2SubGiftCount</span>
+                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier2SubGiftEvent, SubGiftsToAdd))">+</button>
+                            <span class="input-layout-item-c input-layout-item-c">Tier 2 Twitch Sub Gift</span>
+                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier2SubGiftEvent, SubGiftsToAdd))">-</button>
+                        </div>
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@twitchTotalT3SubGiftCount</span>
+                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchTier3SubGiftEvent, SubGiftsToAdd))">+</button>
+                            <span class="input-layout-item-c">Tier 3 Twitch Sub Gift</span>
+                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchTier3SubGiftEvent, SubGiftsToAdd))">-</button>
+                        </div>
+                    </div>
+                </Content>
+            </AccordionItem>
 
-        <div class="d-grid gap-2 col-6 mx-auto">
-            <h4>Cheer Total: @twitchTotalCheerAmount</h4>
+            <AccordionItem>
+                <TitleTemplate>
+                    <div class="timer-accordian-title">
+                        <Icon Name="IconName.Gem" Class="me-1" />
+                        <span>Twitch Cheers</span>
+                        <span>Cheer Total: @twitchTotalCheerAmount</span>
+                    </div>
+                </TitleTemplate>
+                <Content>
+                    <div class="d-grid gap-2 mx-auto">
+                        <InputNumber @bind-Value="BitsToAdd" />
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@twitchCheerEventCount</span>
+                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchCheerEvent, BitsToAdd))">+</button>
+                            <span class="input-layout-item-c">Twitch Cheer</span>
+                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchCheerEvent, BitsToAdd))">-</button>
+                        </div>
+                    </div>
+                </Content>
+            </AccordionItem>
 
-            <InputNumber @bind-Value="BitsToAdd" />
-            <div>
-                <span>@twitchCheerEventCount</span>
-                <button class="btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(twitchCheerEvent, BitsToAdd))">+</button>
-                <span>Twitch Cheer</span>
-                <button class="btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(twitchCheerEvent, BitsToAdd))">-</button>
-            </div>
-        </div>
-
-        <div class="d-grid gap-2 col-6 mx-auto">
-            <div>
-                <span>@youtubeLikeEventCount</span>
-                <button class="btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeLikeEvent))">+</button>
-                <span>Youtube Like</span>
-                <button class="btn btn-danger" @onclick="(() => RemoveTimeYoutube(youTubeLikeEvent))">-</button>
-            </div>
-            <div>
-                <span>@youtubeSubEventCount</span>
-                <button class="btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeSubEvent))">+</button>
-                <span>Youtube Subscribe</span>
-                <button class="btn btn-danger" @onclick="(() => RemoveTimeYoutube(youTubeSubEvent))">-</button>
-            </div>
-        </div>
+            <AccordionItem>
+                <TitleTemplate>
+                    <div class="timer-accordian-title">
+                        <Icon Name="IconName.Youtube" Class="me-1" />
+                        <span>Youtube Events</span>
+                        <span>Youtube Total: @(youtubeLikeEventCount + youtubeSubEventCount)</span>
+                    </div>
+                </TitleTemplate>
+                <Content>
+                    <div class="d-grid gap-2 mx-auto">
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@youtubeLikeEventCount</span>
+                            <button class="input-layout-item-b btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeLikeEvent))">+</button>
+                            <span class="input-layout-item-c">Youtube Like</span>
+                            <button class="input-layout-item-d btn btn-danger" @onclick="(() => RemoveTimeYoutube(youTubeLikeEvent))">-</button>
+                        </div>
+                        <div class="input-layout-container">
+                            <span class="input-layout-item-a">@youtubeSubEventCount</span>
+                            <button class="input-layout-item-b btn btn-danger" @onclick="(() => AddTimeYoutube(youTubeSubEvent))">+</button>
+                            <span class="input-layout-item-c">Youtube Subscribe</span>
+                            <button class="input-layout-item-d btn btn-danger" @onclick="(() => RemoveTimeYoutube(youTubeSubEvent))">-</button>
+                        </div>
+                    </div>
+                </Content>
+            </AccordionItem>
+        </Accordion>
     </div>
 </div>
 
@@ -199,7 +344,12 @@
     private List<StreamTimerModel>? allTimerData;
     private StreamTimerModel? timerData;
     private CreateStreamTimerModel updatedTimerModel = new();
+
+    // Layout Items
     private Offcanvas? timerEditOffcanvas;
+    private Collapse collapseElapsedTime = default!;
+    private Collapse collapseTotalTime = default!;
+    private Collapse collapseTimeFormat = default!;
 
     private Timer _timer = null!;
     // Total time in seconds left for the timer to run, 
@@ -217,8 +367,10 @@
     private int SubGiftsToAdd = 0;
     private int BitsToAdd = 0;
 
+    private string? TimeFormat = @"dd\:hh\:mm\:ss";
     private string? TimeNumFormat = @"dd\:hh\:mm\:ss";
     private string? TimeCharFormat = @"d'd 'h'h 'm'm 's's'";
+
     private string? CurrentTimeDisplayFormat;
     //private string? TimeWordFormat = $"{timeSpan.Days} days, {timeSpan.Hours} hours, {timeSpan.Minutes} minutes, {timeSpan.Seconds} seconds";
 
@@ -408,6 +560,10 @@
         await timerEditOffcanvas?.HideAsync();
     }
 
+    private async Task ToggleElapsedTimetAsync() => await collapseElapsedTime.ToggleAsync();
+    private async Task ToggleTotalTimeAsync() => await collapseTotalTime.ToggleAsync();
+    private async Task ToggleFormatTimeAsync() => await collapseTimeFormat.ToggleAsync();
+
     public async Task InitializeTimer()
     {
         ErrorMessage = "";
@@ -436,6 +592,18 @@
     public TimeSpan SetTime()
     {
         return TimeSpan.FromSeconds(secondsToRun);
+    }
+
+    public void SetTimeFormatToClock()
+    {
+        TimeFormat = TimeNumFormat;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void SetTimeFormatToChar()
+    {
+        TimeFormat = TimeCharFormat;
+        InvokeAsync(StateHasChanged);
     }
 
     public void StartTimer()

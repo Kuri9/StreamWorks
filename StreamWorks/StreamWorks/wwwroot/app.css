@@ -1,3 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=M+PLUS+Rounded+1c:wght@100;300;400;500;700;800;900&family=Noto+Sans+JP:wght@100;200;300;400;500;600;700;800;900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Titan+One&display=swap');
+
+html, body {
+    font-family: 'Noto Sans JP', Arial, sans-serif;
+}
+
+html {
+    font-size: 18px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-size: .8rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+container {
+
+}
+
+/* Fonts */
+.fira {
+    font-family: 'Fira Sans Condensed', sans-serif;
+}
+
+.noto-jp {
+    font-family: 'Noto Sans JP', sans-serif;
+}
+
+.m-plus {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+}
+
+.zen {
+    font-family: 'Zen Maru Gothic', sans-serif;
+}
+
 h1:focus {
     outline: none;
 }
@@ -26,4 +65,82 @@ h1:focus {
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
+}
+
+.page-title h2 {
+    font-size: 3rem;
+    font-weight: 500;
+    color: #777;
+}
+
+.main-container {
+    display: flex;
+    flex
+    padding: 0 3rem;
+    background-color: #96ff4d;
+}
+
+.main-timer {
+    font-size: 5rem;
+    font-weight: 500;
+    color: #FFF;
+}
+
+.elapsed-time-timer {
+    font-size: 2rem;
+    font-weight: 300;
+    color: #777;
+}
+
+.total-time-timer {
+    font-size: 2rem;
+    font-weight: 300;
+    color: #777;
+}
+
+.timer-accordian-title {
+    font-size: 1rem;
+    font-weight: 300;
+    color: #777;
+    padding: .1rem .3rem;
+}
+
+.input-layout-container {
+    display: grid;
+    justify-items: stretch;
+    align-content: center;
+    grid-template-columns: 1fr 1fr 3fr 1fr;
+    grid-template-rows: auto;
+    grid-gap: .5rem;
+}
+
+.input-layout-item-a {
+    grid-column: 1;
+    grid-column-start: 1;
+    justify-self: stretch;
+}
+.input-layout-item-b {
+    grid-column: 1;
+    grid-column-start: 2;
+    justify-self: stretch;
+}
+.input-layout-item-c {
+    grid-column: 1;
+    grid-column-start: 3;
+    justify-self: stretch;
+}
+.input-layout-item-d {
+    grid-column: 1;
+    grid-column-start: 4;
+    justify-self: stretch;
+}
+
+.timer-control-buttons btn {
+    font-size: .9rem;
+    font-weight: lighter;
+    font-family: 'Fira Sans Condensed', sans-serif;
+}
+
+.timer-card {
+    border: 0px none;
 }
