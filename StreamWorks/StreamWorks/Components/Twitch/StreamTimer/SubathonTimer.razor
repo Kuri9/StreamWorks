@@ -1,11 +1,9 @@
 ﻿@page "/twitch-tools/sub-timer"
 @* @using SuperShivaUI.Components.StreamServices *@
 @rendermode InteractiveServer
-@* @attribute [Authorize(Policy = "Admin")] *@
+@attribute [Authorize(Policy = "Admin")]
 
-@using System.Timers
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@using Microsoft.AspNetCore.SignalR.Client
+@using System.Timers;
 @using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers
 @using StreamWorks.Library.Models.Users.Twitch.Widgets.Timers
 @using StreamWorks.Models.Widgets.Timers
@@ -215,6 +213,30 @@
             {
                 AddTimeTwitch(500);
             }
+        });
+
+        twitchHub.On<ChannelFollow>("GetFollows", (follow) =>
+        {
+            Logger.LogInformation($"Follow Received: {follow.UserName} followed {follow.BroadcasterUserName}");
+            
+        });
+
+        twitchHub.On<ChannelSubscribe>("GetSubscribedEvents", (subscription) =>
+        {
+            Logger.LogInformation($"Message Received: {subscription.UserName} sent a Tier {subscription.Tier} Sub");
+
+        });
+
+        twitchHub.On<ChannelSubscriptionGift>("GetSubscriptionGifts", (subGift) =>
+        {
+            Logger.LogInformation($"Message Received: {subGift.UserName} sent {subGift.Total} Sub Gift(s)");
+
+        });
+
+        twitchHub.On<ChannelCheer>("GetCheers", (cheer) =>
+        {
+            Logger.LogInformation($"Message Received: {cheer.UserName} cheered {cheer.Bits} Bits");
+
         });
 
         // twitchHub.On<int>("Tick", newTime =>

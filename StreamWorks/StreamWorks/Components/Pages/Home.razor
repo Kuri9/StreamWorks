@@ -1,26 +1,21 @@
 ﻿@page "/"
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.SignalR.Client
 @using StreamWorks.Api.Twitch.Controllers.EventSubs
 @using StreamWorks.Api.Twitch.Controllers.User
 @using StreamWorks.Api.Twitch.Models.User
-@using System.Net.Http.Headers
 @using StreamWorks.Helpers.Twitch
-@using TwitchLib.Api
-@using TwitchLib.Api.Helix.Models.EventSub
+
 @using TwitchLib.Api.Helix.Models.Users.GetUsers
 @using TwitchLib.EventSub.Core.SubscriptionTypes.Channel
 
-@* Fires OnInitilaize 2x and secondtime doesnt get user from HttpContext *@
+@* Fires OnInitilaize 2x and second time doesnt get user from HttpContext *@
 @rendermode InteractiveServer
 
 @inject ILogger<Home> Logger
 @inject AuthenticationStateProvider AuthProvider
 @inject UserManager<StreamWorksUserModel> UserManager
-@inject SignInManager<StreamWorksUserModel> SignInManager
+@* @inject SignInManager<StreamWorksUserModel> SignInManager *@
 @inject NavigationManager NavManager
-@inject IdentityUserAccessor UserAccessor
+@* @inject IdentityUserAccessor UserAccessor *@
 @inject IStreamWorksUserData userData
 @inject IConfiguration config
 @inject IHttpClientFactory clientFactory
