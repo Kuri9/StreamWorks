@@ -457,7 +457,7 @@ Welcome to your new app.
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Error getting user data from Twitch. Error Code: {ex.HResult}");
+            Logger.LogError(ex, $"Error getting user data from Twitch. Error Code is: {ex.HResult}");
         }
 
         return new GetUsersResponse();
