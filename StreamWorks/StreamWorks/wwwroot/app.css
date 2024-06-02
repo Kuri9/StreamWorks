@@ -37,6 +37,7 @@ container {
     font-family: 'Zen Maru Gothic', sans-serif;
 }
 
+/* Main */
 h1:focus {
     outline: none;
 }
