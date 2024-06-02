@@ -5,12 +5,11 @@ public interface IStreamTimerModel
 {
     double AddTime { get; set; }
     TimeSpan CurrentTime { get; set; }
+    double DefaultTime { get; set; }
     bool FirstRun { get; set; }
     string Id { get; set; }
     bool IsCompleted { get; set; }
-    bool IsPaused { get; set; }
     bool IsRunning { get; set; }
-    bool IsStopped { get; set; }
     TimeSpan LastSetTime { get; set; }
     string? LastSystemMessage { get; set; }
     bool ShowLast { get; set; }

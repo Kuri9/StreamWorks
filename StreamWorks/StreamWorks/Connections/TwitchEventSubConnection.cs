@@ -27,7 +27,7 @@ public class TwitchEventSubConnection : IHostedService
     private HubConnection? twitchHub;
 
     // Set to true to use the Test Server
-    private bool isTesting = true;
+    private bool isTesting = false;
     private Uri TestServer = new Uri("ws://127.0.0.1:8080/ws");
 
     private string AccessToken = "";

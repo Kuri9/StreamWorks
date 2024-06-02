@@ -10,14 +10,13 @@ public class StreamTimerModel : IStreamTimerModel
     public TimeSpan CurrentTime { get; set; }
     public TimeSpan TotalTime { get; set; }
     public double AddTime { get; set; }
+    public double DefaultTime { get; set; } = 300;
 
     public string? LastSystemMessage { get; set; }
     public int TickCount { get; set; }
 
     public bool FirstRun { get; set; } = true;
     public bool IsRunning { get; set; }
-    public bool IsPaused { get; set; }
-    public bool IsStopped { get; set; }
     public bool IsCompleted { get; set; }
 
     public bool ShowTimer { get; set; } = true;
