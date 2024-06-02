@@ -19,7 +19,7 @@ namespace StreamWorks.Library.Models.Users.Twitch
         
         [JsonPropertyName("refresh_token")]
         public string? RefreshToken { get; set; }
-        public string[] Scope { get; set; }
+        public string[]? Scope { get; set; }
         
         [JsonPropertyName("token_type")]
         public string? TokenType { get; set; }
