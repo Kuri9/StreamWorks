@@ -12,7 +12,7 @@ namespace StreamWorks.ApiLibrary.Twitch.Models.Users
         public string IdToken { get; set; }
         [JsonPropertyName("refresh_token")]
         public string RefreshToken { get; set; }
-        public string[] Scope { get; set; }
+        public string[] Scope { get; set; } = default; 
         [JsonPropertyName("token_type")]
         public string TokenType { get; set; }
     }
