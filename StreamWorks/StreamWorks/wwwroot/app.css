@@ -135,6 +135,12 @@ h1:focus {
     justify-self: stretch;
 }
 
+.input-event-counter-pill {
+    position: absolute;
+    top: 10px; 
+    left: 50px;
+}
+
 .timer-control-buttons btn {
     font-size: .9rem;
     font-weight: lighter;

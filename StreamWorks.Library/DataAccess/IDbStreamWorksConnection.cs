@@ -1,4 +1,5 @@
-﻿
+﻿using StreamWorks.Library.Models.Widgets.Timers;
+
 namespace StreamWorks.Library.DataAccess;
 
 public interface IDbStreamWorksConnection
