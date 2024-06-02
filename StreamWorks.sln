@@ -5,15 +5,9 @@ VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks", "StreamWorks\StreamWorks\StreamWorks.csproj", "{EAB1C437-45E7-4D4E-A12D-3EFB78A3A553}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Client", "StreamWorks\StreamWorks.Client\StreamWorks.Client.csproj", "{E6843965-4C06-4490-B7C3-6E95907135B7}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Library", "StreamWorks.Library\StreamWorks.Library.csproj", "{5C423A8F-7096-4EE6-92EC-53878BFF3756}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamWorks.ApiLibrary.Twitch", "StreamWorks.ApiLibrary.Twitch\StreamWorks.ApiLibrary.Twitch.csproj", "{636C8D27-2C77-4EC5-9277-9772288F27C2}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Api", "StreamWorks.Api\StreamWorks.Api.csproj", "{85442B4E-8979-43C4-9D35-727B0E5CAC0F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Api.Twitch", "StreamWorks.Api.Twitch\StreamWorks.Api.Twitch.csproj", "{04D7AF74-509F-4480-912A-72B19B8DB59B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,10 +19,6 @@ Global
 		{EAB1C437-45E7-4D4E-A12D-3EFB78A3A553}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAB1C437-45E7-4D4E-A12D-3EFB78A3A553}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAB1C437-45E7-4D4E-A12D-3EFB78A3A553}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E6843965-4C06-4490-B7C3-6E95907135B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E6843965-4C06-4490-B7C3-6E95907135B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E6843965-4C06-4490-B7C3-6E95907135B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E6843965-4C06-4490-B7C3-6E95907135B7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -37,14 +27,6 @@ Global
 		{636C8D27-2C77-4EC5-9277-9772288F27C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{636C8D27-2C77-4EC5-9277-9772288F27C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{636C8D27-2C77-4EC5-9277-9772288F27C2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{85442B4E-8979-43C4-9D35-727B0E5CAC0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{85442B4E-8979-43C4-9D35-727B0E5CAC0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{85442B4E-8979-43C4-9D35-727B0E5CAC0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{85442B4E-8979-43C4-9D35-727B0E5CAC0F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{04D7AF74-509F-4480-912A-72B19B8DB59B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{04D7AF74-509F-4480-912A-72B19B8DB59B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{04D7AF74-509F-4480-912A-72B19B8DB59B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{04D7AF74-509F-4480-912A-72B19B8DB59B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

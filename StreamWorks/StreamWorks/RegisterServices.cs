@@ -1,20 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using StreamWorks.Helpers.OIDC;
-using TwitchLib.Api.Core.Enums;
-using static TwitchLib.Api.Core.Common.Helpers;
-using Microsoft.AspNetCore.Authentication;
-using TwitchLib.Api;
-using System.Security.Claims;
-using TwitchLib.Api.Helix.Models.Users.GetUsers;
-using StreamWorks.Api.Twitch.Controllers.User;
-using Microsoft.Extensions.DependencyInjection;
 using StreamWorks.Connections;
-using TwitchLib.EventSub.Websockets;
 using TwitchLib.EventSub.Websockets.Extensions;
 using Microsoft.AspNetCore.ResponseCompression;
-using StreamWorks.Api.Twitch.Controllers.EventSubs;
-using StreamWorks.Library.DataAccess;
 using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers;
 
 namespace StreamWorks;
@@ -162,8 +151,8 @@ public static class RegisterServices
         builder.Services.AddBlazorBootstrap();
 
         builder.Services.AddSingleton<TwitchAPI>();
-        builder.Services.AddSingleton<TwitchUserController>();
-        builder.Services.AddSingleton<TwitchEventSubController>();
+        //builder.Services.AddSingleton<TwitchUserController>();
+        //builder.Services.AddSingleton<TwitchEventSubController>();
 
         // Common Data Services
         builder.Services.AddSingleton<IDbUserConnection, DbUserConnection>();

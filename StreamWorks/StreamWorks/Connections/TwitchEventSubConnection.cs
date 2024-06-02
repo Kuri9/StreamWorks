@@ -7,8 +7,6 @@ using Microsoft.AspNetCore.SignalR.Client;
 using StreamWorks.Hubs;
 using Microsoft.AspNetCore.Components;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
-using StreamWorks.Api.Twitch.Controllers.EventSubs;
-using Google.Protobuf.WellKnownTypes;
 using TwitchLib.EventSub.Websockets.Core.EventArgs.Stream;
 using AspNetCore.Identity.MongoDbCore.Models;
 
@@ -20,7 +18,7 @@ public class TwitchEventSubConnection : IHostedService
     private readonly IConfiguration Config;
     private IHubContext<TwitchHub> TwitchHubContext;
     private CancellationToken CancellationToken;
-    private TwitchEventSubController TwitchInternalEventApi;
+    //private TwitchEventSubController TwitchInternalEventApi;
 
     private readonly EventSubWebsocketClient EventSubWebsocketClient;
     private TwitchAPI api = new();
@@ -41,15 +39,15 @@ public class TwitchEventSubConnection : IHostedService
         ILogger<TwitchEventSubConnection> logger,
         IConfiguration config, 
         IHubContext<TwitchHub> twitchHubContext, 
-        EventSubWebsocketClient eventSubWebsocketClient,
-        TwitchEventSubController twitchInternalEventApi
+        EventSubWebsocketClient eventSubWebsocketClient
+        //TwitchEventSubController twitchInternalEventApi
         )
     {
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         Config = config ?? throw new ArgumentNullException(nameof(config));
         TwitchHubContext = twitchHubContext ?? throw new ArgumentNullException(nameof(twitchHubContext));
         EventSubWebsocketClient = eventSubWebsocketClient ?? throw new ArgumentNullException(nameof(eventSubWebsocketClient));
-        TwitchInternalEventApi = twitchInternalEventApi ?? throw new ArgumentNullException(nameof(twitchInternalEventApi));
+        //TwitchInternalEventApi = twitchInternalEventApi ?? throw new ArgumentNullException(nameof(twitchInternalEventApi));
 
         // SETUP THE API
         api.Settings.AccessToken = "";

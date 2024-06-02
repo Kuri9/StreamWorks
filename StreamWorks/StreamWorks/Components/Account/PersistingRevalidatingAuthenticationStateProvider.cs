@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using StreamWorks.Client;
+//using StreamWorks.Client;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -89,11 +89,11 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
 
             if (userId != null && email != null)
             {
-                state.PersistAsJson(nameof(UserInfo), new UserInfo
-                {
-                    UserId = userId,
-                    Email = email,
-                });
+                //state.PersistAsJson(nameof(UserInfo), new UserInfo
+                //{
+                //    UserId = userId,
+                //    Email = email,
+                //});
             }
         }
     }

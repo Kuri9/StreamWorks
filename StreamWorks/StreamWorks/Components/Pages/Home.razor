@@ -1,7 +1,5 @@
 ﻿@page "/"
-@using StreamWorks.Api.Twitch.Controllers.EventSubs
-@using StreamWorks.Api.Twitch.Controllers.User
-@using StreamWorks.Api.Twitch.Models.User
+@using StreamWorks.ApiLibrary.Twitch.Models.Users
 @using StreamWorks.Helpers.Twitch
 
 @using TwitchLib.Api.Helix.Models.Users.GetUsers
@@ -21,8 +19,6 @@
 @inject IHttpClientFactory clientFactory
 @inject TwitchAPI twitchApi;
 @inject ITwitchSignInHelpers twitchSignInHelpers
-@inject TwitchUserController twitchInternalUserApi  
-@inject TwitchEventSubController twitchInternalEventApi
 
 @implements IAsyncDisposable
 
@@ -58,7 +54,7 @@ Welcome to your new app.
                 <h2>Subscription Info</h2>
                 <h4>@eventSubSubscriptions.TotalCost Points out of @eventSubSubscriptions.MaxTotalCost Points Used</h4>
                 <h3>Current Subscriptions</h3>
-                @foreach (var subscription in eventSubSubscriptions?.Subscriptions)
+                @foreach (var subscription in eventSubSubscriptions.Subscriptions)
                 {
                     subscriptions.Add(subscription);
                 }    
@@ -254,19 +250,28 @@ Welcome to your new app.
 
     public void SetupTwitchUser()
     {
-        if (loggedInUser?.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() > 0)
+        if(loggedInUser is not null)
         {
-            Logger.LogInformation($"Setting Twitch Connection");
-
-            SetTwitchConnectionData();
-
-            if (loggedInUser?.Tokens is not null)
+            if (loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() > 0)
             {
-                AccessToken = loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
-                Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
-            }
+                Logger.LogInformation($"Setting Twitch Connection");
 
-            ClientId = twitchConnectionData.ClientId;
+                SetTwitchConnectionData();
+
+                if (loggedInUser.Tokens is not null)
+                {
+                    AccessToken = loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
+                    twitchApi.Settings.AccessToken = AccessToken;
+                    Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
+                }
+
+                UserId = loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").ToList().First().ProviderKey;
+                ClientId = twitchConnectionData.ClientId;
+            }
+        }
+        else
+        {
+            Logger.LogError("User is null!");
         }
     }
 
@@ -307,7 +312,14 @@ Welcome to your new app.
     {
         Logger.LogInformation("Getting Twitch User Data...");
 
-        getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
+        if (String.IsNullOrWhiteSpace(UserId))
+        {
+            UserId = loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").ToList().First().ProviderKey;
+        }
+
+        //getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
+        getUserResponse = await GetTwitchUserDataFromApi(UserId);
+
         await Task.Delay(1000);
 
         if (getUserResponse is not null)
@@ -368,6 +380,8 @@ Welcome to your new app.
                 await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "expires_at", expiresAt);
 
                 Logger.LogInformation($"Current LoggedInUser Token: {loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value}");
+
+                twitchApi.Settings.AccessToken = refreshedToken.AccessToken;
             }
             catch (Exception ex)
             {
@@ -419,7 +433,7 @@ Welcome to your new app.
     {
         // await twitchHub.SendAsync("SubscriptionsRequest");
         // StateHasChanged();
-        eventSubSubscriptions = await twitchInternalEventApi.GetEventSubSubscriptions(UserId, ClientId, AccessToken);
+        //eventSubSubscriptions = await twitchInternalEventApi.GetEventSubSubscriptions(UserId, ClientId, AccessToken);
     }
 
     private void AddTwitchMessage(ChannelChatMessage message)
@@ -428,5 +442,24 @@ Welcome to your new app.
         var encodedMessage = $"{message.ChatterUserName}: {message.Message.Text}";
         twitchMessages?.Add(encodedMessage);
         InvokeAsync(StateHasChanged);
+    }
+
+    public async Task<GetUsersResponse> GetTwitchUserDataFromApi(string id)
+    {
+        id = "kuri9";
+        var logins =  new List<string>();
+        logins.Add(id);
+
+        try
+        {
+            var user = await twitchApi.Helix.Users.GetUsersAsync();
+            return user;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Error getting user data from Twitch. Error Code: {ex.HResult}");
+        }
+
+        return new GetUsersResponse();
     }
 }
