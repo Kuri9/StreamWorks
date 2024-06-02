@@ -1,4 +1,4 @@
-﻿namespace StreamWorks.Library.Models.Users.Twitch.Widgets.Timers;
+﻿namespace StreamWorks.Library.Models.Widgets.Timers;
 public class StreamTimerModel : IStreamTimerModel
 {
     [BsonId]
@@ -57,10 +57,10 @@ public class StreamTimerModel : IStreamTimerModel
     public string TwitchTier1SubGiftEvent { get; set; } = "TwitchTier1SubGift";
     public int TwitchTotalT1SubGiftCount { get; set; }
     public double TwitchTier1SubGiftTime { get; set; } = 300;
-    public string TwitchTier2SubGiftEvent { get; set; } = "TwitchTier1SubGift";
+    public string TwitchTier2SubGiftEvent { get; set; } = "TwitchTier2SubGift";
     public int TwitchTotalT2SubGiftCount { get; set; }
     public double TwitchTier2SubGiftTime { get; set; } = 600;
-    public string TwitchTier3SubGiftEvent { get; set; } = "TwitchTier1SubGift";
+    public string TwitchTier3SubGiftEvent { get; set; } = "TwitchTier3SubGift";
     public int TwitchTotalT3SubGiftCount { get; set; }
     public double TwitchTier3SubGiftTime { get; set; } = 1000;
     public double TwitchSubGiftTime { get; set; }
@@ -68,8 +68,8 @@ public class StreamTimerModel : IStreamTimerModel
     // ==> Cheers
     public string TwitchCheerEvent { get; set; } = "TwitchCheer";
     public int TwitchCheerEventCount { get; set; }
-    public double TwitchCheerTime { get; set; }
-    public int TwitchTotalCheerAmount { get; set; } = 1;
+    public double TwitchCheerTime { get; set; } = 1;
+    public int TwitchTotalCheerAmount { get; set; }
 
     // Youtube
     public string YouTubeLikeEvent { get; set; } = "YoutubeLike";
