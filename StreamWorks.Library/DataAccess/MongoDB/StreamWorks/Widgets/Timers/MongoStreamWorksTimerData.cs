@@ -1,25 +1,21 @@
-﻿using Amazon.Runtime.Internal.Util;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using StreamWorks.Library.DataAccess.MongoDB.Identity;
-using StreamWorks.Library.Models.Users.Identity;
-using StreamWorks.Library.Models.Users.Twitch.Widgets.Timers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers;
 public class MongoStreamWorksTimerData : IStreamWorksTimerData
 {
+    private readonly ILogger<MongoStreamWorksTimerData> Logger;
     private readonly IDbStreamWorksConnection _db;
     private readonly IStreamWorksUserData _userData;
     private readonly IMemoryCache _cache;
     private readonly IMongoCollection<StreamTimerModel> _streamTimer;
     private const string CacheName = "StreamTimerData";
 
-    public MongoStreamWorksTimerData(IDbStreamWorksConnection db, IStreamWorksUserData userData, IMemoryCache cache)
+    public MongoStreamWorksTimerData(ILogger<MongoStreamWorksTimerData> logger, IDbStreamWorksConnection db, IStreamWorksUserData userData, IMemoryCache cache)
     {
+        Logger = logger;
         _db = db;
         _userData = userData;
         _cache = cache;
@@ -87,9 +83,10 @@ public class MongoStreamWorksTimerData : IStreamWorksTimerData
 
             await session.CommitTransactionAsync();
         }
-        catch (Exception ex)
+        catch (Exception? ex)
         {
             //TODO: Logging
+            Logger.LogInformation($"Error creating timer data: {ex.Message}");
             await session.AbortTransactionAsync();
             throw;
         }

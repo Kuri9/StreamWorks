@@ -27,7 +27,7 @@ public class MongoStreamWorksUserData : IStreamWorksUserData
         {
             // TODO: Implement better logging and handle better than just returning Null
             Console.WriteLine("GetUser: Id was empty.");
-            return null;
+            return new StreamWorksUserModel();
 
         }
         else
@@ -51,8 +51,9 @@ public class MongoStreamWorksUserData : IStreamWorksUserData
     {
         var objectId = principal.Claims.Where(c => c.Type.Contains("user_id")).FirstOrDefault()?.Value;
         if (string.IsNullOrEmpty(objectId))
-        { 
-            return null; 
+        {
+            // TODO: Implement better logging and handle better than just returning Null
+            return new StreamWorksUserModel();
         }
         else 
         {

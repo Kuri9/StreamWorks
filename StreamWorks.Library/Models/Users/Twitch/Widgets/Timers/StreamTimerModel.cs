@@ -3,7 +3,7 @@ public class StreamTimerModel : IStreamTimerModel
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; }
+    public string? Id { get; set; }
     public Guid UserId { get; set; }
     public string? TimerTitle { get; set; }
     public double StartingTime { get; set; }

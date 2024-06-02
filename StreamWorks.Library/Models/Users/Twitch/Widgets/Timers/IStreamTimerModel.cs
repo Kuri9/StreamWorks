@@ -7,7 +7,7 @@ public interface IStreamTimerModel
     TimeSpan CurrentTime { get; set; }
     double DefaultTime { get; set; }
     bool FirstRun { get; set; }
-    string Id { get; set; }
+    string? Id { get; set; }
     bool IsCompleted { get; set; }
     bool IsRunning { get; set; }
     TimeSpan LastSetTime { get; set; }
