@@ -75,27 +75,44 @@ h1:focus {
 
 .main-container {
     display: flex;
-    flex
-    padding: 0 3rem;
+    padding: 1rem 1rem 8rem 1rem;
     background-color: #96ff4d;
+    border-radius: .5rem;
+}
+
+.main-container .card {
+    padding: 0 1rem 0 1rem;
+    background-color: #96ff4d;
+    border-radius: .5rem;
+    border: hidden;
 }
 
 .main-timer {
     font-size: 5rem;
     font-weight: 500;
     color: #FFF;
+    padding: 2rem 2rem .5rem 1.2rem;
+}
+
+.sub-timer {
+    font-size: 3rem;
+    font-weight: 300;
+    color: #777;
+    padding: 0 2rem 0 2rem;
+}
+
+.timer-sub-label {
+    font-size: 1rem;
+    font-weight: 300;
+    color: #777;
+    padding: 0 2rem 0 2rem;
 }
 
 .elapsed-time-timer {
-    font-size: 2rem;
-    font-weight: 300;
-    color: #777;
 }
 
 .total-time-timer {
-    font-size: 2rem;
-    font-weight: 300;
-    color: #777;
+
 }
 
 .timer-accordian-title {
@@ -104,6 +121,29 @@ h1:focus {
     color: #777;
     padding: .1rem .3rem;
 }
+
+.timer-setting-form {
+}
+
+    .timer-setting-form h4 {
+        font-size: 1.5rem;
+        font-weight: 300;
+        color: #222;
+        padding: .8rem 0;
+    }
+
+    .timer-setting-form label {
+        font-size: .8rem;
+        font-weight: 300;
+        color: #333;
+    }
+
+    .form-check-input {
+        width: 4rem;
+        height: 2.1rem;
+        margin: 0;
+        padding: 0 4rem;
+    }
 
 .input-layout-container {
     display: grid;
@@ -137,14 +177,20 @@ h1:focus {
 
 .input-event-counter-pill {
     position: absolute;
-    top: 10px; 
-    left: 50px;
+    top: 30px; 
+    left: 255px;
+    padding: 5px 12px;
 }
 
-.timer-control-buttons btn {
+.timer-control-buttons {
+    padding: .5rem 1rem;
+}
+
+.timer-control-buttons button {
+    padding: .8rem 2.5rem;
     font-size: .9rem;
-    font-weight: lighter;
-    font-family: 'Fira Sans Condensed', sans-serif;
+    font-weight: 300;
+    font-family: 'Noto Sans JP', sans-serif;
 }
 
 .timer-card {
