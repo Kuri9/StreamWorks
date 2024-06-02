@@ -24,7 +24,7 @@ public class DbStreamWorksConnection : IDbStreamWorksConnection
         _config = config;
 
         var mongoDbSettings = _config.GetSection(_connectionGroup);
-        Client = new MongoClient(mongoDbSettings.GetConnectionString(_connectionId))
+        Client = new MongoClient(_config.GetConnectionString(_connectionId))
             ?? throw new Exception($"Missing Connection String at {_connectionId}");
         DbName = mongoDbSettings["DatabaseName"];
         _db = Client.GetDatabase(DbName);

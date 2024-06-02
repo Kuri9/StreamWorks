@@ -59,7 +59,7 @@ public static class RegisterServices
         builder.Services.AddIdentity<StreamWorksUserModel, StreamWorksRoleModel>()
         .AddMongoDbStores<StreamWorksUserModel, StreamWorksRoleModel, Guid>
         (
-            mongoDbSettings.GetConnectionString("MongoDBUsers"),
+            builder.Configuration.GetConnectionString("MongoDBUsers"),
             mongoDbSettings.GetSection("DatabaseName").Value
         );
 
