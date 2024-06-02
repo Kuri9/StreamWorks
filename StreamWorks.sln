@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks", "StreamWorks\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamWorks.Library", "StreamWorks.Library\StreamWorks.Library.csproj", "{5C423A8F-7096-4EE6-92EC-53878BFF3756}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamWorks.ApiLibrary.Twitch", "StreamWorks.ApiLibrary.Twitch\StreamWorks.ApiLibrary.Twitch.csproj", "{636C8D27-2C77-4EC5-9277-9772288F27C2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C423A8F-7096-4EE6-92EC-53878BFF3756}.Release|Any CPU.Build.0 = Release|Any CPU
-		{636C8D27-2C77-4EC5-9277-9772288F27C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{636C8D27-2C77-4EC5-9277-9772288F27C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{636C8D27-2C77-4EC5-9277-9772288F27C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{636C8D27-2C77-4EC5-9277-9772288F27C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,5 +1,4 @@
-﻿
-namespace StreamWorks.Helpers.Twitch;
+﻿namespace StreamWorks.Helpers.Twitch;
 
 public interface ITwitchSignInHelpers
 {

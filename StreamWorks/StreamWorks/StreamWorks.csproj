@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\StreamWorks.ApiLibrary.Twitch\StreamWorks.ApiLibrary.Twitch.csproj" />
     <ProjectReference Include="..\..\StreamWorks.Library\StreamWorks.Library.csproj" />
     <PackageReference Include="AspNet.Security.OAuth.Twitch" Version="8.0.0" />
     <PackageReference Include="AspNetCore.Identity.MongoDbCore" Version="3.1.2" />

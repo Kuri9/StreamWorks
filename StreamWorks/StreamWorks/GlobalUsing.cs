@@ -13,6 +13,8 @@ global using AspNet.Security.OAuth.Twitch;
 global using StreamWorks.Components.Account;
 global using StreamWorks.Helpers.Users;
 global using StreamWorks.Helpers.Twitch;
+global using StreamWorks.Library.Models.TwitchApi.Users;
+global using StreamWorks.Library.Models.TwitchApi.Config;
 
 global using StreamWorks.Library.DataAccess;
 global using StreamWorks.Library.DataAccess.MongoDB.Identity;
@@ -20,5 +22,3 @@ global using StreamWorks.Library.Models.Users.Identity;
 
 global using TwitchLib.Api;
 global using TwitchLib.Api.Helix.Models.EventSub;
-
-global using StreamWorks.ApiLibrary.Twitch.Models.Config;

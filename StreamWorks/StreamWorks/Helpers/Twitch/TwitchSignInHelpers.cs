@@ -1,13 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using StreamWorks.ApiLibrary.Twitch.Models.Config;
-using StreamWorks.Library.Models.Users.Twitch;
-using System.Net.Sockets;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using TwitchLib.Api;
 
 namespace StreamWorks.Helpers.Twitch;
 
