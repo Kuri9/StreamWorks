@@ -5,6 +5,7 @@ using StreamWorks.Connections;
 using TwitchLib.EventSub.Websockets.Extensions;
 using Microsoft.AspNetCore.ResponseCompression;
 using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers;
+using StreamWorks.Connections.Scopes;
 
 namespace StreamWorks;
 
@@ -161,7 +162,10 @@ public static class RegisterServices
 
         // Twitch Data Services
         builder.Services.AddTwitchLibEventSubWebsockets();
-        builder.Services.AddHostedService<TwitchEventSubConnection>();
+        //builder.Services.AddHostedService<TwitchEventSubConnection>();
+        builder.Services.AddHostedService<TwitchEventSubConnectionService>();
+        builder.Services.AddScoped<IScopedEventSubConnection, ScopedEventSubConnectionTasks>();
+
         builder.Services.AddScoped<ITwitchSignInHelpers, TwitchSignInHelpers>();
 
         // Widgets

@@ -448,8 +448,9 @@
                 Logger.LogError("Twitch Hub is null! Will not call twitchHub.");
                 return; 
             };
-            await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
-            await twitchHub.SendAsync("StartServiceRequest");
+            // await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
+            // await twitchHub.SendAsync("StartServiceRequest");
+            await twitchHub.SendAsync("SetupConnectionRequest", loggedInUser.Id, AccessToken, UserId);
         }
         else
         {

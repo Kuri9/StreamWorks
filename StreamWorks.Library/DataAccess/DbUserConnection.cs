@@ -1,4 +1,5 @@
-﻿using StreamWorks.Library.Models.Users.Identity;
+﻿using Microsoft.Extensions.Configuration;
+using StreamWorks.Library.Models.Users.Identity;
 
 namespace StreamWorks.Library.DataAccess;
 public class DbUserConnection : IDbUserConnection

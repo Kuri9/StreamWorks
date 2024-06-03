@@ -1,131 +1,145 @@
-﻿using TwitchLib.Api.Core.Enums;
-using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
-using TwitchLib.EventSub.Websockets.Core.EventArgs;
-using TwitchLib.EventSub.Websockets;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Client;
+﻿
+using Azure.Core;
+using StreamWorks.Components;
 using StreamWorks.Hubs;
-using Microsoft.AspNetCore.Components;
-using TwitchLib.Api.Helix.Models.Users.GetUsers;
+using StreamWorks.Library.Models.Connections.TwitchEvent;
+using TwitchLib.Api.Core.Enums;
+using TwitchLib.Api.Helix.Models.Moderation.GetModerators;
+using TwitchLib.EventSub.Websockets;
+using TwitchLib.EventSub.Websockets.Core.EventArgs;
+using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
 using TwitchLib.EventSub.Websockets.Core.EventArgs.Stream;
-using AspNetCore.Identity.MongoDbCore.Models;
 
-namespace StreamWorks.Connections;
+namespace StreamWorks.Connections.Scopes;
 
-public class TwitchEventSubConnection : IHostedService
+public sealed class ScopedEventSubConnectionTasks(
+    ILogger<ScopedEventSubConnectionTasks> Logger,
+    IConfiguration Config
+    ) : IScopedEventSubConnection
 {
-    private readonly ILogger<TwitchEventSubConnection> Logger;
-    private readonly IConfiguration Config;
-    private IHubContext<TwitchHub> TwitchHubContext;
-    private CancellationToken CancellationToken;
+    private EventSubWebsocketClient? eventSubWebsocketClient;
+    private EventSubConnectionModel? eventSubConnectionModel;
+    private TwitchAPI? api;
 
-    private readonly EventSubWebsocketClient EventSubWebsocketClient;
-    private TwitchAPI api = new();
     private HubConnection? twitchHub;
     private string hubName = "/twitchhub";
+    private string? baseUrl;
 
     // Set to true to use the Test Server
     private bool isTesting = false;
     private Uri TestServer = new Uri("ws://127.0.0.1:8080/ws");
 
     private string AccessToken = "";
-
-    // Enoci ID 103139699
     private string BroadcasterId = "";
     private string ModeratorId = "";
     private string UserId = "";
 
-    public TwitchEventSubConnection(
-        ILogger<TwitchEventSubConnection> logger,
-        IConfiguration config, 
-        IHubContext<TwitchHub> twitchHubContext, 
-        EventSubWebsocketClient eventSubWebsocketClient
-        )
+    public async Task<EventSubConnectionModel> CreateScopedEventSubConnection(CancellationToken cancellationToken, string accessToken, string twitchUserId)
     {
-        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        Config = config ?? throw new ArgumentNullException(nameof(config));
-        TwitchHubContext = twitchHubContext ?? throw new ArgumentNullException(nameof(twitchHubContext));
-        EventSubWebsocketClient = eventSubWebsocketClient ?? throw new ArgumentNullException(nameof(eventSubWebsocketClient));
+        Logger.LogInformation("ScopedEventSubConnectionTasks has started.");
+        eventSubConnectionModel = new EventSubConnectionModel();
 
-        // SETUP THE API
-        api.Settings.AccessToken = "";
-        api.Settings.ClientId = Config["Twitch:ClientId"];
-        api.Settings.Secret = Config["Twitch:ClientSecret"];
+        api = new TwitchAPI();
+        if (api is null)
+        {
+            Logger.LogError($"TwitchAPI Client {nameof(api)} is null.");
+            return null;
+        }
+        else
+        {
+            await SetupConnection(accessToken, twitchUserId);
+            eventSubConnectionModel.TwitchApiClient = api;
+            Logger.LogInformation($"TwitchAPI Created For: {api.Settings.ClientId}");
+        }
+
+        eventSubWebsocketClient = new EventSubWebsocketClient();
+        if (eventSubWebsocketClient is null)
+        {
+            Logger.LogError($"EventSubWebsocketClient{nameof(eventSubWebsocketClient)} is null.");
+            return null;
+        }
+        else
+        {
+            Logger.LogInformation($"TwitchEventClient Created For: {api.Settings.ClientId}");
+            eventSubConnectionModel.EventSubWebsocketClient = eventSubWebsocketClient;
+        }
+
+        // Setup Client Hub Connection
+        await SetupHub(cancellationToken);
+
+
+        // SETUP WEBSOCKET CLIENT EVENTS
+        eventSubWebsocketClient.WebsocketConnected += OnWebsocketConnected;
+        eventSubWebsocketClient.WebsocketDisconnected += OnWebsocketDisconnected;
+        eventSubWebsocketClient.WebsocketReconnected += OnWebsocketReconnected;
+        eventSubWebsocketClient.ErrorOccurred += OnErrorOccurred;
+
+        eventSubWebsocketClient.StreamOnline += OnStreamOnline;
+        eventSubWebsocketClient.StreamOffline += OnStreamOffline;
+
+        eventSubWebsocketClient.ChannelFollow += OnChannelFollow;
+
+        eventSubWebsocketClient.ChannelChatMessage += OnChannelChatMessage;
+        //EventSubWebsocketClient.ChannelChatMessageDeleted += OnChannelChatMessageDeleted;
+        //EventSubWebsocketClient.ChannelChatNotification += OnChannelChatNotification;
+        //EventSubWebsocketClient.ChannelChatSettingsChanged += OnChannelChatSettingsChanged;
+
+        eventSubWebsocketClient.ChannelSubscribe += OnChannelSubscribe;
+        eventSubWebsocketClient.ChannelSubscriptionEnd += OnChannelSubscriptionEnd;
+        eventSubWebsocketClient.ChannelSubscriptionGift += OnChannelSubscriptionGift;
+        eventSubWebsocketClient.ChannelSubscriptionMessage += OnChannelSubscriptionMessage;
+
+        eventSubWebsocketClient.ChannelCheer += OnChannelCheer;
+
+        eventSubWebsocketClient.ChannelRaid += OnChannelRaid;
+
+        await StartService();
+
+        return eventSubConnectionModel;
+    }
+
+    private async Task SetupHub(CancellationToken cancellationToken)
+    {
+        Logger.LogInformation("Setting up Hub Connection.");
+
+        baseUrl = Config.GetValue<string>("BaseUrl") ?? "< No Url Set >";
 
         // SETUP SIGNALR HUB CONNECTION 
         twitchHub = new HubConnectionBuilder()
-        .WithUrl(Config["BaseUrl"] + hubName)
+        .WithUrl(baseUrl + hubName)
         .WithAutomaticReconnect()
         .Build();
 
         // SETUP SIGNALR HUB CONNECTION EVENTS
         twitchHub.On<string, string, string>("SetupConnection", async (accessToken, userId, broadcasterId) =>
         {
-            await SetupConnection(accessToken, userId, broadcasterId);
+            //await (accessToken, userId, broadcasterId);
         });
 
-        twitchHub.On("StartService", async () =>
+        //twitchHub.On("StartService", async () =>
+        //{
+        //    await StartService();
+        //});
+
+        await twitchHub.StartAsync();
+        
+        if (twitchHub.ConnectionId is not null)
         {
-            await StartService();
-        });
-
-        twitchHub.On("RequestSubscriptions", async () =>
-        {
-            await StartService();
-        });
-
-        twitchHub.StartAsync();
-
-        // SETUP WEBSOCKET CLIENT EVENTS
-        EventSubWebsocketClient.WebsocketConnected += OnWebsocketConnected;
-        EventSubWebsocketClient.WebsocketDisconnected += OnWebsocketDisconnected;
-        EventSubWebsocketClient.WebsocketReconnected += OnWebsocketReconnected;
-        EventSubWebsocketClient.ErrorOccurred += OnErrorOccurred;
-
-        EventSubWebsocketClient.StreamOnline += OnStreamOnline;
-        EventSubWebsocketClient.StreamOffline += OnStreamOffline;
-
-        EventSubWebsocketClient.ChannelFollow += OnChannelFollow;
-
-        EventSubWebsocketClient.ChannelChatMessage += OnChannelChatMessage;
-        //EventSubWebsocketClient.ChannelChatMessageDeleted += OnChannelChatMessageDeleted;
-        //EventSubWebsocketClient.ChannelChatNotification += OnChannelChatNotification;
-        //EventSubWebsocketClient.ChannelChatSettingsChanged += OnChannelChatSettingsChanged;
-
-        EventSubWebsocketClient.ChannelSubscribe += OnChannelSubscribe;
-        EventSubWebsocketClient.ChannelSubscriptionEnd += OnChannelSubscriptionEnd;
-        EventSubWebsocketClient.ChannelSubscriptionGift += OnChannelSubscriptionGift;
-        EventSubWebsocketClient.ChannelSubscriptionMessage += OnChannelSubscriptionMessage;
-
-        EventSubWebsocketClient.ChannelCheer += OnChannelCheer;
-
-        EventSubWebsocketClient.ChannelRaid += OnChannelRaid;
+            eventSubConnectionModel.HubConnection = twitchHub;
+            Logger.LogInformation($"Hub Connection Id: {twitchHub.ConnectionId}");
+        }
     }
 
-    private async Task OnErrorOccurred(object sender, ErrorOccuredArgs e)
+    public async Task SetupConnection(string accessToken, string twitchUserId)
     {
-        Logger.LogError($"Websocket {EventSubWebsocketClient.SessionId} - Error occurred!");
-    }
-
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        CancellationToken = cancellationToken;
-        Logger.LogInformation("TwitchEventSubConnection has started.");
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        CancellationToken = cancellationToken;
-        await EventSubWebsocketClient.DisconnectAsync();
-    }
-
-    public async Task SetupConnection(string accessToken, string twitchUserId, string broadcasterId ="")
-    {
-        api.Settings.AccessToken = AccessToken;
+        AccessToken = accessToken;
         UserId = twitchUserId;
         ModeratorId = twitchUserId;
         BroadcasterId = twitchUserId;
-        //BroadcasterId = broadcasterId;
+
+        api.Settings.AccessToken = AccessToken;
+        api.Settings.ClientId = Config["Twitch:ClientId"];
+        api.Settings.Secret = Config["Twitch:ClientSecret"]; ;
 
         Logger.LogInformation($"Setting Access Token: {AccessToken}");
         Logger.LogInformation("TwitchEventSubConnection setup complete.");
@@ -137,17 +151,17 @@ public class TwitchEventSubConnection : IHostedService
         if (isTesting == true)
         {
             Logger.LogInformation("Switching to Test Service...");
-            await EventSubWebsocketClient.ConnectAsync(TestServer);
+            await eventSubWebsocketClient.ConnectAsync(TestServer);
         }
         else
         {
-            await EventSubWebsocketClient.ConnectAsync();
+            await eventSubWebsocketClient.ConnectAsync();
         }
     }
 
     private async Task OnWebsocketConnected(object sender, WebsocketConnectedArgs e)
     {
-        Logger.LogInformation($"Websocket {EventSubWebsocketClient.SessionId} connected!");
+        Logger.LogInformation($"Websocket {eventSubWebsocketClient.SessionId} connected!");
         Logger.LogInformation($"Setting Subscriptions: Access Token: {api.Settings.AccessToken}");
 
         if (!e.IsRequestedReconnect)
@@ -163,7 +177,7 @@ public class TwitchEventSubConnection : IHostedService
                                     { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -190,7 +204,7 @@ public class TwitchEventSubConnection : IHostedService
                                     { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -212,14 +226,14 @@ public class TwitchEventSubConnection : IHostedService
             try
             {
                 await api.Helix.EventSub.CreateEventSubSubscriptionAsync(
-                    "channel.follow",
+                "channel.follow",
                     "2",
                     new Dictionary<string, string> {
                         { "broadcaster_user_id", BroadcasterId },
                         { "moderator_user_id", ModeratorId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -248,7 +262,7 @@ public class TwitchEventSubConnection : IHostedService
                                     { "user_id", UserId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -276,7 +290,7 @@ public class TwitchEventSubConnection : IHostedService
                                     { "user_id", UserId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -304,7 +318,7 @@ public class TwitchEventSubConnection : IHostedService
                                     { "user_id", UserId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -332,7 +346,7 @@ public class TwitchEventSubConnection : IHostedService
                                     { "user_id", UserId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -360,7 +374,7 @@ public class TwitchEventSubConnection : IHostedService
                         { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -387,7 +401,7 @@ public class TwitchEventSubConnection : IHostedService
                         { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -414,7 +428,7 @@ public class TwitchEventSubConnection : IHostedService
                         { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -430,7 +444,7 @@ public class TwitchEventSubConnection : IHostedService
                     Logger.LogWarning("Must refresh Token");
                 }
             }
-            
+
             Logger.LogInformation($"Trying Channel ReSubscription Message Notification!");
             try
             {
@@ -441,7 +455,7 @@ public class TwitchEventSubConnection : IHostedService
                         { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -469,7 +483,7 @@ public class TwitchEventSubConnection : IHostedService
                         { "broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -497,7 +511,7 @@ public class TwitchEventSubConnection : IHostedService
                         { "to_broadcaster_user_id", BroadcasterId }
                     },
                     EventSubTransportMethod.Websocket,
-                    EventSubWebsocketClient.SessionId
+                    eventSubWebsocketClient.SessionId
                     );
             }
             catch (Exception ex)
@@ -516,33 +530,30 @@ public class TwitchEventSubConnection : IHostedService
         }
     }
 
-    private async Task OnGetSubscriptions()
-    {
-        var subData = await api.Helix.EventSub.GetEventSubSubscriptionsAsync();
-        await twitchHub.SendAsync("RecievedSubscriptions", subData);
-
-        Logger.LogInformation($"Total Number of Subscriptions: {subData.Total} Total Points Used: {subData.TotalCost}");
-    }
-
     private async Task OnWebsocketDisconnected(object sender, EventArgs e)
     {
-        Logger.LogError($"Websocket {EventSubWebsocketClient.SessionId} disconnected!");
+        Logger.LogError($"Websocket {eventSubWebsocketClient.SessionId} disconnected!");
         await WebsocketReconnectAsync();
+    }
+
+    private async Task OnWebsocketReconnected(object sender, EventArgs e)
+    {
+        Logger.LogWarning($"Websocket {eventSubWebsocketClient.SessionId} reconnected");
+    }
+
+    private async Task OnErrorOccurred(object sender, ErrorOccuredArgs e)
+    {
+        Logger.LogError($"Websocket {eventSubWebsocketClient.SessionId} - Error occurred!");
     }
 
     public async Task WebsocketReconnectAsync()
     {
         // Don't do this in production. You should implement a better reconnect strategy
-        while (!await EventSubWebsocketClient.ReconnectAsync())
+        while (!await eventSubWebsocketClient.ReconnectAsync())
         {
             Logger.LogError("Websocket reconnect failed!");
             await Task.Delay(1000);
         }
-    }
-
-    private async Task OnWebsocketReconnected(object sender, EventArgs e)
-    {
-        Logger.LogWarning($"Websocket {EventSubWebsocketClient.SessionId} reconnected");
     }
 
     // ALL NON-CONNECTION RELATED EVENTS
