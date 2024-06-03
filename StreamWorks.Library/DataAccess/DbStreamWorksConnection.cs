@@ -1,4 +1,6 @@
-﻿namespace StreamWorks.Library.DataAccess;
+﻿using StreamWorks.Library.Models.Widgets.Timers;
+
+namespace StreamWorks.Library.DataAccess;
 public class DbStreamWorksConnection : IDbStreamWorksConnection
 {
     // Create a single connection that will stay open at all times. 

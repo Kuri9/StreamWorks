@@ -1,5 +1,4 @@
-﻿
-namespace StreamWorks.Library.Models.Users.Twitch.Widgets.Timers;
+﻿namespace StreamWorks.Library.Models.Widgets.Timers;
 
 public interface IStreamTimerModel
 {
@@ -59,7 +58,7 @@ public interface IStreamTimerModel
     int TwitchCheerEventCount { get; set; }
     double TwitchCheerTime { get; set; }
     int TwitchTotalCheerAmount { get; set; }
-    
+
     Guid UserId { get; set; }
     string YouTubeLikeEvent { get; set; }
     int YoutubeLikeEventCount { get; set; }
