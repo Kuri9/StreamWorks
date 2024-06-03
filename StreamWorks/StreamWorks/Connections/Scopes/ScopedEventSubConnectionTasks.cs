@@ -21,6 +21,9 @@ public sealed class ScopedEventSubConnectionTasks(
     private EventSubConnectionModel? eventSubConnectionModel;
     private TwitchAPI? api;
 
+    private Guid ThisUser;
+    private string messageGroup;
+
     private HubConnection? twitchHub;
     private string hubName = "/twitchhub";
     private string? baseUrl;
@@ -34,9 +37,12 @@ public sealed class ScopedEventSubConnectionTasks(
     private string ModeratorId = "";
     private string UserId = "";
 
-    public async Task<EventSubConnectionModel> CreateScopedEventSubConnection(CancellationToken cancellationToken, string accessToken, string twitchUserId)
+    public async Task<EventSubConnectionModel> CreateScopedEventSubConnection(CancellationToken cancellationToken, Guid loggedInUserId, string accessToken, string twitchUserId)
     {
         Logger.LogInformation("ScopedEventSubConnectionTasks has started.");
+        ThisUser = loggedInUserId;
+        messageGroup = ThisUser.ToString();
+
         eventSubConnectionModel = new EventSubConnectionModel();
 
         api = new TwitchAPI();
@@ -584,9 +590,11 @@ public sealed class ScopedEventSubConnectionTasks(
     private async Task OnChannelChatMessage(object sender, ChannelChatMessageArgs e)
     {
         var eventData = e.Notification.Payload.Event;
+
+
         if (twitchHub is not null)
         {
-            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+            await twitchHub.SendAsync("RecievedChatMessage", messageGroup, eventData);
         }
 
         Logger.LogInformation($"{eventData.ChatterUserName} typed {eventData.Message.Text}");

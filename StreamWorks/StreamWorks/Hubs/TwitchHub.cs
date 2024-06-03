@@ -8,6 +8,11 @@ namespace StreamWorks.Hubs;
 
 public class TwitchHub: Hub
 {
+    public Task JoinGroup(string groupName)
+    {
+        return Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+    }
+
     public Task SetupConnectionRequest(Guid loggedInUserId, string accessToken, string userId)
     {
         return Clients.All.SendAsync("SetupConnection", loggedInUserId, accessToken, userId);
@@ -24,9 +29,9 @@ public class TwitchHub: Hub
     }
 
     // Non Setup-Related Requests
-    public Task RecievedChatMessage(ChannelChatMessage chatMessageData)
+    public Task RecievedChatMessage(string group, ChannelChatMessage chatMessageData)
     {
-        return Clients.All.SendAsync("ChatMessageReceived", chatMessageData);
+        return Clients.Group(group).SendAsync("ChatMessageReceived", chatMessageData);
     }
 
     public Task RecievedChannelFollow(ChannelFollow followData)

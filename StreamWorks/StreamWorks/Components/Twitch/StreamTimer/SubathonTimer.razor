@@ -521,6 +521,10 @@
 
         await twitchHub.StartAsync();
 
+        var groupName = loggedInUser.Id.ToString();
+        await twitchHub.SendAsync("JoinGroup", groupName);
+        Logger.LogInformation($"Joined Group: {groupName}");
+
         // Set Timer
         _timer = new Timer(1000);
         _timer.Elapsed += OnTickEvent;

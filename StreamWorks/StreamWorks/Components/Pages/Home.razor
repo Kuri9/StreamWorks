@@ -107,7 +107,22 @@
         </div>
     </div>
     <div class="col-2">
-
+        <AuthorizeView>
+            <div class="row">
+                <div class="col">
+                    <h3>Messages from Chat</h3>
+                    <div>
+                        @if (twitchMessageList is not null)
+                        {
+                            @foreach (var message in twitchMessageList)
+                            {
+                                <p>@message.ChatterUserName: @message.Message.Text</p>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </AuthorizeView>
     </div>
 </div>
 
@@ -123,8 +138,8 @@
 
     private string ClientId = "";
     private string AccessToken = "";
+    private string HubConnectionId = "";
 
-    private string name = "kuri9";
     private string UserId = "";
     private string? BroadcasterId = "";
 
@@ -148,6 +163,9 @@
             .WithUrl(NavManager.ToAbsoluteUri("/twitchhub"))
             .WithAutomaticReconnect()
             .Build();
+
+        HubConnectionId = twitchHub.ConnectionId ?? "No Hub Connection";
+
 
         // TWITCH HUB ACTIONS ==============>>
         // Twitch Chat Message Received
@@ -192,7 +210,7 @@
                 tryCount--;
 
                 // Try to get the User Data from Twitch API
-                var result = await GetTwitchUserData(name, AccessToken);
+                var result = await GetTwitchUserData(AccessToken);
 
                 // If we get the data, break the loop
                 if (result == true)
@@ -263,11 +281,18 @@
 
                     foreach (var identity in loggedInUserAuthState.Identities)
                     {
-                        identity.Claims.ToList().ForEach(c => Console.WriteLine(c.Value));
+                        identity.Claims.ToList().ForEach(c => Console.WriteLine($"{c.Type}: {c.Value}"));
                     }
 
                     loggedInUser = await AuthProvider.GetUserFromAuth(userData);
                     Logger.LogInformation($"Current LoggedInUser: {loggedInUser.UserName}");
+
+                    if (twitchHub is not null)
+                    {
+                        var groupName = loggedInUser.Id.ToString();
+                        await twitchHub.SendAsync("JoinGroup", groupName);
+                        Logger.LogInformation($"Joined Group: {groupName}");
+                    }
                 }
                 else
                 {
@@ -349,7 +374,7 @@
         };
     }
 
-    private async Task<bool> GetTwitchUserData(string name, string accessToken)
+    private async Task<bool> GetTwitchUserData(string accessToken)
     {
         Logger.LogInformation("Getting Twitch User Data...");
 
@@ -450,6 +475,8 @@
             };
             // await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
             // await twitchHub.SendAsync("StartServiceRequest");
+
+            // var user = loggedInUserAuthState?.Claims.Where(c => c.Type == "user_id").First().Value;
             await twitchHub.SendAsync("SetupConnectionRequest", loggedInUser.Id, AccessToken, UserId);
         }
         else

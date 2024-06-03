@@ -56,7 +56,7 @@ public sealed class TwitchEventSubConnectionService(
             IScopedEventSubConnection scopedEventSubConnection = scope.ServiceProvider.GetRequiredService<IScopedEventSubConnection>();
             //Logger.LogInformation($"{ClassName} updated UserId to {userId}, Access Token to {accessToken}, and Broadcaster Id to {broadcasterId}.");
 
-            var connectionInstance = await scopedEventSubConnection.CreateScopedEventSubConnection(cancellationToken, accessToken, userId);
+            var connectionInstance = await scopedEventSubConnection.CreateScopedEventSubConnection(cancellationToken, loggedInUserId, accessToken, userId);
             connectionInstance.StreamWorksUserId = loggedInUserId;
 
             connectionsList.AddOrUpdate(
