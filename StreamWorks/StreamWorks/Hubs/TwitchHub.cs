@@ -34,23 +34,23 @@ public class TwitchHub: Hub
         return Clients.Group(group).SendAsync("ChatMessageReceived", chatMessageData);
     }
 
-    public Task RecievedChannelFollow(ChannelFollow followData)
+    public Task RecievedChannelFollow(string group, ChannelFollow followData)
     {
-        return Clients.All.SendAsync("GetFollows", followData);
+        return Clients.Group(group).SendAsync("GetFollows", followData);
     }
 
-    public Task RecievedSubscription(ChannelSubscribe subData)
+    public Task RecievedSubscription(string group, ChannelSubscribe subData)
     {
-        return Clients.All.SendAsync("GetSubscribedEvents", subData);
+        return Clients.Group(group).SendAsync("GetSubscribedEvents", subData);
     }
 
-    public Task RecievedSubscriptionGift(ChannelSubscriptionGift giftData)
+    public Task RecievedSubscriptionGift(string group, ChannelSubscriptionGift giftData)
     {
-        return Clients.All.SendAsync("GetSubscriptionGifts", giftData);
+        return Clients.Group(group).SendAsync("GetSubscriptionGifts", giftData);
     }
 
-    public Task RecievedChannelCheer(ChannelCheer cheerData)
+    public Task RecievedChannelCheer(string group, ChannelCheer cheerData)
     {
-        return Clients.All.SendAsync("GetCheers", cheerData);
+        return Clients.Group(group).SendAsync("GetCheers", cheerData);
     }
 }

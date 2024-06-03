@@ -581,7 +581,7 @@ public sealed class ScopedEventSubConnectionTasks(
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
-            await twitchHub.SendAsync("RecievedChannelFollow", eventData);
+            await twitchHub.SendAsync("RecievedChannelFollow", messageGroup, eventData);
         }
         Logger.LogInformation($"{eventData.UserName} followed {eventData.BroadcasterUserName} at {eventData.FollowedAt}");
     }
@@ -606,7 +606,7 @@ public sealed class ScopedEventSubConnectionTasks(
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
-            await twitchHub.SendAsync("RecievedSubscription", eventData);
+            await twitchHub.SendAsync("RecievedSubscription", messageGroup, eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} subscribed to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
@@ -617,7 +617,7 @@ public sealed class ScopedEventSubConnectionTasks(
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
-            await twitchHub.SendAsync("RecievedSubscriptionEnding", eventData);
+            await twitchHub.SendAsync("RecievedSubscriptionEnding", messageGroup, eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} unsubscribed from {eventData.BroadcasterUserName}: It was a Tier {eventData.Tier} Sub");
@@ -628,7 +628,7 @@ public sealed class ScopedEventSubConnectionTasks(
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
-            await twitchHub.SendAsync("RecievedSubscriptionGift", eventData);
+            await twitchHub.SendAsync("RecievedSubscriptionGift", messageGroup, eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} gifted {eventData.BroadcasterUserName}'s channel a Tier {eventData.Tier} Sub");
@@ -639,7 +639,7 @@ public sealed class ScopedEventSubConnectionTasks(
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
-            await twitchHub.SendAsync("RecievedSubscriptionMessage", eventData);
+            await twitchHub.SendAsync("RecievedSubscriptionMessage", messageGroup, eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} sent a sub message to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
@@ -651,7 +651,7 @@ public sealed class ScopedEventSubConnectionTasks(
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
-            await twitchHub.SendAsync("RecievedChannelCheer", eventData);
+            await twitchHub.SendAsync("RecievedChannelCheer", messageGroup, eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} cheered {eventData.Bits} Bits to {eventData.BroadcasterUserName}");
@@ -663,7 +663,7 @@ public sealed class ScopedEventSubConnectionTasks(
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
-            await twitchHub.SendAsync("RecievedChannelRaid", eventData);
+            await twitchHub.SendAsync("RecievedChannelRaid", messageGroup, eventData);
         }
 
         Logger.LogInformation($"{eventData.FromBroadcasterUserName} raided {eventData.ToBroadcasterUserName} with {eventData.Viewers} Viewers!");
