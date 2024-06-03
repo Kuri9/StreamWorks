@@ -21,60 +21,95 @@
 
 @implements IAsyncDisposable
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Welcome to StreamWorks Live!</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="row">
+    <div class="col-10">
+        <div class="row">
+            <div class="col-2">
+                <AuthorizeView>
+                    @if (twitchUserData is not null && twitchUserData.Count > 0)
+                    {
+                        <img class="img-fluid profile-image" src="@twitchUserData.First().ProfileImageUrl" />
+                        <div class="mb-3">
+                            <p>Click here to Revoke Twitch Token</p>
+                            <Button class="btn btn-sm btn-dark" @onclick="RevokeTwitchToken">Revoke Twitch Token</Button>
+                        </div>
+                    }
+                </AuthorizeView>
+            </div>
+            <div class="col-9">
+                <div class="row mb-3">
+                @if (loggedInUser is not null && loggedInUser.DisplayName?.Length > 0)
+                {
+                    <h1>Hello, @loggedInUser.DisplayName!</h1>
+                }
+                else
+                {
+                    <h1>Hello, world!</h1>
 
-Welcome to your new app.
+                    <p>Be sure to log in so you can use our various stream reources!</p>
+                }
 
+                </div>
+                <AuthorizeView>
+                    <div class="row mb-3">
+                        <h3>Your Twitch Connection Data</h3>
+                    <div/>
+                    <div class="row">
+                        <div class="col">
+                            @if (twitchUserData is not null && twitchUserData.Count() > 0)
+                            {
+                                <h4>@twitchUserData.First().DisplayName</h4>
+                                <h5>Twitch ID: @twitchUserData.First().Id</h5>
+                                
+                                <div>
+                                <p>Broadcaster Type: @twitchUserData.First().BroadcasterType</p>
+                                <p>@twitchUserData.First().Description</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
 
-<AuthorizeView Policy="Admin">
+                    @if (eventSubSubscriptions is not null)
+                    {
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2>Subscription Info</h2>
+                                <h4>@eventSubSubscriptions.TotalCost Points out of @eventSubSubscriptions.MaxTotalCost Points Used</h4>
+                                <h3>Current Subscriptions</h3>
+                                @foreach (var subscription in eventSubSubscriptions.Subscriptions)
+                                {
+                                    subscriptions.Add(subscription);
+                                }
+                            </div>
+                        </div>
 
-    <h2>Twitch Connection Data</h2>
-
-    <Button class="btn btn-dark" @onclick="RevokeTwitchToken">Revoke Twitch Token</Button>
-
-    <div class="row">
-        <div class="col">
-            @if (twitchUserData is not null && twitchUserData.Count() > 0)
-            {
-                <h3>@twitchUserData.First().DisplayName</h3>
-                <h4>@twitchUserData.First().Id</h4>
-                <p>@twitchUserData.First().BroadcasterType</p>
-                <p>@twitchUserData.First().Description</p>
-            }
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h3>Chat Messages</h3>
+                                @if (twitchMessages is not null)
+                                {
+                                    @foreach (var message in twitchMessages)
+                                    {
+                                        <p>@message</p>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                    </div>
+                </AuthorizeView>
+            </div>
+            <div class="col-1">
+            
+            </div>
         </div>
     </div>
+    <div class="col-2">
 
-    @if (eventSubSubscriptions is not null)
-    {
-         <div class="row">
-            <div class="col">
-                <h2>Subscription Info</h2>
-                <h4>@eventSubSubscriptions.TotalCost Points out of @eventSubSubscriptions.MaxTotalCost Points Used</h4>
-                <h3>Current Subscriptions</h3>
-                @foreach (var subscription in eventSubSubscriptions.Subscriptions)
-                {
-                    subscriptions.Add(subscription);
-                }    
-            </div>
-        </div>   
-
-        <div class="row">
-            <div class="col">
-                <h3>Chat Messages</h3>
-                @if (twitchMessages is not null)
-                {
-                    @foreach (var message in twitchMessages)
-                    {
-                        <p>@message</p>
-                    }
-                }
-            </div>
-        </div>
-    }
-
-</AuthorizeView>
+    </div>
+</div>
 
 @code {
     private StreamWorksUserModel loggedInUser = default!;
@@ -265,7 +300,7 @@ Welcome to your new app.
                 }
 
                 UserId = loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").ToList().First().ProviderKey;
-                ClientId = twitchConnectionData.ClientId;
+                ClientId = twitchConnectionData.ClientId ?? "No Client ID";
             }
         }
         else
@@ -279,11 +314,18 @@ Welcome to your new app.
         var refreshToken = loggedInUser?.GetToken("TwitchLogin", "refresh_token").Value;
         Logger.LogInformation($"Refresh Token Check and Set: {refreshToken}");
 
-        UserId = loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").First().ProviderKey;
-        Logger.LogInformation($"User Twitch ID is: {UserId}");
-
-        BroadcasterId = config["Twitch:DefaultBroadcaster"];
-        Logger.LogInformation($"Twitch BroadcasterID is: {BroadcasterId}");
+        if (loggedInUser is not null && String.IsNullOrWhiteSpace(UserId))
+        {
+            UserId = loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").First().ProviderKey;
+            Logger.LogInformation($"User Twitch ID is: {UserId}");
+        }
+        if (loggedInUser is not null && String.IsNullOrWhiteSpace(BroadcasterId))
+        {
+            // Sets the broadcaster ID to the same as the UserId.
+            // BroadcasterId = config["Twitch:DefaultBroadcaster"];
+            BroadcasterId = UserId;
+            Logger.LogInformation($"Twitch BroadcasterID is: {BroadcasterId}");
+        }
 
         if (refreshToken is not null)
         {
@@ -337,6 +379,10 @@ Welcome to your new app.
                     userData.Id = user.Id;
                     userData.BroadcasterType = user.BroadcasterType;
                     userData.Description = user.Description;
+                    userData.ProfileImageUrl = user.ProfileImageUrl;
+                    userData.OfflineImageUrl = user.OfflineImageUrl;
+                    userData.CreatedAt = user.CreatedAt;
+                    userData.ViewCount = user.ViewCount;
 
                     twitchUserData?.Add(userData);
                 }
@@ -397,6 +443,11 @@ Welcome to your new app.
             // Setup EventSub with data after testing
             Logger.LogInformation("Setting up EventSub");
 
+            if (twitchHub is null) 
+            {
+                Logger.LogError("Twitch Hub is null! Will not call twitchHub.");
+                return; 
+            };
             await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
             await twitchHub.SendAsync("StartServiceRequest");
         }
@@ -445,9 +496,8 @@ Welcome to your new app.
 
     public async Task<GetUsersResponse> GetTwitchUserDataFromApi(string id)
     {
-        id = "kuri9";
-        var logins =  new List<string>();
-        logins.Add(id);
+        // var logins =  new List<string>();
+        // logins.Add(id);
 
         try
         {

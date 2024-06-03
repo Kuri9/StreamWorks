@@ -25,6 +25,12 @@
     <li class="nav-item">
         <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
     </li>
+
+    <AuthorizeView Policy="Admin">
+        <li class="nav-item">
+            <NavLink class="nav-link" href="/Account/Manage/Administration">Account Administration</NavLink>
+        </li>
+    </AuthorizeView>
 </ul>
 
 @code {

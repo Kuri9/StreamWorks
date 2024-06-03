@@ -1,7 +1,7 @@
 ﻿@page "/twitch-tools/sub-timer"
 @* @using SuperShivaUI.Components.StreamServices *@
 @rendermode InteractiveServer
-@attribute [Authorize(Policy = "Admin")]
+@attribute [Authorize]
 
 @using System.Timers;
 @using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers

@@ -1,6 +1,8 @@
 ﻿@page "/Account/Manage/Administration"
 
 @rendermode InteractiveServer
+@attribute [Authorize(Policy = "Admin")]
+
 @inject IConfiguration _Config
 @inject UserManager<StreamWorksUserModel> _UserManager
 @inject RoleManager<StreamWorksRoleModel> _RoleManager
