@@ -59,6 +59,12 @@ public interface IStreamTimerModel
     double TwitchCheerTime { get; set; }
     int TwitchTotalCheerAmount { get; set; }
 
+    // ==> Raids
+    string TwitchRaidEvent { get; set; }
+    int TwitchRaidEventCount { get; set; }
+    double TwitchRaidTime { get; set; }
+    int TwitchTotalRaidAmount { get; set; }
+
     Guid UserId { get; set; }
     string YouTubeLikeEvent { get; set; }
     int YoutubeLikeEventCount { get; set; }

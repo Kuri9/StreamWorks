@@ -82,6 +82,23 @@ h1:focus {
     box-shadow: rgb(10,10,10,.1) -5px -5px inset;
 }
 
+.button-connected-group {
+    display: flex-box;
+    margin: 0 0 0 0;
+}
+
+    .button-connected-group button {
+        margin: 0 0 0 0;
+    }
+
+        .button-connected-group button:first-child {
+            border-radius: .4rem .4rem 0 0;
+        }
+
+        .button-connected-group button:last-child {
+            border-radius: 0 0 .4rem .4rem;
+        }
+
 .main-container {
     display: flex;
     padding: 1rem 1rem 8rem 1rem;
@@ -97,24 +114,24 @@ h1:focus {
 }
 
 .main-timer {
-    font-size: 5rem;
+    font-size: 3rem;
     font-weight: 500;
     color: #FFF;
-    padding: 2rem 2rem .5rem 1.2rem;
+    padding: 2rem 2rem .2rem 1.2rem;
 }
 
 .sub-timer {
-    font-size: 3rem;
+    font-size: 1.8rem;
     font-weight: 300;
     color: #777;
-    padding: 0 2rem 0 2rem;
+    padding: 0 1rem 0 1rem;
 }
 
 .timer-sub-label {
     font-size: 1rem;
     font-weight: 300;
     color: #777;
-    padding: 0 2rem 0 2rem;
+    padding: 0 1rem 0 1rem;
 }
 
 .elapsed-time-timer {

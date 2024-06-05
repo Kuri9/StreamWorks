@@ -19,6 +19,9 @@ public class CreateStreamTimerModel
     // ==> Cheers
     public double TwitchCheerTime { get; set; } = 1;
 
+    // ==> Cheers
+    public double TwitchRaidTime { get; set; } = 1;
+
     // Youtube
     public double YouTubeLikeTime { get; set; } = 300;
     public double YouTubeSubTime { get; set; } = 300;

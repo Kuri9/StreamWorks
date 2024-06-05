@@ -53,4 +53,9 @@ public class TwitchHub: Hub
     {
         return Clients.Group(group).SendAsync("GetCheers", cheerData);
     }
+
+    public Task RecievedChannelRaid(string group, ChannelRaid raidData)
+    {
+        return Clients.Group(group).SendAsync("GetRaid", raidData);
+    }
 }

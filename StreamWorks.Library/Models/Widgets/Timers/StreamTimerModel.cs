@@ -71,6 +71,12 @@ public class StreamTimerModel : IStreamTimerModel
     public double TwitchCheerTime { get; set; } = 1;
     public int TwitchTotalCheerAmount { get; set; }
 
+    // ==> Raids
+    public string TwitchRaidEvent { get; set; } = "TwitchRaid";
+    public int TwitchRaidEventCount { get; set; }
+    public double TwitchRaidTime { get; set; } = 1;
+    public int TwitchTotalRaidAmount { get; set; }
+
     // Youtube
     public string YouTubeLikeEvent { get; set; } = "YoutubeLike";
     public int YoutubeLikeEventCount { get; set; }
