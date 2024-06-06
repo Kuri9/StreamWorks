@@ -72,4 +72,10 @@ public interface IStreamTimerModel
     string YouTubeSubEvent { get; set; }
     int YoutubeSubEventCount { get; set; }
     double YouTubeSubTime { get; set; }
+
+    // ==> Donations
+    string DonationEvent { get; set; }
+    int DonationEventCount { get; set; }
+    double DonationTotalAmount { get; set; }
+    double DonationTime { get; set; }
 }

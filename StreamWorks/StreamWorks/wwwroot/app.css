@@ -89,6 +89,7 @@ h1:focus {
 
     .button-connected-group button {
         margin: 0 0 0 0;
+        border-radius: 0;
     }
 
         .button-connected-group button:first-child {
@@ -114,10 +115,28 @@ h1:focus {
 }
 
 .main-timer {
+    display: grid;
+    width: 100%;
     font-size: 3rem;
     font-weight: 500;
     color: #FFF;
-    padding: 2rem 2rem .2rem 1.2rem;
+    padding: 5rem 2rem 0rem 1.2rem;
+}
+    .main-timer h1 {
+        font-size: 3rem;
+        font-weight: 500;
+        color: #FFF;
+        padding: 0rem 2rem 0rem 1rem;
+        margin: 0 0 0 0;
+    }
+
+.main-timer-label {
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 300;
+    color: #FFF;
+    padding: 0 0 0 1rem;
+    margin: 0 0 0 0;
 }
 
 .sub-timer {
@@ -164,7 +183,7 @@ h1:focus {
         color: #333;
     }
 
-    .form-check-input {
+    .timer-setting-form .form-check-input {
         width: 4rem;
         height: 2.1rem;
         margin: 0;
