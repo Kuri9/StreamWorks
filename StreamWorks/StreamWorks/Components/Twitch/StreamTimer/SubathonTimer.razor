@@ -449,6 +449,14 @@
 </Offcanvas>
 
 @code {
+    //TODO LIST:
+        // 1. Seperate the core timer and functions to a seperate component and read into this page. Make the timer more useable in various situations other pages this way.
+        // 2. Add a way to select a timer from a list of timers.
+        // 3. Add a way to create a new timer.
+        // 4. Add a way to delete a timer.
+        // 5. Allow Timers to count both up and down.
+        // 6. Move some of these other functions to a seperate component to make this page more readable and code more reusable.
+
     private StreamWorksUserModel loggedInUser = default!;
 
     //TODO
@@ -672,20 +680,20 @@
 
         // await collapseElapsedTime.ToggleAsync();
     }
-    // private async Task ToggleTotalTimeAsync()
-    // {
-    //     if (isShowTotal)
-    //     {
-    //         isShowTotal = false;
-    //     }
-    //     else
-    //     {
-    //         isShowTotal = true;
-    //         isShowRemaining = false;
-    //         isShowElapsed = false;
-    //     }
-    //     await collapseTotalTime.ToggleAsync();
-    // }
+    private async Task ToggleTotalTimeAsync()
+    {
+        if (isShowTotal)
+        {
+            isShowTotal = false;
+        }
+        else
+        {
+            isShowTotal = true;
+            isShowRemaining = false;
+            isShowElapsed = false;
+        }
+        await collapseTotalTime.ToggleAsync();
+    }
     private void ToggleStartButton()
     {
         if (timerData is not null)

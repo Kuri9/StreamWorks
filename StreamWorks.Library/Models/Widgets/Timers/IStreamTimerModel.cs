@@ -78,4 +78,6 @@ public interface IStreamTimerModel
     int DonationEventCount { get; set; }
     double DonationTotalAmount { get; set; }
     double DonationTime { get; set; }
+
+    string? TimerFormat { get; set; }
 }

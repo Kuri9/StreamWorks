@@ -11,6 +11,7 @@ public class StreamTimerModel : IStreamTimerModel
     public TimeSpan TotalTime { get; set; }
     public double AddTime { get; set; }
     public double DefaultTime { get; set; } = 300;
+    public string? TimerFormat { get; set; }
 
     public string? LastSystemMessage { get; set; }
     public int TickCount { get; set; }
