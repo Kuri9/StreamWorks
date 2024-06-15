@@ -21,5 +21,7 @@ global using StreamWorks.Library.DataAccess.MongoDB.Identity;
 global using StreamWorks.Library.Models.Users.Identity;
 global using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.AppUserData;
 
+global using StreamWorks.Helpers.Widgets.Timers;
+
 global using TwitchLib.Api;
 global using TwitchLib.Api.Helix.Models.EventSub;

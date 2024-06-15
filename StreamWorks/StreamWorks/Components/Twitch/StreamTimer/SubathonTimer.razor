@@ -368,7 +368,6 @@
                 <div class="form-group">
                     <div class="input-group mb-2">
                         <label class="input-group-text" for="twitchFollowTime">Twitch Follow</label>
-                        <input id="time"
                         <InputNumber id="twitchFollowTime" class="form-control" @bind-Value="updatedTimerModel.TwitchFollowTime" />
                     </div>
                 </div>
@@ -886,8 +885,11 @@
 
             timerData.TimerSettings.IsRunning = false;
             timerData.TimerSettings.IsCompleted = false;
-
             timerData.TimerSettings.FirstRun = true;
+            
+            isTimerStopped = true;
+            isTimerRunning = false;
+
             StateHasChanged();
             await SaveTimer();
         }
@@ -943,37 +945,67 @@
         }
     }
 
+    public async Task AddTime(int time)
+    {
+        if (timerData is not null)
+        {
+            timerData = TimerHelpers.AddTime(TimeSpan.FromSeconds(time), timerData);
+            TimeLeft = timerData.CurrentTime;
+            await InvokeAsync(StateHasChanged);
+            await SaveTimer();
+        }
+        else
+        {
+            Logger.LogError("Timer Data is null. Couldn't add time from Chat");
+        }
+    }
+
+    public async Task RemoveTime(int time)
+    {
+        if (timerData is not null)
+        {
+            timerData = TimerHelpers.RemoveTime(TimeSpan.FromSeconds(time), timerData);
+            TimeLeft = timerData.CurrentTime;
+            await InvokeAsync(StateHasChanged);
+            await SaveTimer();
+        }
+        else
+        {
+            Logger.LogError("Timer Data is null. Couldn't add time from Chat");
+        }
+    }
+
+    public async Task AddTimeWithAmount(string eventName, int amount)
+    {
+        if (timerData is not null)
+        {
+            timerData = TimerHelpers.AddTimeWithAmount(eventName, amount, timerData);
+            await UpdateTime();
+        }
+        else
+        {
+            Logger.LogError("Timer Data is null. Couldn't add time.");
+        }
+    }
+
+    public async Task RemoveTimeWithAmount(string eventName, int amount)
+    {
+        if (timerData is not null)
+        {
+            timerData = TimerHelpers.RemoveTimeWithAmount(eventName, amount, timerData);
+            await UpdateTime();
+        }
+        else
+        {
+            Logger.LogError("Timer Data is null. Couldn't add time.");
+        }
+    }
+
     public async Task AddTimeTwitch(string twitchEvent)
     {
         if (timerData is not null)
         {
-            timerData.AddTime = TimeSpan.Zero;
-
-            if (twitchEvent == timerData.TwitchEvents.TwitchFollowEvent)
-            {
-                timerData.TwitchEvents.TwitchFollowEventCount++;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchFollowTime;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier1Event)
-            {
-                timerData.TwitchEvents.TwitchTier1EventCount++;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier1Time;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier2Event)
-            {
-                timerData.TwitchEvents.TwitchTier2EventCount++;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier2Time;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier3Event)
-            {
-                timerData.TwitchEvents.TwitchTier3EventCount++;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier3Time;
-            }
-            else
-            {
-                Logger.LogError("Could not find Twitch Event");
-            }
-
+            timerData = TimerHelpers.AddTimeTwitch(twitchEvent, timerData);
             await UpdateTime();
         }
         else
@@ -984,77 +1016,14 @@
 
     public async Task AddTimeWithAmountTwitch(string twitchEvent, int amount)
     {
-        if (amount < 0)
-        {
-            amount *= -1;
-        }
-
         if (timerData is not null)
         {
-            if (twitchEvent == timerData.TwitchEvents.TwitchTier1SubGiftEvent)
-            {
-                timerData.TwitchEvents.TwitchSubGiftEventCount++;
-                timerData.TwitchEvents.TwitchTotalSubGiftCount += amount;
-                timerData.TwitchEvents.TwitchTotalT1SubGiftCount += amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier1SubGiftTime * amount;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier2SubGiftEvent)
-            {
-                timerData.TwitchEvents.TwitchSubGiftEventCount++;
-                timerData.TwitchEvents.TwitchTotalSubGiftCount += amount;
-                timerData.TwitchEvents.TwitchTotalT2SubGiftCount += amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier2SubGiftTime * amount;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier3SubGiftEvent)
-            {
-                timerData.TwitchEvents.TwitchSubGiftEventCount++;
-                timerData.TwitchEvents.TwitchTotalSubGiftCount += amount;
-                timerData.TwitchEvents.TwitchTotalT3SubGiftCount += amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier3SubGiftTime * amount;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchCheerEvent)
-            {
-                timerData.TwitchEvents.TwitchCheerEventCount++;
-                timerData.TwitchEvents.TwitchTotalCheerAmount += amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchCheerTime * amount;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchRaidEvent)
-            {
-                timerData.TwitchEvents.TwitchRaidEventCount++;
-                timerData.TwitchEvents.TwitchTotalRaidAmount += amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchRaidTime * amount;
-            }
-            else
-            {
-                Logger.LogError("Could not find Twitch Event");
-            }
-
+            timerData = TimerHelpers.AddTimeWithAmountTwitch(twitchEvent, amount, timerData);
             await UpdateTime();
         }
         else
         {
-            Logger.LogError("Timer Data is null. Couldn't add time with amount.");
-        }
-    }
-
-    public async Task AddTime(int time)
-    {
-        if (time < 0)
-        {
-            time *= -1;
-        }
-        if (timerData is not null)
-        {
-            timerData.AddTime = TimeSpan.FromSeconds(time);
-            timerData.CurrentTime += timerData.AddTime;
-            timerData.TimerSettings.TotalTime += timerData.AddTime;
-            TimeLeft = timerData.CurrentTime;
-            await InvokeAsync(StateHasChanged);
-            await SaveTimer();
-        }
-        else
-        {
-            Logger.LogError("Timer Data is null. Couldn't add time from Chat");
+            Logger.LogError("Timer Data is null. Couldn't add time.");
         }
     }
 
@@ -1062,94 +1031,25 @@
     {
         if (timerData is not null)
         {
-            if (twitchEvent == timerData.TwitchEvents.TwitchFollowEvent)
-            {
-                timerData.TwitchEvents.TwitchFollowEventCount--;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchFollowTime * -1;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier1Event)
-            {
-                timerData.TwitchEvents.TwitchTier1EventCount--;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier1Time * -1;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier2Event)
-            {
-                timerData.TwitchEvents.TwitchTier2EventCount--;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier2Time * -1;
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier3Event)
-            {
-                timerData.TwitchEvents.TwitchTier3EventCount--;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier3Time * -1;
-            }
-            else
-            {
-                Logger.LogError("Could not find Twitch Event");
-            }
-
+            timerData = TimerHelpers.RemoveTimeTwitch(twitchEvent, timerData);
             await UpdateTime();
         }
         else
         {
-            Logger.LogError("Timer Data is null. Couldn't add time with amount.");
+            Logger.LogError("Timer Data is null. Couldn't add time.");
         }
     }
 
     public async Task RemoveTimeWithAmountTwitch(string twitchEvent, int amount)
     {
-        if (amount < 0)
-        {
-            amount *= -1;
-        }
-
         if (timerData is not null)
         {
-            if (twitchEvent == timerData.TwitchEvents.TwitchTier1SubGiftEvent)
-            {
-                timerData.TwitchEvents.TwitchSubGiftEventCount--;
-                timerData.TwitchEvents.TwitchTotalSubGiftCount -= amount;
-
-                timerData.TwitchEvents.TwitchTotalT1SubGiftCount -= amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier1SubGiftTime * -(amount);
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier2SubGiftEvent)
-            {
-                timerData.TwitchEvents.TwitchSubGiftEventCount--;
-                timerData.TwitchEvents.TwitchTotalSubGiftCount -= amount;
-
-                timerData.TwitchEvents.TwitchTotalT2SubGiftCount -= amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier2SubGiftTime * -(amount);
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchTier3SubGiftEvent)
-            {
-                timerData.TwitchEvents.TwitchSubGiftEventCount--;
-                timerData.TwitchEvents.TwitchTotalSubGiftCount -= amount;
-
-                timerData.TwitchEvents.TwitchTotalT3SubGiftCount -= amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier3SubGiftTime * -(amount);
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchCheerEvent)
-            {
-                timerData.TwitchEvents.TwitchCheerEventCount--;
-                timerData.TwitchEvents.TwitchTotalCheerAmount -= amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchCheerTime * -(amount);
-            }
-            else if (twitchEvent == timerData.TwitchEvents.TwitchRaidEvent)
-            {
-                timerData.TwitchEvents.TwitchRaidEventCount--;
-                timerData.TwitchEvents.TwitchTotalRaidAmount -= amount;
-                timerData.AddTime = timerData.TwitchEvents.SetTwitchCheerTime * -(amount);
-            }
-            else
-            {
-                Logger.LogError("Could not find Twitch Event");
-            }
-
+            timerData = TimerHelpers.RemoveTimeWithAmountTwitch(twitchEvent, amount, timerData);
             await UpdateTime();
         }
         else
         {
-            Logger.LogError("Timer Data is null. Couldn't add time with amount.");
+            Logger.LogError("Timer Data is null. Couldn't add time.");
         }
     }
 
@@ -1157,167 +1057,61 @@
     {
         if (timerData is not null)
         {
-            switch (youtubeEvent)
-            {
-                case "YoutubeLike":
-                    timerData.YoutubeEvents.YoutubeLikeEventCount++;
-                    timerData.AddTime = timerData.YoutubeEvents.SetYouTubeLikeTime;
-                    break;
-
-                case "YoutubeSubscribe":
-                    timerData.YoutubeEvents.YoutubeSubEventCount++;
-                    timerData.AddTime = timerData.YoutubeEvents.SetYouTubeSubTime;
-                    break;
-
-                default:
-                    timerData.AddTime = timerData.TimerSettings.DefaultTime;
-                    break;
-            }
-
+            timerData = TimerHelpers.AddTimeYoutube(youtubeEvent, timerData);
             await UpdateTime();
         }
         else
         {
-            Logger.LogError("Timer Data is null. Couldn't add time with amount.");
+            Logger.LogError("Timer Data is null. Couldn't add time.");
         }
     }
 
     public async Task RemoveTimeYoutube(string youtubeEvent)
     {
-        if (timerData is not null)
-        {
-            switch (youtubeEvent)
-            {
-                case "YoutubeLike":
-                    timerData.YoutubeEvents.YoutubeLikeEventCount--;
-                    timerData.AddTime = -(timerData.YoutubeEvents.SetYouTubeLikeTime);
-                    break;
+        // if (timerData is not null)
+        // {
+        //     switch (youtubeEvent)
+        //     {
+        //         case "YoutubeLike":
+        //             timerData.YoutubeEvents.YoutubeLikeEventCount--;
+        //             timerData.AddTime = -(timerData.YoutubeEvents.SetYouTubeLikeTime);
+        //             break;
 
-                case "YoutubeSubscribe":
-                    timerData.YoutubeEvents.YoutubeSubEventCount--;
-                    timerData.AddTime = -(timerData.YoutubeEvents.SetYouTubeSubTime);
-                    break;
+        //         case "YoutubeSubscribe":
+        //             timerData.YoutubeEvents.YoutubeSubEventCount--;
+        //             timerData.AddTime = -(timerData.YoutubeEvents.SetYouTubeSubTime);
+        //             break;
 
-                default:
-                    timerData.AddTime = -(timerData.TimerSettings.DefaultTime);
-                    break;
-            }
+        //         default:
+        //             timerData.AddTime = -(timerData.TimerSettings.DefaultTime);
+        //             break;
+        //     }
 
-            await UpdateTime();
-        }
-        else
-        {
-            Logger.LogError("Timer Data is null. Couldn't add time with amount.");
-        }
-    }
+        //     await UpdateTime();
+        // }
+        // else
+        // {
+        //     Logger.LogError("Timer Data is null. Couldn't add time with amount.");
+        // }
 
-    public async Task AddTimeWithAmount(string eventName, int amount)
-    {
-        if (amount < 0)
-        {
-            amount *= -1;
-        }
-
-        if (timerData is not null)
-        {
-            if (eventName == timerData.OtherEvents.DonationEvent)
-            {
-                timerData.OtherEvents.DonationEventCount++;
-                timerData.AddTime = timerData.OtherEvents.SetDonationTime * amount;
-            }
-            else
-            {
-                Logger.LogError("Could not find Twitch Event");
-            }
-
-            await UpdateTime();
-        }
-        else
-        {
-            Logger.LogError("Timer Data is null. Couldn't add time with amount.");
-        }
-    }
-
-    public async Task RemoveTimeWithAmount(string eventName, int amount)
-    {
-        if (amount < 0)
-        {
-            amount *= -1;
-        }
-
-        if (timerData is not null)
-        {
-            if (eventName == timerData.OtherEvents.DonationEvent)
-            {
-                timerData.OtherEvents.DonationEventCount--;
-                timerData.AddTime = timerData.OtherEvents.SetDonationTime * -(amount);
-            }
-            else
-            {
-                Logger.LogError("Could not find Twitch Event");
-            }
-
-            await UpdateTime();
-        }
-        else
-        {
-            Logger.LogError("Timer Data is null. Couldn't add time with amount.");
-        }
-    }
-
-    public async Task RemoveTime(int time)
-    {
-        if (time < 0)
-        {
-            time *= -1;
-        }
-        if (timerData is not null)
-        {
-            timerData.AddTime = TimeSpan.FromSeconds(time);
-            timerData.CurrentTime -= timerData.AddTime;
-            timerData.TimerSettings.TotalTime -= timerData.AddTime;
-            TimeLeft = timerData.CurrentTime;
-            await InvokeAsync(StateHasChanged);
-            await SaveTimer();
-        }
-        else
-        {
-            Logger.LogError("Timer Data is null. Couldn't add time from Chat");
-        }
+        timerData = TimerHelpers.RemoveTimeYoutube(youtubeEvent, timerData);
+        await UpdateTime();
     }
 
     public void ResetEventCounts()
     {
         if (timerData is not null)
         {
-            timerData.TwitchEvents.TwitchFollowEventCount = 0;
-
-            timerData.TwitchEvents.TwitchTier1EventCount = 0;
-            timerData.TwitchEvents.TwitchTier2EventCount = 0;
-            timerData.TwitchEvents.TwitchTier3EventCount = 0;
-
-            timerData.TwitchEvents.TwitchSubGiftEventCount = 0;
-            timerData.TwitchEvents.TwitchTotalSubGiftCount = 0;
-            timerData.TwitchEvents.TwitchTotalT1SubGiftCount = 0;
-            timerData.TwitchEvents.TwitchTotalT2SubGiftCount = 0;
-            timerData.TwitchEvents.TwitchTotalT3SubGiftCount = 0;
-
-            timerData.TwitchEvents.TwitchCheerEventCount = 0;
-            timerData.TwitchEvents.TwitchTotalCheerAmount = 0;
-
-            timerData.TwitchEvents.TwitchRaidEventCount = 0;
-            timerData.TwitchEvents.TwitchTotalRaidAmount = 0;
-
-            timerData.YoutubeEvents.YoutubeLikeEventCount = 0;
-            timerData.YoutubeEvents.YoutubeSubEventCount = 0;
+            timerData = TimerHelpers.ResetEventCounts(timerData);
+        }
+        else
+        {
+            Logger.LogError("Timer Data is null. Couldn't reset Event Counts.");
         }
     }
 
     public async Task SetHubTimer()
     {
-        // currentTime = startTime;
-        // streamTimer.SetTimer(1000);
-        // streamTimer.OnTick += TickHandler;
         if (twitchHub is not null)
         {
             await twitchHub.SendAsync("SetTimer");
@@ -1326,7 +1120,6 @@
 
     public async Task StartHubTimer()
     {
-        //streamTimer.StartTimer();
         if (twitchHub is not null)
         {
             await twitchHub.SendAsync("StartTimer");
@@ -1360,29 +1153,8 @@
             Logger.LogError("Timer Data is null");
             return;
         }
-        timerData.TimerSettings.StartingTime = TimeSpan.FromSeconds(updatedTimerModel.StartingTime);
-        timerData.TimerSettings.ShowTotalCounts = updatedTimerModel.ShowTotalCounts;
 
-        // Twitch
-        timerData.TwitchEvents.SetTwitchFollowTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchFollowTime);
-        timerData.TwitchEvents.SetTwitchTier1Time = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier1Time);
-        timerData.TwitchEvents.SetTwitchTier2Time = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier2Time);
-        timerData.TwitchEvents.SetTwitchTier3Time = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier3Time);
-
-        timerData.TwitchEvents.SetTwitchTier1SubGiftTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier1SubGiftTime);
-        timerData.TwitchEvents.SetTwitchTier2SubGiftTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier2SubGiftTime);
-        timerData.TwitchEvents.SetTwitchTier3SubGiftTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier3SubGiftTime);
-
-        timerData.TwitchEvents.SetTwitchCheerTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchCheerTime);
-        timerData.TwitchEvents.SetTwitchRaidTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchRaidTime);
-
-        // Youtube
-        timerData.YoutubeEvents.SetYouTubeLikeTime = TimeSpan.FromSeconds(updatedTimerModel.YouTubeLikeTime);
-        timerData.YoutubeEvents.SetYouTubeSubTime = TimeSpan.FromSeconds(updatedTimerModel.YouTubeSubTime);
-
-        // Other
-        timerData.OtherEvents.SetDonationTime = TimeSpan.FromSeconds(updatedTimerModel.DonationTime);
-
+        timerData = TimerHelpers.SetUpdateData(timerData, updatedTimerModel);
         await SaveTimer();
 
         SetupTimerUpdateModel();
