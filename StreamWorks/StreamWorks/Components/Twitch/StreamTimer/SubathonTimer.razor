@@ -4,6 +4,7 @@
 @attribute [Authorize]
 
 @using System.Timers;
+@using Components.Twitch.StreamTimer.TimerClasses
 @using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers
 @using StreamWorks.Library.Models.Widgets.Timers
 @using StreamWorks.Models.Widgets.Timers
@@ -56,9 +57,9 @@
                         <span>Show Timers</span>
                     </div>
                     <div class="d-grid button-connected-group">
-                        <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" Active="isShowRemaining" ElementId="remainingButton" @onclick="@(() => ToggleTimeAsync(remainingButton))">Remaining Time</Button>
-                        <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" Active="isShowElapsed" ElementId="elapsedButton" @onclick="@(() => ToggleTimeAsync(elapsedButton))">Elapsed Time</Button>
-                        <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" Active="isShowTotal" ElementId="totalButton" @onclick="@(() => ToggleTimeAsync(totalButton))">Total Time</Button>
+                        <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" Active="timerData.TimerSettings.IsShowRemaining" ElementId="remainingButton" @onclick="@(() => ToggleTimeAsync(remainingButton))">Remaining Time</Button>
+                        <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" Active="timerData.TimerSettings.IsShowElapsed" ElementId="elapsedButton" @onclick="@(() => ToggleTimeAsync(elapsedButton))">Elapsed Time</Button>
+                        <Button Type="ButtonType.Button" Color="ButtonColor.Secondary" Active="timerData.TimerSettings.IsShowTotal" ElementId="totalButton" @onclick="@(() => ToggleTimeAsync(totalButton))">Total Time</Button>
                     </div>
                 </div>
 
@@ -83,23 +84,23 @@
                         <div class="main-timer">
                             @if (timerData is not null) 
                             {
-                                if (timerData.IsCompleted == true)
+                                if (timerData.TimerSettings.IsCompleted == true)
                                 {
                                     <h1>Countdown Completed!</h1>
                                 }
-                                else if (isShowElapsed == true)
+                                else if (timerData.TimerSettings.IsShowElapsed == true)
                                 {
-                                    <h1 class="main-timer">@TimeElapsed.ToString(TimeFormat)</h1>
+                                    <h1 class="main-timer">@TimeElapsed.ToString(timerData.TimerSettings.TimerFormat)</h1>
                                     <span class="main-timer-label">Elapsed Time / 経過時間</span>
                                 }
-                                else if (isShowTotal == true)
+                                else if (timerData.TimerSettings.IsShowTotal == true)
                                 {
-                                    <h1 class="main-timer">@timerData.TotalTime.ToString(TimeFormat)</h1>
+                                    <h1 class="main-timer">@timerData.TimerSettings.TotalTime.ToString(timerData.TimerSettings.TimerFormat)</h1>
                                     <span class="main-timer-label">Total Time / 合計時間</span>
                                 }
                                 else
                                 {
-                                    <h1 class="main-timer">@TimeLeft.ToString(TimeFormat)</h1>
+                                    <h1 class="main-timer">@TimeLeft.ToString(timerData.TimerSettings.TimerFormat)</h1>
                                     <span class="main-timer-label">Remaining Time / 残りの時間</span>
                                 }
                             }
@@ -165,9 +166,9 @@
                                 <div>
                                     <div class="d-grid gap-2 mx-auto">
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(timerData.TwitchFollowEvent))">+</button>
-                                            <span class="input-layout-item-c">Follow : @timerData.TwitchFollowEventCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(timerData.TwitchFollowEvent))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(timerData.TwitchEvents.TwitchFollowEvent))">+</button>
+                                            <span class="input-layout-item-c">Follow : @timerData.TwitchEvents.TwitchFollowEventCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(timerData.TwitchEvents.TwitchFollowEvent))">-</button>
                                         </div>
                                     </div>
                                 </div>
@@ -183,19 +184,19 @@
                                 <div>
                                     <div class="d-grid gap-2 mx-auto">
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(timerData.TwitchTier1Event))">+</button>
-                                            <span class="input-layout-item-c">Tier 1 : @timerData.TwitchTier1EventCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(timerData.TwitchTier1Event))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(timerData.TwitchEvents.TwitchTier1Event))">+</button>
+                                            <span class="input-layout-item-c">Tier 1 : @timerData.TwitchEvents.TwitchTier1EventCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(timerData.TwitchEvents.TwitchTier1Event))">-</button>
                                         </div>
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(timerData.TwitchTier2Event))">+</button>
-                                            <span class="input-layout-item-c">Tier 2 : @timerData.TwitchTier2EventCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(timerData.TwitchTier2Event))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(timerData.TwitchEvents.TwitchTier2Event))">+</button>
+                                            <span class="input-layout-item-c">Tier 2 : @timerData.TwitchEvents.TwitchTier2EventCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(timerData.TwitchEvents.TwitchTier2Event))">-</button>
                                         </div>
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(timerData.TwitchTier3Event))">+</button>
-                                            <span class="input-layout-item-c">Tier 3 : @timerData.TwitchTier3EventCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(timerData.TwitchTier3Event))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeTwitch(timerData.TwitchEvents.TwitchTier3Event))">+</button>
+                                            <span class="input-layout-item-c">Tier 3 : @timerData.TwitchEvents.TwitchTier3EventCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeTwitch(timerData.TwitchEvents.TwitchTier3Event))">-</button>
                                         </div>
                                     </div>
                                 </div>
@@ -212,19 +213,19 @@
                                     <div class="d-grid gap-2 mx-auto">
                                         <InputNumber @bind-Value="SubGiftsToAdd" />
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchTier1SubGiftEvent, SubGiftsToAdd))">+</button>
-                                            <span class="input-layout-item-c">Tier 1 : @timerData.TwitchTotalT1SubGiftCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchTier1SubGiftEvent, SubGiftsToAdd))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier1SubGiftEvent, SubGiftsToAdd))">+</button>
+                                            <span class="input-layout-item-c">Tier 1 : @timerData.TwitchEvents.TwitchTotalT1SubGiftCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier1SubGiftEvent, SubGiftsToAdd))">-</button>
                                         </div>
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchTier2SubGiftEvent, SubGiftsToAdd))">+</button>
-                                            <span class="input-layout-item-c input-layout-item-c">Tier 2 : @timerData.TwitchTotalT2SubGiftCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchTier2SubGiftEvent, SubGiftsToAdd))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier2SubGiftEvent, SubGiftsToAdd))">+</button>
+                                            <span class="input-layout-item-c input-layout-item-c">Tier 2 : @timerData.TwitchEvents.TwitchTotalT2SubGiftCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier2SubGiftEvent, SubGiftsToAdd))">-</button>
                                         </div>
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchTier3SubGiftEvent, SubGiftsToAdd))">+</button>
-                                            <span class="input-layout-item-c">Tier 3 : @timerData.TwitchTotalT3SubGiftCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchTier3SubGiftEvent, SubGiftsToAdd))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier3SubGiftEvent, SubGiftsToAdd))">+</button>
+                                            <span class="input-layout-item-c">Tier 3 : @timerData.TwitchEvents.TwitchTotalT3SubGiftCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier3SubGiftEvent, SubGiftsToAdd))">-</button>
                                         </div>
                                     </div>
                                 </div>
@@ -241,9 +242,9 @@
                                     <div class="d-grid gap-2 mx-auto">
                                         <InputNumber @bind-Value="BitsToAdd" />
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchCheerEvent, BitsToAdd))">+</button>
-                                            <span class="input-layout-item-c">Cheer : @timerData.TwitchCheerEventCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchCheerEvent, BitsToAdd))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchCheerEvent, BitsToAdd))">+</button>
+                                            <span class="input-layout-item-c">Cheer : @timerData.TwitchEvents.TwitchCheerEventCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchEvents.TwitchCheerEvent, BitsToAdd))">-</button>
                                         </div>
                                     </div>
                                 </div>
@@ -260,9 +261,9 @@
                                     <div class="d-grid gap-2 mx-auto">
                                         <InputNumber @bind-Value="RaidersToAdd" />
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchRaidEvent, RaidersToAdd))">+</button>
-                                            <span class="input-layout-item-c">Raid : @timerData.TwitchRaidEventCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchRaidEvent, RaidersToAdd))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchRaidEvent, RaidersToAdd))">+</button>
+                                            <span class="input-layout-item-c">Raid : @timerData.TwitchEvents.TwitchRaidEventCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmountTwitch(timerData.TwitchEvents.TwitchRaidEvent, RaidersToAdd))">-</button>
                                         </div>
                                     </div>
                                 </div>
@@ -278,14 +279,14 @@
                                 <div>
                                     <div class="d-grid gap-2 mx-auto">
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-danger" @onclick="(() => AddTimeYoutube(timerData.YouTubeLikeEvent))">+</button>
-                                            <span class="input-layout-item-c">Like : @timerData.YoutubeLikeEventCount</span>
-                                            <button class="input-layout-item-d btn btn-danger" @onclick="(() => RemoveTimeYoutube(timerData.YouTubeLikeEvent))">-</button>
+                                            <button class="input-layout-item-b btn btn-danger" @onclick="(() => AddTimeYoutube(timerData.YoutubeEvents.YouTubeLikeEvent))">+</button>
+                                            <span class="input-layout-item-c">Like : @timerData.YoutubeEvents.YoutubeLikeEventCount</span>
+                                            <button class="input-layout-item-d btn btn-danger" @onclick="(() => RemoveTimeYoutube(timerData.YoutubeEvents.YouTubeLikeEvent))">-</button>
                                         </div>
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-danger" @onclick="(() => AddTimeYoutube(timerData.YouTubeSubEvent))">+</button>
-                                            <span class="input-layout-item-c">Subscribe : @timerData.YoutubeSubEventCount</span>
-                                            <button class="input-layout-item-d btn btn-danger" @onclick="(() => RemoveTimeYoutube(timerData.YouTubeSubEvent))">-</button>
+                                            <button class="input-layout-item-b btn btn-danger" @onclick="(() => AddTimeYoutube(timerData.YoutubeEvents.YouTubeSubEvent))">+</button>
+                                            <span class="input-layout-item-c">Subscribe : @timerData.YoutubeEvents.YoutubeSubEventCount</span>
+                                            <button class="input-layout-item-d btn btn-danger" @onclick="(() => RemoveTimeYoutube(timerData.YoutubeEvents.YouTubeSubEvent))">-</button>
                                         </div>
                                     </div>
                                 </div>
@@ -302,9 +303,9 @@
                                     <div class="d-grid gap-2 mx-auto">
                                         <InputNumber @bind-Value="DollarsToAdd" />
                                         <div class="d-grid gap-2 mx-auto">
-                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmount(timerData.DonationEvent, DollarsToAdd))">+</button>
-                                            <span class="input-layout-item-c">Donations : @timerData.TwitchRaidEventCount</span>
-                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmount(timerData.DonationEvent, DollarsToAdd))">-</button>
+                                            <button class="input-layout-item-b btn btn-primary" @onclick="(() => AddTimeWithAmount(timerData.OtherEvents.DonationEvent, DollarsToAdd))">+</button>
+                                            <span class="input-layout-item-c">Donations : @timerData.OtherEvents.DonationEventCount</span>
+                                            <button class="input-layout-item-d btn btn-primary" @onclick="(() => RemoveTimeWithAmount(timerData.OtherEvents.DonationEvent, DollarsToAdd))">-</button>
                                         </div>
                                     </div>
                                 </div>
@@ -367,6 +368,7 @@
                 <div class="form-group">
                     <div class="input-group mb-2">
                         <label class="input-group-text" for="twitchFollowTime">Twitch Follow</label>
+                        <input id="time"
                         <InputNumber id="twitchFollowTime" class="form-control" @bind-Value="updatedTimerModel.TwitchFollowTime" />
                     </div>
                 </div>
@@ -450,12 +452,12 @@
 
 @code {
     //TODO LIST:
-        // 1. Seperate the core timer and functions to a seperate component and read into this page. Make the timer more useable in various situations other pages this way.
-        // 2. Add a way to select a timer from a list of timers.
-        // 3. Add a way to create a new timer.
-        // 4. Add a way to delete a timer.
-        // 5. Allow Timers to count both up and down.
-        // 6. Move some of these other functions to a seperate component to make this page more readable and code more reusable.
+    // 1. Seperate the core timer and functions to a seperate component and read into this page. Make the timer more useable in various situations other pages this way.
+    // 2. Add a way to select a timer from a list of timers.
+    // 3. Add a way to create a new timer.
+    // 4. Add a way to delete a timer.
+    // 5. Allow Timers to count both up and down.
+    // 6. Move some of these other functions to a seperate component to make this page more readable and code more reusable.
 
     private StreamWorksUserModel loggedInUser = default!;
 
@@ -470,7 +472,7 @@
     private CreateStreamTimerModel updatedTimerModel = new();
 
     // Layout Items
-    private Offcanvas? timerEditOffcanvas = default!;
+    private Offcanvas timerEditOffcanvas = default!;
     private Collapse collapseElapsedTime = default!;
     private Collapse collapseTotalTime = default!;
 
@@ -486,9 +488,6 @@
     private int DollarsToAdd = 0;
     private int AddExtraTime = 0;
 
-    private string? TimeFormat = @"dd\:hh\:mm\:ss";
-    private string? TimeNumFormat = @"dd\:hh\:mm\:ss";
-    private string? TimeCharFormat = @"d'd 'h'h 'm'm 's's'";
     private string remainingButton = "remainingButton";
     private string elapsedButton = "elapsedButton";
     private string totalButton = "totalButton";
@@ -498,10 +497,6 @@
 
     private bool isTimerStopped = true;
     private bool isTimerRunning = false;
-
-    private bool isShowRemaining = true;
-    private bool isShowElapsed = false;
-    private bool isShowTotal = false;
 
     private bool isShowFormat = false;
     private bool startIsDisabled = false;
@@ -541,7 +536,7 @@
             Logger.LogInformation($"Follow Received: {follow.UserName} followed {follow.BroadcasterUserName}");
             if (follow is not null)
             {
-                AddTimeTwitch(timerData.TwitchFollowEvent ?? "");
+                AddTimeTwitch(timerData.TwitchEvents.TwitchFollowEvent ?? "");
             }
         });
 
@@ -553,15 +548,15 @@
             {
                 if (subscription.Tier == "1000")
                 {
-                    AddTimeTwitch(timerData.TwitchTier1Event ?? "");
+                    AddTimeTwitch(timerData.TwitchEvents.TwitchTier1Event ?? "");
                 }
                 else if (subscription.Tier == "2000")
                 {
-                    AddTimeTwitch(timerData.TwitchTier2Event ?? "");
+                    AddTimeTwitch(timerData.TwitchEvents.TwitchTier2Event ?? "");
                 }
                 else if (subscription.Tier == "3000")
                 {
-                    AddTimeTwitch(timerData.TwitchTier3Event ?? "");
+                    AddTimeTwitch(timerData.TwitchEvents.TwitchTier3Event ?? "");
                 }
             }
         });
@@ -573,15 +568,15 @@
             {
                 if (subGift.Tier == "1000")
                 {
-                    AddTimeWithAmountTwitch(timerData.TwitchTier1SubGiftEvent ?? "", subGift.Total);
+                    AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier1SubGiftEvent ?? "", subGift.Total);
                 }
                 else if (subGift.Tier == "2000")
                 {
-                    AddTimeWithAmountTwitch(timerData.TwitchTier2SubGiftEvent ?? "", subGift.Total);
+                    AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier2SubGiftEvent ?? "", subGift.Total);
                 }
                 else if (subGift.Tier == "3000")
                 {
-                    AddTimeWithAmountTwitch(timerData.TwitchTier3SubGiftEvent ?? "", subGift.Total);
+                    AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchTier3SubGiftEvent ?? "", subGift.Total);
                 }
             }
         });
@@ -591,7 +586,7 @@
             Logger.LogInformation($"Message Received: {cheer.UserName} cheered {cheer.Bits} Bits");
             if (cheer is not null && cheer.Bits > 0)
             {
-                AddTimeWithAmountTwitch(timerData.TwitchCheerEvent ?? "", cheer.Bits);
+                AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchCheerEvent ?? "", cheer.Bits);
             }
 
         });
@@ -599,10 +594,10 @@
         twitchHub.On<ChannelRaid>("GetRaid", (raid) =>
         {
             Logger.LogInformation($"Message Received: {raid.FromBroadcasterUserId} raided {raid.ToBroadcasterUserName} with {raid.Viewers} viewers!");
-        if (raid is not null && raid.Viewers > 0)
-        {
-            AddTimeWithAmountTwitch(timerData.TwitchRaidEvent ?? "", raid.Viewers);
-        }
+            if (raid is not null && raid.Viewers > 0)
+            {
+                AddTimeWithAmountTwitch(timerData.TwitchEvents.TwitchRaidEvent ?? "", raid.Viewers);
+            }
 
         });
 
@@ -650,47 +645,55 @@
 
     private async Task ShowOffcanvasAsync()
     {
-        await timerEditOffcanvas?.ShowAsync();
+        await timerEditOffcanvas.ShowAsync();
     }
     private async Task HideOffcanvasAsync()
     {
-        await timerEditOffcanvas?.HideAsync();
+        await timerEditOffcanvas.HideAsync();
     }
 
     private void ToggleTimeAsync(string buttonName) 
     {
-        if (buttonName == "remainingButton")
+        if (timerData is not null)
         {
-            isShowRemaining = true;
-            isShowElapsed = false;
-            isShowTotal = false;
-        }
-        else if (buttonName == "elapsedButton")
-        {
-            isShowRemaining = false;
-            isShowElapsed = true;
-            isShowTotal = false;
-        }
-        else
-        {
-            isShowRemaining = false;
-            isShowElapsed = false;
-            isShowTotal = true;
+            if (buttonName == "remainingButton")
+            {
+                timerData.TimerSettings.IsShowRemaining = true;
+                timerData.TimerSettings.IsShowElapsed = false;
+                timerData.TimerSettings.IsShowTotal = false;
+            }
+            else if (buttonName == "elapsedButton")
+            {
+                timerData.TimerSettings.IsShowRemaining = false;
+                timerData.TimerSettings.IsShowElapsed = true;
+                timerData.TimerSettings.IsShowTotal = false;
+            }
+            else
+            {
+                timerData.TimerSettings.IsShowRemaining = false;
+                timerData.TimerSettings.IsShowElapsed = false;
+                timerData.TimerSettings.IsShowTotal = true;
+            }
         }
 
         // await collapseElapsedTime.ToggleAsync();
     }
     private async Task ToggleTotalTimeAsync()
     {
-        if (isShowTotal)
+        if (timerData is null)         
         {
-            isShowTotal = false;
+            Logger.LogError("Timer Data is null. Cannot toggle Total Time.");
+            return;
+        }
+        if (timerData.TimerSettings.IsShowTotal)
+        {
+            timerData.TimerSettings.IsShowTotal = false;
         }
         else
         {
-            isShowTotal = true;
-            isShowRemaining = false;
-            isShowElapsed = false;
+            timerData.TimerSettings.IsShowTotal = true;
+            timerData.TimerSettings.IsShowRemaining = false;
+            timerData.TimerSettings.IsShowElapsed = false;
         }
         await collapseTotalTime.ToggleAsync();
     }
@@ -698,7 +701,7 @@
     {
         if (timerData is not null)
         {
-            if (timerData.IsRunning)
+            if (timerData.TimerSettings.IsRunning)
             {
                 startIsDisabled = true;
             }
@@ -730,7 +733,7 @@
             if (timerData is not null)
             {
                 TimeLeft = timerData.CurrentTime;
-                TimeElapsed = timerData.TotalTime - timerData.CurrentTime;
+                TimeElapsed = timerData.TimerSettings.TotalTime - timerData.CurrentTime;
             }
             else
             {
@@ -750,8 +753,8 @@
     {
         if (timerData is not null)
         {
-            timerData.CurrentTime += SetTime(timerData.AddTime);
-            timerData.TotalTime += SetTime(timerData.AddTime);
+            timerData.CurrentTime += timerData.AddTime;
+            timerData.TimerSettings.TotalTime += timerData.AddTime;
             TimeLeft = timerData.CurrentTime;
             await InvokeAsync(StateHasChanged);
             await SaveTimer();
@@ -760,18 +763,24 @@
 
     public void SetTimeFormatToClock()
     {
-        isTimeFormat = true;
-        isDateFormat = false;
-        TimeFormat = TimeNumFormat;
-        InvokeAsync(StateHasChanged);
+        if (timerData is not null)
+        {
+            isTimeFormat = true;
+            isDateFormat = false;
+            timerData.TimerSettings.TimerFormat = timerData.TimerSettings.TimeNumFormat;
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     public void SetTimeFormatToChar()
     {
-        isTimeFormat = false;
-        isDateFormat = true;
-        TimeFormat = TimeCharFormat;
-        InvokeAsync(StateHasChanged);
+        if (timerData is not null)
+        {
+            isTimeFormat = false;
+            isDateFormat = true;
+            timerData.TimerSettings.TimerFormat = timerData.TimerSettings.TimeCharFormat;
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     public async Task StartTimer()
@@ -780,21 +789,21 @@
 
         if (timerData is not null)
         {
-            if (timerData.FirstRun == true)
+            if (timerData.TimerSettings.FirstRun == true)
             {
-                timerData.CurrentTime = SetTime(timerData.StartingTime);
-                timerData.TotalTime = SetTime(timerData.StartingTime);
+                timerData.CurrentTime = timerData.TimerSettings.StartingTime;
+                timerData.TimerSettings.TotalTime = timerData.TimerSettings.StartingTime;
 
-                TimeLeft = SetTime(timerData.StartingTime);
+                TimeLeft = timerData.TimerSettings.StartingTime;
                 TimeElapsed = SetTime(0);
 
-                timerData.FirstRun = false;
-                timerData.IsRunning = true;
+                timerData.TimerSettings.FirstRun = false;
+                timerData.TimerSettings.IsRunning = true;
                 await SaveTimer();
             }
             else
             {
-                timerData.IsRunning = true;
+                timerData.TimerSettings.IsRunning = true;
                 await SaveTimer();
             }
 
@@ -817,7 +826,7 @@
 
         if (timerData is not null)
         {
-            timerData.IsRunning = false;
+            timerData.TimerSettings.IsRunning = false;
             await SaveTimer();
         }
     }
@@ -832,28 +841,28 @@
         }
         updatedTimerModel = new();
 
-        updatedTimerModel.StartingTime = timerData.StartingTime;
-        updatedTimerModel.ShowTotalCounts = timerData.ShowTotalCounts;
+        updatedTimerModel.StartingTime = timerData.TimerSettings.StartingTime.TotalSeconds;
+        updatedTimerModel.ShowTotalCounts = timerData.TimerSettings.ShowTotalCounts;
 
         // Twitch: Set Data in Update Model
-        updatedTimerModel.TwitchFollowTime = timerData.TwitchFollowTime;
-        updatedTimerModel.TwitchTier1Time = timerData.TwitchTier1Time;
-        updatedTimerModel.TwitchTier2Time = timerData.TwitchTier2Time;
-        updatedTimerModel.TwitchTier3Time = timerData.TwitchTier3Time;
+        updatedTimerModel.TwitchFollowTime = timerData.TwitchEvents.SetTwitchFollowTime.TotalSeconds;
+        updatedTimerModel.TwitchTier1Time = timerData.TwitchEvents.SetTwitchTier1Time.TotalSeconds;
+        updatedTimerModel.TwitchTier2Time = timerData.TwitchEvents.SetTwitchTier2Time.TotalSeconds;
+        updatedTimerModel.TwitchTier3Time = timerData.TwitchEvents.SetTwitchTier3Time.TotalSeconds;
 
-        updatedTimerModel.TwitchTier1SubGiftTime = timerData.TwitchTier1SubGiftTime;
-        updatedTimerModel.TwitchTier2SubGiftTime = timerData.TwitchTier2SubGiftTime;
-        updatedTimerModel.TwitchTier3SubGiftTime = timerData.TwitchTier3SubGiftTime;
+        updatedTimerModel.TwitchTier1SubGiftTime = timerData.TwitchEvents.SetTwitchTier1SubGiftTime.TotalSeconds;
+        updatedTimerModel.TwitchTier2SubGiftTime = timerData.TwitchEvents.SetTwitchTier2SubGiftTime.TotalSeconds;
+        updatedTimerModel.TwitchTier3SubGiftTime = timerData.TwitchEvents.SetTwitchTier3SubGiftTime.TotalSeconds;
 
-        updatedTimerModel.TwitchCheerTime = timerData.TwitchCheerTime;
-        updatedTimerModel.TwitchRaidTime = timerData.TwitchRaidTime;
+        updatedTimerModel.TwitchCheerTime = timerData.TwitchEvents.SetTwitchCheerTime.TotalSeconds;
+        updatedTimerModel.TwitchRaidTime = timerData.TwitchEvents.SetTwitchRaidTime.TotalSeconds;
 
         // Youtube
-        updatedTimerModel.YouTubeLikeTime = timerData.YouTubeLikeTime;
-        updatedTimerModel.YouTubeSubTime = timerData.YouTubeSubTime;
+        updatedTimerModel.YouTubeLikeTime = timerData.YoutubeEvents.SetYouTubeLikeTime.TotalSeconds;
+        updatedTimerModel.YouTubeSubTime = timerData.YoutubeEvents.SetYouTubeSubTime.TotalSeconds;
 
         // Other
-        updatedTimerModel.DonationTime = timerData.DonationTime;
+        updatedTimerModel.DonationTime = timerData.OtherEvents.SetDonationTime.TotalSeconds;
     }
 
     public async Task ResetTimer()
@@ -864,21 +873,21 @@
 
         if (timerData is not null)
         {
-            timerData.LastSetTime = timerData.CurrentTime;
+            timerData.TimerSettings.LastSetTime = timerData.CurrentTime;
 
-            timerData.CurrentTime = SetTime(timerData.StartingTime);
-            timerData.TotalTime = SetTime(timerData.StartingTime);
+            timerData.CurrentTime = timerData.TimerSettings.StartingTime;
+            timerData.TimerSettings.TotalTime = timerData.TimerSettings.StartingTime;
 
-            TimeLeft = SetTime(timerData.StartingTime);
+            TimeLeft = timerData.TimerSettings.StartingTime;
             TimeElapsed = SetTime(0);
 
             // Clear all Event Counts and rest them, to 0
             ResetEventCounts();
 
-            timerData.IsRunning = false;
-            timerData.IsCompleted = false;
+            timerData.TimerSettings.IsRunning = false;
+            timerData.TimerSettings.IsCompleted = false;
 
-            timerData.FirstRun = true;
+            timerData.TimerSettings.FirstRun = true;
             StateHasChanged();
             await SaveTimer();
         }
@@ -894,7 +903,7 @@
         {
             TimeLeft = TimeLeft.Subtract(oneSecond);
             timerData.CurrentTime = timerData.CurrentTime.Subtract(oneSecond);
-            TimeElapsed = timerData.TotalTime - timerData.CurrentTime;
+            TimeElapsed = timerData.TimerSettings.TotalTime - timerData.CurrentTime;
 
             await InvokeAsync(StateHasChanged);
 
@@ -915,8 +924,8 @@
 
         if (timerData is not null)
         {
-            timerData.IsRunning = false;
-            timerData.IsCompleted = true;
+            timerData.TimerSettings.IsRunning = false;
+            timerData.TimerSettings.IsCompleted = true;
 
             Logger.LogInformation("Timer Ended");
             await InvokeAsync(StateHasChanged);
@@ -938,27 +947,27 @@
     {
         if (timerData is not null)
         {
-            timerData.AddTime = 0;
+            timerData.AddTime = TimeSpan.Zero;
 
-            if (twitchEvent == timerData.TwitchFollowEvent)
+            if (twitchEvent == timerData.TwitchEvents.TwitchFollowEvent)
             {
-                timerData.TwitchFollowEventCount++;
-                timerData.AddTime = timerData.TwitchFollowTime;
+                timerData.TwitchEvents.TwitchFollowEventCount++;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchFollowTime;
             }
-            else if (twitchEvent == timerData.TwitchTier1Event)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier1Event)
             {
-                timerData.TwitchTier1EventCount++;
-                timerData.AddTime = timerData.TwitchTier1Time;
+                timerData.TwitchEvents.TwitchTier1EventCount++;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier1Time;
             }
-            else if (twitchEvent == timerData.TwitchTier2Event)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier2Event)
             {
-                timerData.TwitchTier2EventCount++;
-                timerData.AddTime = timerData.TwitchTier2Time;
+                timerData.TwitchEvents.TwitchTier2EventCount++;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier2Time;
             }
-            else if (twitchEvent == timerData.TwitchTier3Event)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier3Event)
             {
-                timerData.TwitchTier3EventCount++;
-                timerData.AddTime = timerData.TwitchTier3Time;
+                timerData.TwitchEvents.TwitchTier3EventCount++;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier3Time;
             }
             else
             {
@@ -982,38 +991,38 @@
 
         if (timerData is not null)
         {
-            if (twitchEvent == timerData.TwitchTier1SubGiftEvent)
+            if (twitchEvent == timerData.TwitchEvents.TwitchTier1SubGiftEvent)
             {
-                timerData.TwitchSubGiftEventCount++;
-                timerData.TwitchTotalSubGiftCount += amount;
-                timerData.TwitchTotalT1SubGiftCount += amount;
-                timerData.AddTime = timerData.TwitchTier1SubGiftTime * amount;
+                timerData.TwitchEvents.TwitchSubGiftEventCount++;
+                timerData.TwitchEvents.TwitchTotalSubGiftCount += amount;
+                timerData.TwitchEvents.TwitchTotalT1SubGiftCount += amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier1SubGiftTime * amount;
             }
-            else if (twitchEvent == timerData.TwitchTier2SubGiftEvent)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier2SubGiftEvent)
             {
-                timerData.TwitchSubGiftEventCount++;
-                timerData.TwitchTotalSubGiftCount += amount;
-                timerData.TwitchTotalT2SubGiftCount += amount;
-                timerData.AddTime = timerData.TwitchTier2SubGiftTime * amount;
+                timerData.TwitchEvents.TwitchSubGiftEventCount++;
+                timerData.TwitchEvents.TwitchTotalSubGiftCount += amount;
+                timerData.TwitchEvents.TwitchTotalT2SubGiftCount += amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier2SubGiftTime * amount;
             }
-            else if (twitchEvent == timerData.TwitchTier3SubGiftEvent)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier3SubGiftEvent)
             {
-                timerData.TwitchSubGiftEventCount++;
-                timerData.TwitchTotalSubGiftCount += amount;
-                timerData.TwitchTotalT3SubGiftCount += amount;
-                timerData.AddTime = timerData.TwitchTier3SubGiftTime * amount;
+                timerData.TwitchEvents.TwitchSubGiftEventCount++;
+                timerData.TwitchEvents.TwitchTotalSubGiftCount += amount;
+                timerData.TwitchEvents.TwitchTotalT3SubGiftCount += amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier3SubGiftTime * amount;
             }
-            else if (twitchEvent == timerData.TwitchCheerEvent)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchCheerEvent)
             {
-                timerData.TwitchCheerEventCount++;
-                timerData.TwitchTotalCheerAmount += amount;
-                timerData.AddTime = timerData.TwitchCheerTime * amount;
+                timerData.TwitchEvents.TwitchCheerEventCount++;
+                timerData.TwitchEvents.TwitchTotalCheerAmount += amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchCheerTime * amount;
             }
-            else if (twitchEvent == timerData.TwitchRaidEvent)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchRaidEvent)
             {
-                timerData.TwitchRaidEventCount++;
-                timerData.TwitchTotalRaidAmount += amount;
-                timerData.AddTime = timerData.TwitchRaidTime * amount;
+                timerData.TwitchEvents.TwitchRaidEventCount++;
+                timerData.TwitchEvents.TwitchTotalRaidAmount += amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchRaidTime * amount;
             }
             else
             {
@@ -1036,9 +1045,9 @@
         }
         if (timerData is not null)
         {
-            timerData.AddTime = time;
-            timerData.CurrentTime += SetTime(timerData.AddTime);
-            timerData.TotalTime += SetTime(timerData.AddTime);
+            timerData.AddTime = TimeSpan.FromSeconds(time);
+            timerData.CurrentTime += timerData.AddTime;
+            timerData.TimerSettings.TotalTime += timerData.AddTime;
             TimeLeft = timerData.CurrentTime;
             await InvokeAsync(StateHasChanged);
             await SaveTimer();
@@ -1053,25 +1062,25 @@
     {
         if (timerData is not null)
         {
-            if (twitchEvent == timerData.TwitchFollowEvent)
+            if (twitchEvent == timerData.TwitchEvents.TwitchFollowEvent)
             {
-                timerData.TwitchFollowEventCount--;
-                timerData.AddTime = timerData.TwitchFollowTime * -1;
+                timerData.TwitchEvents.TwitchFollowEventCount--;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchFollowTime * -1;
             }
-            else if (twitchEvent == timerData.TwitchTier1Event)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier1Event)
             {
-                timerData.TwitchTier1EventCount--;
-                timerData.AddTime = timerData.TwitchTier1Time * -1;
+                timerData.TwitchEvents.TwitchTier1EventCount--;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier1Time * -1;
             }
-            else if (twitchEvent == timerData.TwitchTier2Event)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier2Event)
             {
-                timerData.TwitchTier2EventCount--;
-                timerData.AddTime = timerData.TwitchTier2Time * -1;
+                timerData.TwitchEvents.TwitchTier2EventCount--;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier2Time * -1;
             }
-            else if (twitchEvent == timerData.TwitchTier3Event)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier3Event)
             {
-                timerData.TwitchTier3EventCount--;
-                timerData.AddTime = timerData.TwitchTier3Time * -1;
+                timerData.TwitchEvents.TwitchTier3EventCount--;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier3Time * -1;
             }
             else
             {
@@ -1095,41 +1104,41 @@
 
         if (timerData is not null)
         {
-            if (twitchEvent == timerData.TwitchTier1SubGiftEvent)
+            if (twitchEvent == timerData.TwitchEvents.TwitchTier1SubGiftEvent)
             {
-                timerData.TwitchSubGiftEventCount--;
-                timerData.TwitchTotalSubGiftCount -= amount;
+                timerData.TwitchEvents.TwitchSubGiftEventCount--;
+                timerData.TwitchEvents.TwitchTotalSubGiftCount -= amount;
 
-                timerData.TwitchTotalT1SubGiftCount -= amount;
-                timerData.AddTime = timerData.TwitchTier1SubGiftTime * -(amount);
+                timerData.TwitchEvents.TwitchTotalT1SubGiftCount -= amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier1SubGiftTime * -(amount);
             }
-            else if (twitchEvent == timerData.TwitchTier2SubGiftEvent)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier2SubGiftEvent)
             {
-                timerData.TwitchSubGiftEventCount--;
-                timerData.TwitchTotalSubGiftCount -= amount;
+                timerData.TwitchEvents.TwitchSubGiftEventCount--;
+                timerData.TwitchEvents.TwitchTotalSubGiftCount -= amount;
 
-                timerData.TwitchTotalT2SubGiftCount -= amount;
-                timerData.AddTime = timerData.TwitchTier2SubGiftTime * -(amount);
+                timerData.TwitchEvents.TwitchTotalT2SubGiftCount -= amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier2SubGiftTime * -(amount);
             }
-            else if (twitchEvent == timerData.TwitchTier3SubGiftEvent)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchTier3SubGiftEvent)
             {
-                timerData.TwitchSubGiftEventCount--;
-                timerData.TwitchTotalSubGiftCount -= amount;
+                timerData.TwitchEvents.TwitchSubGiftEventCount--;
+                timerData.TwitchEvents.TwitchTotalSubGiftCount -= amount;
 
-                timerData.TwitchTotalT3SubGiftCount -= amount;
-                timerData.AddTime = timerData.TwitchTier3SubGiftTime * -(amount);
+                timerData.TwitchEvents.TwitchTotalT3SubGiftCount -= amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchTier3SubGiftTime * -(amount);
             }
-            else if (twitchEvent == timerData.TwitchCheerEvent)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchCheerEvent)
             {
-                timerData.TwitchCheerEventCount--;
-                timerData.TwitchTotalCheerAmount -= amount;
-                timerData.AddTime = timerData.TwitchCheerTime * -(amount);
+                timerData.TwitchEvents.TwitchCheerEventCount--;
+                timerData.TwitchEvents.TwitchTotalCheerAmount -= amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchCheerTime * -(amount);
             }
-            else if (twitchEvent == timerData.TwitchRaidEvent)
+            else if (twitchEvent == timerData.TwitchEvents.TwitchRaidEvent)
             {
-                timerData.TwitchRaidEventCount--;
-                timerData.TwitchTotalRaidAmount -= amount;
-                timerData.AddTime = timerData.TwitchCheerTime * -(amount);
+                timerData.TwitchEvents.TwitchRaidEventCount--;
+                timerData.TwitchEvents.TwitchTotalRaidAmount -= amount;
+                timerData.AddTime = timerData.TwitchEvents.SetTwitchCheerTime * -(amount);
             }
             else
             {
@@ -1151,17 +1160,17 @@
             switch (youtubeEvent)
             {
                 case "YoutubeLike":
-                    timerData.YoutubeLikeEventCount++;
-                    timerData.AddTime = timerData.YouTubeLikeTime;
+                    timerData.YoutubeEvents.YoutubeLikeEventCount++;
+                    timerData.AddTime = timerData.YoutubeEvents.SetYouTubeLikeTime;
                     break;
 
                 case "YoutubeSubscribe":
-                    timerData.YoutubeSubEventCount++;
-                    timerData.AddTime = timerData.YouTubeSubTime;
+                    timerData.YoutubeEvents.YoutubeSubEventCount++;
+                    timerData.AddTime = timerData.YoutubeEvents.SetYouTubeSubTime;
                     break;
 
                 default:
-                    timerData.AddTime = timerData.DefaultTime;
+                    timerData.AddTime = timerData.TimerSettings.DefaultTime;
                     break;
             }
 
@@ -1180,17 +1189,17 @@
             switch (youtubeEvent)
             {
                 case "YoutubeLike":
-                    timerData.YoutubeLikeEventCount--;
-                    timerData.AddTime = -(timerData.YouTubeLikeTime);
+                    timerData.YoutubeEvents.YoutubeLikeEventCount--;
+                    timerData.AddTime = -(timerData.YoutubeEvents.SetYouTubeLikeTime);
                     break;
 
                 case "YoutubeSubscribe":
-                    timerData.YoutubeSubEventCount--;
-                    timerData.AddTime = -(timerData.YouTubeSubTime);
+                    timerData.YoutubeEvents.YoutubeSubEventCount--;
+                    timerData.AddTime = -(timerData.YoutubeEvents.SetYouTubeSubTime);
                     break;
 
                 default:
-                    timerData.AddTime = -(timerData.DefaultTime);
+                    timerData.AddTime = -(timerData.TimerSettings.DefaultTime);
                     break;
             }
 
@@ -1211,10 +1220,10 @@
 
         if (timerData is not null)
         {
-            if (eventName == timerData.DonationEvent)
+            if (eventName == timerData.OtherEvents.DonationEvent)
             {
-                timerData.DonationEventCount++;
-                timerData.AddTime = timerData.DonationTime * amount;
+                timerData.OtherEvents.DonationEventCount++;
+                timerData.AddTime = timerData.OtherEvents.SetDonationTime * amount;
             }
             else
             {
@@ -1238,10 +1247,10 @@
 
         if (timerData is not null)
         {
-            if (eventName == timerData.DonationEvent)
+            if (eventName == timerData.OtherEvents.DonationEvent)
             {
-                timerData.DonationEventCount--;
-                timerData.AddTime = timerData.DonationTime * -(amount);
+                timerData.OtherEvents.DonationEventCount--;
+                timerData.AddTime = timerData.OtherEvents.SetDonationTime * -(amount);
             }
             else
             {
@@ -1264,9 +1273,9 @@
         }
         if (timerData is not null)
         {
-            timerData.AddTime = time;
-            timerData.CurrentTime -= SetTime(timerData.AddTime);
-            timerData.TotalTime -= SetTime(timerData.AddTime);
+            timerData.AddTime = TimeSpan.FromSeconds(time);
+            timerData.CurrentTime -= timerData.AddTime;
+            timerData.TimerSettings.TotalTime -= timerData.AddTime;
             TimeLeft = timerData.CurrentTime;
             await InvokeAsync(StateHasChanged);
             await SaveTimer();
@@ -1281,26 +1290,26 @@
     {
         if (timerData is not null)
         {
-            timerData.TwitchFollowEventCount = 0;
+            timerData.TwitchEvents.TwitchFollowEventCount = 0;
 
-            timerData.TwitchTier1EventCount = 0;
-            timerData.TwitchTier2EventCount = 0;
-            timerData.TwitchTier3EventCount = 0;
+            timerData.TwitchEvents.TwitchTier1EventCount = 0;
+            timerData.TwitchEvents.TwitchTier2EventCount = 0;
+            timerData.TwitchEvents.TwitchTier3EventCount = 0;
 
-            timerData.TwitchSubGiftEventCount = 0;
-            timerData.TwitchTotalSubGiftCount = 0;
-            timerData.TwitchTotalT1SubGiftCount = 0;
-            timerData.TwitchTotalT2SubGiftCount = 0;
-            timerData.TwitchTotalT3SubGiftCount = 0;
+            timerData.TwitchEvents.TwitchSubGiftEventCount = 0;
+            timerData.TwitchEvents.TwitchTotalSubGiftCount = 0;
+            timerData.TwitchEvents.TwitchTotalT1SubGiftCount = 0;
+            timerData.TwitchEvents.TwitchTotalT2SubGiftCount = 0;
+            timerData.TwitchEvents.TwitchTotalT3SubGiftCount = 0;
 
-            timerData.TwitchCheerEventCount = 0;
-            timerData.TwitchTotalCheerAmount = 0;
+            timerData.TwitchEvents.TwitchCheerEventCount = 0;
+            timerData.TwitchEvents.TwitchTotalCheerAmount = 0;
 
-            timerData.TwitchRaidEventCount = 0;
-            timerData.TwitchTotalRaidAmount = 0;
+            timerData.TwitchEvents.TwitchRaidEventCount = 0;
+            timerData.TwitchEvents.TwitchTotalRaidAmount = 0;
 
-            timerData.YoutubeLikeEventCount = 0;
-            timerData.YoutubeSubEventCount = 0;
+            timerData.YoutubeEvents.YoutubeLikeEventCount = 0;
+            timerData.YoutubeEvents.YoutubeSubEventCount = 0;
         }
     }
 
@@ -1324,18 +1333,12 @@
         }
     }
 
-    private void TickHandler()
-    {
-        timerData.TickCount += 1;
-        InvokeAsync(StateHasChanged);
-    }
-
     private async Task CreateTimer()
     {
         timerData = new();
         timerData.UserId = loggedInUser.Id;
         timerData.CurrentTime = SetTime(0);
-        timerData.TimerTitle = "Default Title";
+        timerData.TimerSettings.TimerTitle = "Default Title";
 
         try
         {
@@ -1357,28 +1360,28 @@
             Logger.LogError("Timer Data is null");
             return;
         }
-        timerData.StartingTime = updatedTimerModel.StartingTime;
-        timerData.ShowTotalCounts = updatedTimerModel.ShowTotalCounts;
+        timerData.TimerSettings.StartingTime = TimeSpan.FromSeconds(updatedTimerModel.StartingTime);
+        timerData.TimerSettings.ShowTotalCounts = updatedTimerModel.ShowTotalCounts;
 
         // Twitch
-        timerData.TwitchFollowTime = updatedTimerModel.TwitchFollowTime;
-        timerData.TwitchTier1Time = updatedTimerModel.TwitchTier1Time;
-        timerData.TwitchTier2Time = updatedTimerModel.TwitchTier2Time;
-        timerData.TwitchTier3Time = updatedTimerModel.TwitchTier3Time;
+        timerData.TwitchEvents.SetTwitchFollowTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchFollowTime);
+        timerData.TwitchEvents.SetTwitchTier1Time = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier1Time);
+        timerData.TwitchEvents.SetTwitchTier2Time = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier2Time);
+        timerData.TwitchEvents.SetTwitchTier3Time = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier3Time);
 
-        timerData.TwitchTier1SubGiftTime = updatedTimerModel.TwitchTier1SubGiftTime;
-        timerData.TwitchTier2SubGiftTime = updatedTimerModel.TwitchTier2SubGiftTime;
-        timerData.TwitchTier3SubGiftTime = updatedTimerModel.TwitchTier3SubGiftTime;
+        timerData.TwitchEvents.SetTwitchTier1SubGiftTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier1SubGiftTime);
+        timerData.TwitchEvents.SetTwitchTier2SubGiftTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier2SubGiftTime);
+        timerData.TwitchEvents.SetTwitchTier3SubGiftTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchTier3SubGiftTime);
 
-        timerData.TwitchCheerTime = updatedTimerModel.TwitchCheerTime;
-        timerData.TwitchRaidTime = updatedTimerModel.TwitchRaidTime;
+        timerData.TwitchEvents.SetTwitchCheerTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchCheerTime);
+        timerData.TwitchEvents.SetTwitchRaidTime = TimeSpan.FromSeconds(updatedTimerModel.TwitchRaidTime);
 
         // Youtube
-        timerData.YouTubeLikeTime = updatedTimerModel.YouTubeLikeTime;
-        timerData.YouTubeSubTime = updatedTimerModel.YouTubeSubTime;
+        timerData.YoutubeEvents.SetYouTubeLikeTime = TimeSpan.FromSeconds(updatedTimerModel.YouTubeLikeTime);
+        timerData.YoutubeEvents.SetYouTubeSubTime = TimeSpan.FromSeconds(updatedTimerModel.YouTubeSubTime);
 
         // Other
-        timerData.DonationTime = updatedTimerModel.DonationTime;
+        timerData.OtherEvents.SetDonationTime = TimeSpan.FromSeconds(updatedTimerModel.DonationTime);
 
         await SaveTimer();
 

@@ -1,0 +1,34 @@
+﻿@page "/timer"
+
+@using StreamWorks.Helpers.Widgets.Timers
+@inject ILogger<TimerComponent> Logger
+
+<h3>@timer.Timer.CurrentTime</h3>
+
+<Button @onclick="(() => timer.StartTimer())">Start</Button>
+<Button @onclick="timer.StopTimer">Stop</Button>
+
+@code {
+    StreamTimer timer = new StreamTimer();
+
+    protected override async Task OnInitializedAsync()
+    {
+        timer = new StreamTimer();
+        timer.OnTimerTick += onTick;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+        }
+    }
+
+    private void onTick()
+    {
+        Logger.LogInformation("Timer ticked");
+        StateHasChanged();
+    }
+}
+[]

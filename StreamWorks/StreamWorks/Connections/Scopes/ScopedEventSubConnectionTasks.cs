@@ -1,10 +1,13 @@
 ﻿
 using Azure.Core;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 using StreamWorks.Components;
 using StreamWorks.Hubs;
 using StreamWorks.Library.Models.Connections.TwitchEvent;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Helix.Models.Moderation.GetModerators;
+using TwitchLib.EventSub.Core.Models.Chat;
 using TwitchLib.EventSub.Websockets;
 using TwitchLib.EventSub.Websockets.Core.EventArgs;
 using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
@@ -12,30 +15,42 @@ using TwitchLib.EventSub.Websockets.Core.EventArgs.Stream;
 
 namespace StreamWorks.Connections.Scopes;
 
-public sealed class ScopedEventSubConnectionTasks(
-    ILogger<ScopedEventSubConnectionTasks> Logger,
-    IConfiguration Config
-    ) : IScopedEventSubConnection
+public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
 {
+
     private EventSubWebsocketClient? eventSubWebsocketClient;
     private EventSubConnectionModel? eventSubConnectionModel;
     private TwitchAPI? api;
 
     private Guid ThisUser;
-    private string messageGroup;
+    private string? messageGroup;
 
+    private readonly ILogger<ScopedEventSubConnectionTasks> Logger;
+    private readonly IConfiguration Config;
+    public IHubContext<TwitchHub> _hubContext { get; }
+    
     private HubConnection? twitchHub;
     private string hubName = "/twitchhub";
     private string? baseUrl;
 
     // Set to true to use the Test Server
-    private bool isTesting = false;
+    private bool isTesting = true;
     private Uri TestServer = new Uri("ws://127.0.0.1:8080/ws");
 
     private string AccessToken = "";
     private string BroadcasterId = "";
     private string ModeratorId = "";
     private string UserId = "";
+
+    public ScopedEventSubConnectionTasks(
+        ILogger<ScopedEventSubConnectionTasks> Logger,
+        IConfiguration Config,
+        IHubContext<TwitchHub> TwitchHubContext)
+    {
+        this.Logger = Logger;
+        this.Config = Config;
+        _hubContext = TwitchHubContext;
+    }
 
     public async Task<EventSubConnectionModel> CreateScopedEventSubConnection(CancellationToken cancellationToken, Guid loggedInUserId, string accessToken, string twitchUserId)
     {
@@ -110,7 +125,7 @@ public sealed class ScopedEventSubConnectionTasks(
 
         baseUrl = Config.GetValue<string>("BaseUrl") ?? "< No Url Set >";
 
-        // SETUP SIGNALR HUB CONNECTION 
+        //SETUP SIGNALR HUB CONNECTION
         twitchHub = new HubConnectionBuilder()
         .WithUrl(baseUrl + hubName)
         .WithAutomaticReconnect()
@@ -129,7 +144,7 @@ public sealed class ScopedEventSubConnectionTasks(
 
         await twitchHub.StartAsync();
         
-        if (twitchHub.ConnectionId is not null)
+        if (twitchHub.ConnectionId is not null && eventSubConnectionModel is not null)
         {
             eventSubConnectionModel.HubConnection = twitchHub;
             Logger.LogInformation($"Hub Connection Id: {twitchHub.ConnectionId}");
@@ -143,30 +158,57 @@ public sealed class ScopedEventSubConnectionTasks(
         ModeratorId = twitchUserId;
         BroadcasterId = twitchUserId;
 
-        api.Settings.AccessToken = AccessToken;
-        api.Settings.ClientId = Config["Twitch:ClientId"];
-        api.Settings.Secret = Config["Twitch:ClientSecret"]; ;
+        if (api is not null)
+        {
+            api.Settings.AccessToken = AccessToken;
+            api.Settings.ClientId = Config["Twitch:ClientId"];
+            api.Settings.Secret = Config["Twitch:ClientSecret"];
+        }
+        else
+        {
+            Logger.LogError("TwitchAPI Client is null. Starting new API");
+            api = new TwitchAPI();
+            api.Settings.AccessToken = AccessToken;
+            api.Settings.ClientId = Config["Twitch:ClientId"];
+            api.Settings.Secret = Config["Twitch:ClientSecret"];
+        }
 
         Logger.LogInformation($"Setting Access Token: {AccessToken}");
         Logger.LogInformation("TwitchEventSubConnection setup complete.");
     }
 
-    public async Task StartService()
+    public async Task<bool> StartService()
     {
-        Logger.LogInformation("Starting Service...");
-        if (isTesting == true)
+        if (eventSubWebsocketClient is not null)
         {
-            Logger.LogInformation("Switching to Test Service...");
-            await eventSubWebsocketClient.ConnectAsync(TestServer);
+            Logger.LogInformation("Starting Service...");
+            if (isTesting == true)
+            {
+                Logger.LogInformation("Switching to Test Service...");
+                await eventSubWebsocketClient.ConnectAsync(TestServer);
+                return true;
+            }
+            else
+            {
+                await eventSubWebsocketClient.ConnectAsync();
+                return true;
+            }
         }
         else
         {
-            await eventSubWebsocketClient.ConnectAsync();
+            Logger.LogError("EventSubWebsocketClient is null. Cannot Start Service.");
+            return false;
         }
     }
 
-    private async Task OnWebsocketConnected(object sender, WebsocketConnectedArgs e)
+    private async Task<bool> OnWebsocketConnected(object sender, WebsocketConnectedArgs e)
     {
+        if (eventSubWebsocketClient is null)
+        {
+            Logger.LogError("EventSubWebsocketClient is null. Cannot Connect.");
+            return false;
+        }
+
         Logger.LogInformation($"Websocket {eventSubWebsocketClient.SessionId} connected!");
         Logger.LogInformation($"Setting Subscriptions: Access Token: {api.Settings.AccessToken}");
 
@@ -534,26 +576,47 @@ public sealed class ScopedEventSubConnectionTasks(
                 }
             }
         }
+
+        // End Events Sub
+        return true;
     }
 
     private async Task OnWebsocketDisconnected(object sender, EventArgs e)
     {
+        if (eventSubWebsocketClient is null)
+        {
+            Logger.LogError("EventSubWebsocketClient is null. Cannot Reconnect.");
+            return;
+        }
         Logger.LogError($"Websocket {eventSubWebsocketClient.SessionId} disconnected!");
         await WebsocketReconnectAsync();
     }
 
     private async Task OnWebsocketReconnected(object sender, EventArgs e)
     {
+        if (eventSubWebsocketClient is null)
+        {
+            Logger.LogError("EventSubWebsocketClient is null. Cannot Reconnect.");
+            return;
+        }
         Logger.LogWarning($"Websocket {eventSubWebsocketClient.SessionId} reconnected");
     }
 
     private async Task OnErrorOccurred(object sender, ErrorOccuredArgs e)
     {
-        Logger.LogError($"Websocket {eventSubWebsocketClient.SessionId} - Error occurred!");
+        if (eventSubWebsocketClient is not null)
+        {
+            Logger.LogError($"Websocket {eventSubWebsocketClient.SessionId} - Error occurred!");
+        }
     }
 
     public async Task WebsocketReconnectAsync()
     {
+        if (eventSubWebsocketClient is null)
+        {
+            Logger.LogError("EventSubWebsocketClient is null. Cannot Reconnect.");
+            return;
+        }
         // Don't do this in production. You should implement a better reconnect strategy
         while (!await eventSubWebsocketClient.ReconnectAsync())
         {
@@ -581,6 +644,7 @@ public sealed class ScopedEventSubConnectionTasks(
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
+            //await hubContext.Clients.All.SendAsync("RecievedChannelFollow", messageGroup, eventData);
             await twitchHub.SendAsync("RecievedChannelFollow", messageGroup, eventData);
         }
         Logger.LogInformation($"{eventData.UserName} followed {eventData.BroadcasterUserName} at {eventData.FollowedAt}");

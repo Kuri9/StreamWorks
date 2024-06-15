@@ -33,7 +33,10 @@ public static class AuthenticationProviderHelpers
         {
             try
             {
-                userId = authState?.User.Claims.FirstOrDefault(c => c.Type.Contains("user_id")).Value;
+                if (authState?.User.Claims is not null)
+                {
+                    userId = authState.User.Claims.First(c => c.Type.Contains("user_id")).Value ?? "No User ID Found";
+                }
             }
             catch (Exception ex)
             {

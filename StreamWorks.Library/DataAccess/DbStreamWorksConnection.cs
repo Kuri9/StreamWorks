@@ -15,6 +15,9 @@ public class DbStreamWorksConnection : IDbStreamWorksConnection
 
     // Collections are roughly similar to a table in SQL
     // GENERAL
+    public string UserAppStateDataCollectionName { get; private set; } = "App User Data";
+
+    public IMongoCollection<UserAppStateDataModel> UserAppStateDataCollection { get; private set; }
 
     // STREAMWORKS COLLECTIONS
     public string StreamTimerCollectionName { get; private set; } = "Stream Timer";

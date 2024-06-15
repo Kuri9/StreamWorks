@@ -1,4 +1,6 @@
-﻿namespace StreamWorks.Models.Widgets.Timers;
+﻿using System;
+
+namespace StreamWorks.Models.Widgets.Timers;
 
 public class CreateStreamTimerModel
 {
