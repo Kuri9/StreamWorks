@@ -881,7 +881,7 @@
             TimeElapsed = SetTime(0);
 
             // Clear all Event Counts and rest them, to 0
-            ResetEventCounts();
+            timerData = TimerHelpers.ResetEventCounts(timerData);
 
             timerData.TimerSettings.IsRunning = false;
             timerData.TimerSettings.IsCompleted = false;
@@ -889,6 +889,7 @@
             
             isTimerStopped = true;
             isTimerRunning = false;
+            startIsDisabled = false;
 
             StateHasChanged();
             await SaveTimer();
@@ -1096,18 +1097,6 @@
 
         timerData = TimerHelpers.RemoveTimeYoutube(youtubeEvent, timerData);
         await UpdateTime();
-    }
-
-    public void ResetEventCounts()
-    {
-        if (timerData is not null)
-        {
-            timerData = TimerHelpers.ResetEventCounts(timerData);
-        }
-        else
-        {
-            Logger.LogError("Timer Data is null. Couldn't reset Event Counts.");
-        }
     }
 
     public async Task SetHubTimer()

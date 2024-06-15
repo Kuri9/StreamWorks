@@ -33,9 +33,16 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
     private string hubName = "/twitchhub";
     private string? baseUrl;
 
-    // Set to true to use the Test Server
+    private bool IsConnected = false;
+    private int DelayTime = 500;
+    private int MaxDelayTime = 7200000;
+    private int ReconnectTries = 0;
+    private bool LimitReconnectTries = true;
+
+    // Set to true to use the Test Server =======================================
     private bool isTesting = true;
     private Uri TestServer = new Uri("ws://127.0.0.1:8080/ws");
+    // ==========================================================================
 
     private string AccessToken = "";
     private string BroadcasterId = "";
@@ -45,10 +52,12 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
     public ScopedEventSubConnectionTasks(
         ILogger<ScopedEventSubConnectionTasks> Logger,
         IConfiguration Config,
+        EventSubWebsocketClient eventSubWebsocketClient,
         IHubContext<TwitchHub> TwitchHubContext)
     {
         this.Logger = Logger;
         this.Config = Config;
+        this.eventSubWebsocketClient = eventSubWebsocketClient;
         _hubContext = TwitchHubContext;
     }
 
@@ -73,7 +82,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
             Logger.LogInformation($"TwitchAPI Created For: {api.Settings.ClientId}");
         }
 
-        eventSubWebsocketClient = new EventSubWebsocketClient();
+        //eventSubWebsocketClient = new EventSubWebsocketClient();
         if (eventSubWebsocketClient is null)
         {
             Logger.LogError($"EventSubWebsocketClient{nameof(eventSubWebsocketClient)} is null.");
@@ -101,9 +110,9 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         eventSubWebsocketClient.ChannelFollow += OnChannelFollow;
 
         eventSubWebsocketClient.ChannelChatMessage += OnChannelChatMessage;
-        //EventSubWebsocketClient.ChannelChatMessageDeleted += OnChannelChatMessageDeleted;
-        //EventSubWebsocketClient.ChannelChatNotification += OnChannelChatNotification;
-        //EventSubWebsocketClient.ChannelChatSettingsChanged += OnChannelChatSettingsChanged;
+        // eventSubWebsocketClient.ChannelChatMessageDeleted += OnChannelChatMessageDeleted;
+        // eventSubWebsocketClient.ChannelChatNotification += OnChannelChatNotification;
+        // eventSubWebsocketClient.ChannelChatSettingsChanged += OnChannelChatSettingsChanged;
 
         eventSubWebsocketClient.ChannelSubscribe += OnChannelSubscribe;
         eventSubWebsocketClient.ChannelSubscriptionEnd += OnChannelSubscriptionEnd;
@@ -143,8 +152,8 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         //});
 
         await twitchHub.StartAsync();
-        
-        if (twitchHub.ConnectionId is not null && eventSubConnectionModel is not null)
+
+        if (eventSubConnectionModel is not null)
         {
             eventSubConnectionModel.HubConnection = twitchHub;
             Logger.LogInformation($"Hub Connection Id: {twitchHub.ConnectionId}");
@@ -208,6 +217,8 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
             Logger.LogError("EventSubWebsocketClient is null. Cannot Connect.");
             return false;
         }
+
+        IsConnected = true;
 
         Logger.LogInformation($"Websocket {eventSubWebsocketClient.SessionId} connected!");
         Logger.LogInformation($"Setting Subscriptions: Access Token: {api.Settings.AccessToken}");
@@ -588,6 +599,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
             Logger.LogError("EventSubWebsocketClient is null. Cannot Reconnect.");
             return;
         }
+        IsConnected = false;
         Logger.LogError($"Websocket {eventSubWebsocketClient.SessionId} disconnected!");
         await WebsocketReconnectAsync();
     }
@@ -599,6 +611,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
             Logger.LogError("EventSubWebsocketClient is null. Cannot Reconnect.");
             return;
         }
+        IsConnected = true;
         Logger.LogWarning($"Websocket {eventSubWebsocketClient.SessionId} reconnected");
     }
 
@@ -618,11 +631,40 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
             return;
         }
         // Don't do this in production. You should implement a better reconnect strategy
-        while (!await eventSubWebsocketClient.ReconnectAsync())
+        while (IsConnected is false)
         {
-            Logger.LogError("Websocket reconnect failed!");
-            await Task.Delay(1000);
+            ReconnectTries += 1;
+            if (ReconnectTries > 10 && LimitReconnectTries == true)
+            {
+                Logger.LogError("Reconnect Tries Exceeded 10. Stopping Reconnect Attempts.");
+                return;
+            }
+            try {
+                if (await eventSubWebsocketClient.ReconnectAsync() == true)
+                {
+                    Logger.LogInformation($"Websocket reconnected in {ReconnectTries} tries!");
+                }
+                else
+                {
+                    Logger.LogError($"Websocket reconnect failed {ReconnectTries} times. Reconnecting...");
+                    
+                    var newDelayTime = DelayTime * 2;
+                    if (newDelayTime < MaxDelayTime)
+                    {
+                        DelayTime = newDelayTime;
+                    }
+
+                    await Task.Delay(DelayTime);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Websocket reconnect failed: {ex.Message}");
+            }
         }
+
+        ReconnectTries = 0;
+        DelayTime = 500;
     }
 
     // ALL NON-CONNECTION RELATED EVENTS

@@ -153,6 +153,7 @@ public static class RegisterServices
         builder.Services.AddBlazorBootstrap();
 
         builder.Services.AddSingleton<TwitchAPI>();
+        builder.Services.AddTwitchLibEventSubWebsockets();
         //builder.Services.AddSingleton<TwitchUserController>();
         //builder.Services.AddSingleton<TwitchEventSubController>();
 
