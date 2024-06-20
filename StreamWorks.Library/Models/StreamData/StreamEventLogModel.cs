@@ -1,7 +1,7 @@
 ﻿namespace StreamWorks.Library.Models.StreamData;
-public class StreamEventLogModel
+public class StreamEventLogModel : IStreamEventLog
 {
-    public string? UserId { get; set; }
+    public Guid UserId { get; set; }
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.Now;
     public TwitchEventDataModel TwitchEventData { get; set; } = new TwitchEventDataModel();
 }

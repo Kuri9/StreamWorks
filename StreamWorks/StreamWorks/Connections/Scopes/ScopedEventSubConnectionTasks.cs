@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using StreamWorks.Components;
 using StreamWorks.Hubs;
 using StreamWorks.Library.Models.Connections.TwitchEvent;
+using StreamWorks.Library.Models.StreamData;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Helix.Models.Moderation.GetModerators;
 using TwitchLib.EventSub.Core.Models.Chat;
@@ -27,6 +28,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
 
     private readonly ILogger<ScopedEventSubConnectionTasks> Logger;
     private readonly IConfiguration Config;
+    private readonly IStreamEventLog StreamEventLog;
     public IHubContext<TwitchHub> _hubContext { get; }
     
     private HubConnection? twitchHub;
@@ -53,10 +55,12 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         ILogger<ScopedEventSubConnectionTasks> Logger,
         IConfiguration Config,
         EventSubWebsocketClient eventSubWebsocketClient,
+        IStreamEventLog streamEventLog,
         IHubContext<TwitchHub> TwitchHubContext)
     {
         this.Logger = Logger;
         this.Config = Config;
+        this.StreamEventLog = streamEventLog;
         this.eventSubWebsocketClient = eventSubWebsocketClient;
         _hubContext = TwitchHubContext;
     }
@@ -687,6 +691,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         if (twitchHub is not null)
         {
             //await hubContext.Clients.All.SendAsync("RecievedChannelFollow", messageGroup, eventData);
+            StreamEventLog.TwitchEventData.ChannelFollow.Add(eventData);
             await twitchHub.SendAsync("RecievedChannelFollow", messageGroup, eventData);
         }
         Logger.LogInformation($"{eventData.UserName} followed {eventData.BroadcasterUserName} at {eventData.FollowedAt}");
@@ -700,6 +705,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
 
         if (twitchHub is not null)
         {
+            StreamEventLog.TwitchEventData.ChannelChatMessage.Add(eventData);
             await twitchHub.SendAsync("RecievedChatMessage", messageGroup, eventData);
         }
 
@@ -712,6 +718,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
+            StreamEventLog.TwitchEventData.ChannelSubscription.Add(eventData);
             await twitchHub.SendAsync("RecievedSubscription", messageGroup, eventData);
         }
 
@@ -723,6 +730,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
+            StreamEventLog.TwitchEventData.ChannelSubscriptionEnd.Add(eventData);
             await twitchHub.SendAsync("RecievedSubscriptionEnding", messageGroup, eventData);
         }
 
@@ -734,6 +742,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
+            StreamEventLog.TwitchEventData.ChannelSubscriptionGift.Add(eventData);
             await twitchHub.SendAsync("RecievedSubscriptionGift", messageGroup, eventData);
         }
 
@@ -757,6 +766,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
+            StreamEventLog.TwitchEventData.ChannelCheer.Add(eventData);
             await twitchHub.SendAsync("RecievedChannelCheer", messageGroup, eventData);
         }
 
@@ -769,6 +779,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         var eventData = e.Notification.Payload.Event;
         if (twitchHub is not null)
         {
+            StreamEventLog.TwitchEventData.ChannelRaid.Add(eventData);
             await twitchHub.SendAsync("RecievedChannelRaid", messageGroup, eventData);
         }
 

@@ -1,6 +1,8 @@
 ﻿@page "/"
+@using StreamWorks.Core.App
 @using StreamWorks.Helpers.Twitch
 
+@using StreamWorks.Library.Models.Users.UserData
 @using TwitchLib.Api.Helix.Models.Users.GetUsers
 @using TwitchLib.EventSub.Core.SubscriptionTypes.Channel
 
@@ -16,6 +18,8 @@
 @inject IHttpClientFactory clientFactory
 @inject TwitchAPI twitchApi;
 @inject ITwitchSignInHelpers twitchSignInHelpers
+@inject IAppStateCore appState
+@inject IUserAppState userAppState
 
 @implements IAsyncDisposable
 
@@ -129,6 +133,7 @@
     private ClaimsPrincipal? loggedInUserAuthState;
     private List<GetUserDataModel>? twitchUserData = new();
     private GetUsersResponse? getUserResponse;
+    //private UserAppStateModel userAppState = new();
 
     private int tryCount = 3;
     private bool mustRefreshToken = false;
@@ -157,6 +162,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        //userAppState = await appState.GetUserStateData(loggedInUser);
+        Logger.LogInformation($"UserAppState: {userAppState?.UserId}");
+
         twitchHub = new HubConnectionBuilder()
             .WithUrl(NavManager.ToAbsoluteUri("/twitchhub"))
             .WithAutomaticReconnect()
@@ -193,72 +201,7 @@
 
     public async Task RunSetup()
     {
-        // Check if user is logged in. Set loggedInUser if they are.
-        await CheckLoggedInUser();
-
-        if (loggedInUser?.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() >= 1)
-        {
-            // If the loggedInMember has a Twitch Login, set up the Twitch User
-            SetupTwitchUser();
-
-            // Then try connecting to API to test the Access Token
-            while (tryCount > 0)
-            {
-                Logger.LogWarning($"Current Try: {tryCount}");
-                tryCount--;
-
-                // Try to get the User Data from Twitch API
-                var result = await GetTwitchUserData(AccessToken);
-
-                // If we get the data, break the loop
-                if (result == true)
-                {
-                    accessCodeValid = true;
-                    Logger.LogInformation($"User Data Received: {twitchUserData?.First().DisplayName}");
-                    break;
-                } 
-                else if (result == false && mustRefreshToken == true)
-                {
-                    // If we don't get the data and must refresh token, try to refresh the token
-                    Logger.LogWarning($"Trying Token Refresh....");
-                    accessCodeValid = false;
-
-                    // Try to refresh the Token
-                    await RefreshTwitchToken();
-
-                    Logger.LogInformation($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
-
-                    // If the token is not null, set the new token
-                    if (loggedInUser?.Tokens is not null)
-                    {
-
-                        AccessToken = loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
-                        Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
-                    }
-
-                    // No more ned to refresh
-                    mustRefreshToken = false;
-                }
-                else
-                {
-                    // Token is invalid
-                    accessCodeValid = false;
-                    Logger.LogError("There was an error with the API call.");
-                    break;
-                }
-            }
-
-            // If we have the data, set up the Twitch API
-            tryCount = 3;
-            if (accessCodeValid == true)
-            {
-                await TwitchApiSetup();
-            }
-        }
-        else
-        {
-            Logger.LogError("This User doesn't have a Twitch account connected..");
-        }
+        await appState.SetUserData();
     }
 
     public async Task CheckLoggedInUser()
@@ -361,7 +304,7 @@
             twitchConnectionData.RedirectUri = NavManager.Uri.ToString();
             Logger.LogInformation($"Redirect URI: {twitchConnectionData.RedirectUri}");
 
-            twitchConnectionData.Scopes = [];
+            twitchConnectionData.Scopes = new TwitchScope();
 
             twitchConnectionData.RefreshToken = refreshToken;
             Logger.LogInformation($"Refresh Token: {twitchConnectionData.RefreshToken}");

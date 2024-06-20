@@ -4,9 +4,8 @@ using StreamWorks.Helpers.OIDC;
 using StreamWorks.Connections;
 using TwitchLib.EventSub.Websockets.Extensions;
 using Microsoft.AspNetCore.ResponseCompression;
-using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers;
-using StreamWorks.Connections.Scopes;
-using StreamWorks.Components.Twitch.StreamTimer.TimerClasses;
+using StreamWorks.Library.Models.Users.UserData;
+using StreamWorks.Core.App;
 
 namespace StreamWorks;
 
@@ -161,13 +160,20 @@ public static class RegisterServices
         builder.Services.AddSingleton<IDbUserConnection, DbUserConnection>();
         builder.Services.AddSingleton<IStreamWorksUserData, MongoStreamWorksUserData>();
         builder.Services.AddSingleton<IDbStreamWorksConnection, DbStreamWorksConnection>();
+        builder.Services.AddScoped<IStreamEventLogData, MongoStreamEventLogData>();
 
         // User Data Services
-        builder.Services.AddSingleton<IAppStateUserData, MongoAppStateUserData>();
+        builder.Services.AddSingleton<IUserAppStateData, MongoUserAppStateData>();
+        builder.Services.AddScoped<IUserAppState, UserAppStateModel>();
+        builder.Services.AddScoped<IStreamEventLog, StreamEventLogModel>();
+
+        // Common App Services
+        builder.Services.AddScoped<IAppStateCore, AppStateCore>();
 
         // Twitch Data Services
         builder.Services.AddTwitchLibEventSubWebsockets();
         //builder.Services.AddHostedService<TwitchEventSubConnection>();
+        builder.Services.AddScoped<TwitchSetup>();
         builder.Services.AddHostedService<TwitchEventSubConnectionService>();
         builder.Services.AddScoped<IScopedEventSubConnection, ScopedEventSubConnectionTasks>();
 

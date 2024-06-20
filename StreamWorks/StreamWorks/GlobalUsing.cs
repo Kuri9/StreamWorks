@@ -11,15 +11,21 @@ global using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 global using AspNet.Security.OAuth.Twitch;
 
 global using StreamWorks.Components.Account;
+global using StreamWorks.Components.Twitch.StreamTimer.TimerClasses;
 global using StreamWorks.Helpers.Users;
 global using StreamWorks.Helpers.Twitch;
+global using StreamWorks.Connections.Scopes;
+
 global using StreamWorks.Library.Models.TwitchApi.Users;
 global using StreamWorks.Library.Models.TwitchApi.Config;
+global using StreamWorks.Library.Models.Users.Identity;
+global using StreamWorks.Library.Models.StreamData;
 
 global using StreamWorks.Library.DataAccess;
 global using StreamWorks.Library.DataAccess.MongoDB.Identity;
-global using StreamWorks.Library.Models.Users.Identity;
 global using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.AppUserData;
+global using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.StreamEventsData;
+global using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers;
 
 global using StreamWorks.Helpers.Widgets.Timers;
 

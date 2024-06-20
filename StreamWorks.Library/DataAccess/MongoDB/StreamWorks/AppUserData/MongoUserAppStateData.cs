@@ -9,16 +9,16 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace StreamWorks.Library.DataAccess.MongoDB.StreamWorks.AppUserData;
-public class MongoAppStateUserData : IAppStateUserData
+public class MongoUserAppStateData : IUserAppStateData
 {
-    private readonly ILogger<MongoAppStateUserData> Logger;
+    private readonly ILogger<MongoUserAppStateData> Logger;
     private readonly IDbStreamWorksConnection _db;
     private readonly IStreamWorksUserData _userData;
     private readonly IMemoryCache _cache;
-    private readonly IMongoCollection<UserAppStateDataModel> _userAppData;
-    private const string CacheName = "StreamTimerData";
+    private readonly IMongoCollection<UserAppStateModel> _userAppData;
+    private const string CacheName = "AppStateData";
 
-    public MongoAppStateUserData(ILogger<MongoAppStateUserData> logger, IDbStreamWorksConnection db, IStreamWorksUserData userData, IMemoryCache cache)
+    public MongoUserAppStateData(ILogger<MongoUserAppStateData> logger, IDbStreamWorksConnection db, IStreamWorksUserData userData, IMemoryCache cache)
     {
         Logger = logger;
         _db = db;
@@ -27,9 +27,9 @@ public class MongoAppStateUserData : IAppStateUserData
         _userAppData = db.UserAppStateDataCollection;
     }
 
-    public async Task<List<UserAppStateDataModel>> GetAllStateData()
+    public async Task<List<UserAppStateModel>> GetAllStateData()
     {
-        var output = _cache?.Get<List<UserAppStateDataModel>>(CacheName);
+        var output = _cache?.Get<List<UserAppStateModel>>(CacheName);
         if (output == null)
         {
             var results = await _userAppData.FindAsync(_ => true);
@@ -40,9 +40,9 @@ public class MongoAppStateUserData : IAppStateUserData
         return output;
     }
 
-    public async Task<List<UserAppStateDataModel>> GetStateDataByUserId(Guid userId)
+    public async Task<List<UserAppStateModel>> GetStateDataByUserId(Guid userId)
     {
-        var output = _cache?.Get<List<UserAppStateDataModel>>(CacheName);
+        var output = _cache?.Get<List<UserAppStateModel>>(CacheName);
         if (output is not null)
         {
             output = output?.Where(o => o.UserId == userId).ToList();
@@ -57,7 +57,7 @@ public class MongoAppStateUserData : IAppStateUserData
         return output;
     }
 
-    public async Task CreateStateData(UserAppStateDataModel userState)
+    public async Task CreateStateData(UserAppStateModel userState)
     {
         var client = _db.Client;
         using var session = await client.StartSessionAsync();
@@ -66,7 +66,7 @@ public class MongoAppStateUserData : IAppStateUserData
         try
         {
             var db = client.GetDatabase(_db.DbName);
-            var contentInTransaction = db.GetCollection<UserAppStateDataModel>(_db.StreamTimerCollectionName);
+            var contentInTransaction = db.GetCollection<UserAppStateModel>(_db.UserAppStateDataCollectionName);
             await contentInTransaction.InsertOneAsync(session, userState);
 
             await session.CommitTransactionAsync();
@@ -74,7 +74,7 @@ public class MongoAppStateUserData : IAppStateUserData
         catch (Exception? ex)
         {
             //TODO: Logging
-            Logger.LogInformation($"Error creating timer data: {ex.Message}");
+            Logger.LogInformation($"Error creating App State data: {ex.Message}");
             await session.AbortTransactionAsync();
             throw;
         }
@@ -82,7 +82,7 @@ public class MongoAppStateUserData : IAppStateUserData
         _cache.Remove(CacheName);
     }
 
-    public async Task UpdateStateData(UserAppStateDataModel userState)
+    public async Task UpdateStateData(UserAppStateModel userState)
     {
         await _userAppData.ReplaceOneAsync(t => t.UserId == userState.UserId, userState);
 

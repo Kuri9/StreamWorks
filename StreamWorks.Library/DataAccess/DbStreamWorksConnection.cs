@@ -1,6 +1,4 @@
-﻿using StreamWorks.Library.Models.Widgets.Timers;
-
-namespace StreamWorks.Library.DataAccess;
+﻿namespace StreamWorks.Library.DataAccess;
 public class DbStreamWorksConnection : IDbStreamWorksConnection
 {
     // Create a single connection that will stay open at all times. 
@@ -16,8 +14,10 @@ public class DbStreamWorksConnection : IDbStreamWorksConnection
     // Collections are roughly similar to a table in SQL
     // GENERAL
     public string UserAppStateDataCollectionName { get; private set; } = "App User Data";
+    public string StreamEventLogDataCollectionName { get; private set; } = "Stream Event Log Data";
 
-    public IMongoCollection<UserAppStateDataModel> UserAppStateDataCollection { get; private set; }
+    public IMongoCollection<UserAppStateModel> UserAppStateDataCollection { get; private set; }
+    public IMongoCollection<StreamEventLogModel> StreamEventLogDataCollection { get; private set; }
 
     // STREAMWORKS COLLECTIONS
     public string StreamTimerCollectionName { get; private set; } = "Stream Timer";
@@ -35,8 +35,10 @@ public class DbStreamWorksConnection : IDbStreamWorksConnection
         _db = Client.GetDatabase(DbName);
 
         // GENERAL
+        UserAppStateDataCollection = _db.GetCollection<UserAppStateModel>(UserAppStateDataCollectionName);
 
         // STREAMWORKS DATA
+        StreamEventLogDataCollection = _db.GetCollection<StreamEventLogModel>(StreamEventLogDataCollectionName);
         StreamTimerCollection = _db.GetCollection<StreamTimerModel>(StreamTimerCollectionName);
     }
 }
