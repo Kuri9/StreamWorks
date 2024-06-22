@@ -66,7 +66,7 @@ public class AppStateCore : IAppStateCore
         // Confirm the user Id is correct
         CheckStartingUserData();
 
-        if (IsFirstLogin == false && IsDataUpdated == true)
+        if (IsFirstLogin == false && IsInfoCorrect == true)
         {
             // Update the user state data
             await UpdateUserDataState();
@@ -83,9 +83,19 @@ public class AppStateCore : IAppStateCore
             IsDataUpdated = false;
         }
 
-        if (IsLoggedIn == true)
+        await CheckUserConnections();
+
+        if (IsLoggedIn == true && this.userAppStateDataModel.TwitchAccountConnected == true)
         {
+            // TODO: Check if user has a Twitch connection
             await SetTwitchData();
+            Logger.LogInformation($"Twitch Data Set: {this.userAppStateDataModel.TwitchUserData.DisplayName ?? "Twitch Data Not Set"}");
+
+            if (IsDataUpdated == true)
+            {
+                Logger.LogInformation($"Updating user data...");
+                await UpdateUserDataState();
+            }
         }
     }
 
@@ -175,6 +185,21 @@ public class AppStateCore : IAppStateCore
         }
     }
 
+    private async Task CheckUserConnections()
+    {
+        if (this.loggedInUser is not null)
+        {
+            if (this.loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() >= 1)
+            {
+                this.userAppStateDataModel.TwitchAccountConnected = true;
+            }
+            else
+            {
+                this.userAppStateDataModel.TwitchAccountConnected = false;
+            }
+        }
+    }
+
     private UserAppStateModel CreateUserState()
     {
         if (this.userAppStateDataModel is null)
@@ -241,9 +266,10 @@ public class AppStateCore : IAppStateCore
     {
         if (IsLoggedIn is true)
         {
-            if (IsInfoCorrect == true && IsDataUpdated == true)
+            if (IsDataUpdated == true)
             {
                 await UpdateUserStateData();
+                IsDataUpdated = false;
             }
         }
     }
@@ -264,19 +290,19 @@ public class AppStateCore : IAppStateCore
     {
         if (this.userAppStateDataModel.UserId != Guid.Empty)
         {
-            //try
-            //{
+            try
+            {
                 await _appStateData.UpdateStateData(this.userAppStateDataModel);
-            //}
-            //catch
-            //{
-            //    Logger.LogError("There was an error updating the current user's App State Data.");
-            //}
-            //finally
-            //{
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"There was an error updating the current user's App State Data. {ex.Message}");
+            }
+            finally
+            {
                 Logger.LogInformation("User State Data updated.");
                 _appState = this.userAppStateDataModel;
-            //}
+            }
         }
         else
         {
@@ -336,7 +362,7 @@ public class AppStateCore : IAppStateCore
                     // No more need to refresh
                     getDataFailed = false;
                 }
-                //else if (result is null && mustRefreshToken == true)
+                // If we don't get data back, then try refreshing the token then trying again!
                 else if (result is null)
                 {
                     // If we don't get the data and must refresh token, try to refresh the token
@@ -352,7 +378,9 @@ public class AppStateCore : IAppStateCore
                         Logger.LogInformation($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
                         this.userAppStateDataModel.TwitchConnection = newConnectionData;
 
-                        AccessToken = this.loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
+                        AccessToken = this.userAppStateDataModel.TwitchConnection.AccessToken;
+
+                        IsDataUpdated = true;
                     }
 
                     getDataFailed = true;
@@ -368,6 +396,7 @@ public class AppStateCore : IAppStateCore
 
             // If we have the data, set up the Twitch API
             tryCount = 3;
+            IsDataUpdated = true;
 
             if (accessCodeValid == true)
             {
@@ -380,6 +409,5 @@ public class AppStateCore : IAppStateCore
             Logger.LogError("This User doesn't have a Twitch account connected..");
         }
     }
-
 
 }

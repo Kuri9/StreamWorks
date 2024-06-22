@@ -18,6 +18,7 @@ public class UserAppStateModel : IUserAppState
     public DateTimeOffset LastLogout { get; set; } = DateTimeOffset.Now;
     public bool IsLoggedIn { get; set; } = false;
     public bool IsStreaming { get; set; } = false;
+    public bool TwitchAccountConnected { get; set; } = false;
     public TwitchConnectionModel TwitchConnection { get; set; } = new TwitchConnectionModel();
     public GetUserDataModel TwitchUserData { get; set; } = new GetUserDataModel();
 }

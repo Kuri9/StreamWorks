@@ -1,4 +1,7 @@
 ﻿
+using StreamWorks.Library.Models.TwitchApi.Config;
+using StreamWorks.Library.Models.TwitchApi.Users;
+
 namespace StreamWorks.Library.Models.Users.UserData;
 
 public interface IUserAppState
@@ -10,4 +13,8 @@ public interface IUserAppState
     DateTimeOffset LastLogin { get; set; }
     DateTimeOffset LastLogout { get; set; }
     Guid UserId { get; set; }
+    string Id { get; set; }
+    bool TwitchAccountConnected { get; set; }
+    TwitchConnectionModel TwitchConnection { get; set; }
+    GetUserDataModel TwitchUserData { get; set; }
 }

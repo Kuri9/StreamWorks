@@ -32,7 +32,7 @@
                 <AuthorizeView>
                     @if (twitchUserData is not null && twitchUserData.Count > 0)
                     {
-                        <img class="img-fluid profile-image" src="@twitchUserData.First().ProfileImageUrl" />
+                        <img class="img-fluid profile-image" src="@userAppState.TwitchUserData.ProfileImageUrl" />
                         <div class="mb-3">
                             <p>Click here to Revoke Twitch Token</p>
                             <Button class="btn btn-sm btn-dark" @onclick="RevokeTwitchToken">Revoke Twitch Token</Button>
@@ -42,10 +42,17 @@
             </div>
             <div class="col-9">
                 <div class="row mb-3">
-                @if (loggedInUser is not null && loggedInUser.DisplayName?.Length > 0)
+                @if (loggedInUser is not null)
                 {
-                    <h1>Hello, @loggedInUser.DisplayName!</h1>
-                }
+                        if (String.IsNullOrEmpty(userAppState.TwitchUserData.DisplayName))
+                        {
+                            <h1>Hello, @loggedInUser.DisplayName!</h1>
+                        }
+                        else
+                        {
+                            <h1>Hello, @userAppState.TwitchUserData.DisplayName!</h1>
+                        }
+                    }
                 else
                 {
                     <h1>Hello, world!</h1>
