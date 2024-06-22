@@ -1,0 +1,180 @@
+﻿@page "/AuthorizeTwitch"
+
+@using System.Net
+@using StreamWorks.Core.App
+@using StreamWorks.Library.Models.Users.UserData
+@using TwitchLib.Api
+@using TwitchLib.Api.Auth
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject ILogger<AuthorizeTwitch> Logger
+@inject AuthenticationStateProvider authProvider
+@inject ProtectedSessionStorage protectedSessionStore
+@inject IStreamWorksUserData userData
+@inject IAppStateCore appState
+@inject IUserAppState userAppState
+@inject TwitchSetup twitchSetup
+@inject NavigationManager navManager
+
+
+@if (tokenSet == false)
+{
+    <h3>Authorizing Twitch ...</h3>
+}
+else
+{
+    <h3>Authorized!</h3>
+    @ClosePage()
+}
+
+@code {
+    private HttpListener http = new();
+    private StreamWorksUserModel loggedInUser;
+    private UserAppStateModel appStateData;
+    private string twitchUri;
+    private string lastPage;
+
+    private bool tokenSet = false;
+
+    private TwitchAPI api = new();
+    //private List<string> scopes = new List<string> { "chat:read", "whispers:read", "whispers:edit", "chat:edit", "channel:moderate" };
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "code")]
+    public string codeFromUri { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "scope")]
+    public string scopesFromUri { get; set; }
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        //navManager.LocationChanged += OnLocationChanged;
+
+        //loggedInUser = await authProvider.GetUserFromAuth(userData);
+        appStateData = await appState.GetUserStateData();
+
+        if (appStateData is not null)
+        {
+            if (appStateData.TwitchConnection?.AccessToken is not null && appStateData.TwitchConnection.AccessToken.Length > 0)
+            {
+                Logger.LogInformation("Need to check if Token is valid!");
+                await SetTwitchToken();
+            }
+            else
+            {
+                if (codeFromUri is not null && codeFromUri.Length > 0)
+                {
+                    await RunTwitchUserAuth();
+                }
+            }
+        }
+    }
+
+    private async Task ClosePage()
+    {
+        var result = await protectedSessionStore.GetAsync<string>("lastVistedPage");
+        lastPage = result.Value;
+        Logger.LogInformation($"Return to URL: {lastPage}");
+        navManager.NavigateTo(lastPage);
+    }
+
+    private async void OnLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        await protectedSessionStore.SetAsync("lastVistedPage", navManager.Uri);
+    }
+
+    private string GetAuthorizationCodeUrl()
+    {
+        if (appStateData.TwitchConnection is not null)
+        {
+            var twitchUri = twitchSetup.GetAuthorizationCodeUrl(
+               appStateData.TwitchConnection.ClientId,
+               appStateData.TwitchConnection.RedirectUri,
+               appStateData.TwitchConnection.Scopes.Scopes);
+        }
+
+        return twitchUri;
+    }
+
+    private void ConnectToTwitch()
+    {
+        Logger.LogInformation("Navigating to Twitch...");
+        navManager.NavigateTo(GetAuthorizationCodeUrl());
+    }
+
+    private async Task RunTwitchUserAuth()
+    {
+        Logger.LogInformation("Checking info is ok...");
+        ValidateCreds();
+
+        Logger.LogInformation("Getting a new token...");
+        var response = await api.Auth.GetAccessTokenFromCodeAsync(codeFromUri, appStateData.TwitchConnection.ClientSecret, appStateData.TwitchConnection.RedirectUri, appStateData.TwitchConnection.ClientId);
+        api.Settings.AccessToken = response.AccessToken;
+
+        Logger.LogInformation($"Token Retrived!\n\nAccess token: {api.Settings.AccessToken}\nRefresh token: {response.RefreshToken}\nExpires in: {response.ExpiresIn}\nScopes: {string.Join(", ", response.Scopes)}");
+
+        // var apiUserData = (await api.Helix.Users.GetUsersAsync()).Users[0];
+        // Console.WriteLine($"Authorization success!\n\nUser: {apiUserData.DisplayName} (id: {apiUserData.Id})");
+
+        Logger.LogInformation("Setting AppState data...");
+        appStateData.TwitchConnection.AccessToken = response.AccessToken;
+        appStateData.TwitchConnection.RefreshToken = response.RefreshToken;
+        appStateData.TwitchConnection.TokenExpiresIn = response.ExpiresIn;
+        appStateData.TwitchConnection.TokenExpiresAt = DateTimeOffset.Now.AddSeconds(response.ExpiresIn);
+        appStateData.TwitchConnection.ResponseScopes = response.Scopes;
+
+        await UpdateTwitchData(appStateData);
+        tokenSet = true;
+    }
+
+    private async Task SetTwitchToken()
+    {
+        // TODO: Need to check about finding the date when a refresh is needed and only refresh there!
+        try
+        {
+            Logger.LogInformation("Refreshing Twitch Auth Token");
+            api.Settings.AccessToken = appStateData.TwitchConnection.AccessToken;
+            api.Settings.ClientId = appStateData.TwitchConnection.ClientId;
+            api.Settings.Secret = appStateData.TwitchConnection.ClientSecret;
+            if (appStateData.TwitchConnection.TokenExpiresAt > DateTimeOffset.Now)
+            {
+                var refresh = await api.Auth.RefreshAuthTokenAsync(appStateData.TwitchConnection.RefreshToken, appStateData.TwitchConnection.ClientSecret);
+                api.Settings.AccessToken = refresh.AccessToken;
+                Logger.LogInformation($"Refresh Successful!\n\nNew Access token: {api.Settings.AccessToken}");
+
+                appStateData.TwitchConnection.AccessToken = refresh.AccessToken;
+                appStateData.TwitchConnection.RefreshToken = refresh.RefreshToken;
+                appStateData.TwitchConnection.TokenExpiresIn = refresh.ExpiresIn;
+                appStateData.TwitchConnection.TokenExpiresAt = DateTimeOffset.Now.AddSeconds(refresh.ExpiresIn);
+
+                await UpdateTwitchData(appStateData);
+                tokenSet = true;
+            };
+        }
+        catch (Exception e)
+        {
+            Logger.LogWarning($"\n\nError: {e.Message}. \nReauthorizing!");
+            await RunTwitchUserAuth();
+        }
+    }
+
+    private async Task UpdateTwitchData(UserAppStateModel appStateData)
+    {
+        //await userData.UpdateUser(loggedInUser);
+        Logger.LogInformation("Returning refreshed token data...");
+        //await twitchSetup.OnRefreshTwitchToken(appStateData, loggedInUser);
+    }
+
+    private void ValidateCreds()
+    {
+        if (String.IsNullOrEmpty(appStateData.TwitchConnection.ClientId))
+            throw new Exception("client id cannot be null or empty");
+        if (String.IsNullOrEmpty(appStateData.TwitchConnection.ClientSecret))
+            throw new Exception("client secret cannot be null or empty");
+        if (String.IsNullOrEmpty(appStateData.TwitchConnection.RedirectUri))
+            throw new Exception("redirect uri cannot be null or empty");
+        Logger.LogInformation($"Using client id '{appStateData.TwitchConnection.ClientId}', secret '{appStateData.TwitchConnection.ClientSecret}' and redirect url '{appStateData.TwitchConnection.RedirectUri}'.");
+    }
+}

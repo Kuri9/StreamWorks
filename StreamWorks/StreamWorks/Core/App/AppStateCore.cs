@@ -31,7 +31,7 @@ public class AppStateCore : IAppStateCore
     private bool IsDataUpdated = false;
 
     private int tryCount = 3;
-    private bool mustRefreshToken = false;
+    private bool getDataFailed = true;
     private bool accessCodeValid = false;
 
     private string ClientId = "";
@@ -309,6 +309,7 @@ public class AppStateCore : IAppStateCore
     public async Task SetTwitchData()
     {
         this.userAppStateDataModel.TwitchConnection = new TwitchConnectionModel();
+        getDataFailed = true;
 
         if (this.loggedInUser?.Logins.Where(l => l.LoginProvider == "TwitchLogin").Count() >= 1)
         {
@@ -316,7 +317,7 @@ public class AppStateCore : IAppStateCore
             this.userAppStateDataModel.TwitchConnection = _twitchSetup.SetupTwitchUser(this.loggedInUser);
 
             // Then try connecting to API to test the Access Token
-            while (tryCount > 0)
+            while (getDataFailed == true || tryCount > 0)
             {
                 Logger.LogWarning($"Current Try: {tryCount}");
                 tryCount--;
@@ -324,35 +325,37 @@ public class AppStateCore : IAppStateCore
                 // Try to get the User Data from Twitch API
                 var result = await _twitchSetup.GetTwitchUserData(this.userAppStateDataModel, this.loggedInUser);
 
-                // If we get the data, break the loop
-                if (result == true)
+                // If we get the data, break the loop by setting 
+                if (result is not null)
                 {
                     accessCodeValid = true;
-                    Logger.LogInformation($"User Data Received: {twitchUserData?.First().DisplayName}");
-                    break;
+                    this.userAppStateDataModel = result;
+
+                    Logger.LogInformation($"User Data Received: {this.userAppStateDataModel.TwitchUserData.DisplayName}");
+
+                    // No more need to refresh
+                    getDataFailed = false;
                 }
-                //else if (result == false && mustRefreshToken == true)
-                else if (result == false)
+                //else if (result is null && mustRefreshToken == true)
+                else if (result is null)
                 {
                     // If we don't get the data and must refresh token, try to refresh the token
                     Logger.LogWarning($"Trying Token Refresh....");
                     accessCodeValid = false;
 
                     // Try to refresh the Token
-                    await _twitchSetup.RefreshTwitchToken(this.userAppStateDataModel, this.loggedInUser);
-
-                    Logger.LogInformation($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
+                    var newConnectionData = await _twitchSetup.RefreshTwitchToken(this.userAppStateDataModel.TwitchConnection, this.loggedInUser);
 
                     // If the token is not null, set the new token
-                    if (loggedInUser?.Tokens is not null)
+                    if (String.IsNullOrEmpty(newConnectionData.AccessToken) is false)
                     {
+                        Logger.LogInformation($"Token Refreshed. {loggedInUser?.GetToken("TwitchLogin", "access_token").Value}");
+                        this.userAppStateDataModel.TwitchConnection = newConnectionData;
 
-                        AccessToken = loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
-                        Logger.LogInformation($"After Set User, {loggedInUser.UserName}'s Access Token: {AccessToken}");
+                        AccessToken = this.loggedInUser.Tokens.Where(t => t.Name == "access_token").First().Value;
                     }
 
-                    // No more ned to refresh
-                    mustRefreshToken = false;
+                    getDataFailed = true;
                 }
                 else
                 {
@@ -365,6 +368,7 @@ public class AppStateCore : IAppStateCore
 
             // If we have the data, set up the Twitch API
             tryCount = 3;
+
             if (accessCodeValid == true)
             {
                 Logger.LogInformation($"Arrived at Setting up Twitch API...");

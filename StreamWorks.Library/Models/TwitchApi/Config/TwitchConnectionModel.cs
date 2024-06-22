@@ -15,6 +15,9 @@ public class TwitchConnectionModel
     public string? ClientSecret { get; set; }
     public string? RedirectUri { get; set; }
     public TwitchScope Scopes { get; set; } = new TwitchScope();
+    public string[]? ResponseScopes { get; set; } = Array.Empty<string>();
     public string? RefreshToken { get; set; }
     public string? Code { get; set; }
+    public int TokenExpiresIn { get; set; }
+    public DateTimeOffset TokenExpiresAt { get; set; }
 }

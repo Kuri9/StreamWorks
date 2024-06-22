@@ -18,6 +18,7 @@ public class TwitchSetup
     private IUserAppState AppState;
     private TwitchAPI twitchApi;
     private UserManager<StreamWorksUserModel> UserManager;
+    private StreamWorksUserModel loggedInUser;
     private NavigationManager NavManager;
 
     private TwitchConnectionModel twitchConnectionData = new TwitchConnectionModel();
@@ -64,39 +65,64 @@ public class TwitchSetup
         }
     }
 
-    public async Task RefreshTwitchToken(UserAppStateModel appState, StreamWorksUserModel loggedInUser)
+    public string GetAuthorizationCodeUrl(string clientId, string redirectUri, List<string> scopes)
     {
-        Logger.LogInformation($"Starting Refresh Token...");
-        var refreshToken = appState.TwitchConnection.RefreshToken;
-        this.twitchApi.Settings.ClientId = appState.TwitchConnection.ClientId;
-        this.twitchApi.Settings.Secret = appState.TwitchConnection.ClientSecret;
+        var scopesStr = String.Join('+', scopes);
+
+        return "https://id.twitch.tv/oauth2/authorize?" +
+               $"client_id={clientId}&" +
+               $"redirect_uri={System.Web.HttpUtility.UrlEncode(redirectUri)}&" +
+               "response_type=code&" +
+               $"scope={scopesStr}";
+    }
+
+    public async Task<TwitchConnectionModel> RefreshTwitchToken(TwitchConnectionModel currentConnection, StreamWorksUserModel loggedInUser)
+    {
+        // Need to go to the page above, refresh, and return the code here!
+        TwitchConnectionModel newConnectionData = new TwitchConnectionModel();
+
+        Logger.LogInformation($"Token Refresh check...");
+
+        twitchApi.Settings.ClientId = currentConnection.ClientId;
+        twitchApi.Settings.Secret = currentConnection.ClientSecret;
 
         var refreshedToken = await this.twitchApi.Auth.RefreshAuthTokenAsync(
-                appState.TwitchConnection.RefreshToken,
-                appState.TwitchConnection.ClientId,
-                appState.TwitchConnection.ClientSecret
+                currentConnection.RefreshToken,
+                currentConnection.ClientSecret
             );
 
         if (refreshedToken is not null)
         {
             Logger.LogInformation($"Refresh Token Response not null!");
-            try
+
+            var newExpiresOn = DateTimeOffset.Now.AddSeconds(refreshedToken.ExpiresIn);
+
+            await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "access_token", refreshedToken.AccessToken);
+            await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "refresh_token", refreshedToken.RefreshToken);
+            await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "expires_at", newExpiresOn.ToString());
+
+            var newAccessToken = loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value;
+
+            Logger.LogInformation($"Current LoggedInUser New Token: {newAccessToken}");
+
+            if (newAccessToken == refreshedToken.AccessToken)
             {
-                var expiresAt = DateTimeOffset.Now.AddSeconds(refreshedToken.ExpiresIn).ToString();
-                Logger.LogInformation($"Received Token: {refreshedToken.AccessToken}");
+                newConnectionData.RefreshToken = refreshedToken.RefreshToken;
+                newConnectionData.AccessToken = refreshedToken.AccessToken;
+                newConnectionData.ResponseScopes = refreshedToken.Scopes;
+                newConnectionData.TokenExpiresIn = refreshedToken.ExpiresIn;
+                newConnectionData.TokenExpiresAt = newExpiresOn;
 
-                await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "access_token", refreshedToken.AccessToken);
-                await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "refresh_token", refreshedToken.RefreshToken);
-                await UserManager.SetAuthenticationTokenAsync(loggedInUser, "TwitchLogin", "expires_at", expiresAt);
-
-                Logger.LogInformation($"Current LoggedInUser Token: {loggedInUser?.Tokens.Where(t => t.Name == "access_token").First().Value}");
-
-                this.twitchApi.Settings.AccessToken = refreshedToken.AccessToken;
+                Logger.LogInformation($"Update complete. Newly Set Token: {newConnectionData.AccessToken}");
             }
-            catch (Exception ex)
-            {
-                Logger.LogError($"Failed to update user tokens: {ex.Message}");
-            }
+
+            return newConnectionData;
+
+        }
+        else
+        {
+            Logger.LogError($"Failed to update user tokens...");
+            return null;
         }
     }
 
@@ -177,7 +203,7 @@ public class TwitchSetup
         };
     }
 
-    public async Task<bool> GetTwitchUserData(UserAppStateModel appState, StreamWorksUserModel loggedInUser)
+    public async Task<UserAppStateModel> GetTwitchUserData(UserAppStateModel appState, StreamWorksUserModel loggedInUser)
     {
         Logger.LogInformation("Getting Twitch User Data...");
 
@@ -187,6 +213,9 @@ public class TwitchSetup
         }
 
         //getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
+        this.twitchApi.Settings.AccessToken = appState.TwitchConnection.AccessToken;
+        this.twitchApi.Settings.ClientId = appState.TwitchConnection.ClientId;
+        this.twitchApi.Settings.Secret = appState.TwitchConnection.ClientSecret;
         var getUserResponse = await GetTwitchUserDataFromApi(appState);
 
         await Task.Delay(1000);
@@ -214,23 +243,31 @@ public class TwitchSetup
 
                     twitchUserData?.Add(userData);
                 }
-                appState.TwitchUserData = twitchUserData.Where(t => t.Id == appState.TwitchConnection.TwitchId).First();
 
-                Logger.LogInformation($"User Data: {twitchUserData?.First().DisplayName}");
+                if (twitchUserData is not null)
+                {
+                    appState.TwitchUserData = twitchUserData.Where(t => t.Id == appState.TwitchConnection.TwitchId).First();
+                    Logger.LogInformation($"User Data: {twitchUserData?.First().DisplayName}.. End of Get User Data");
 
-                return true;
+                    return appState;
+                }
+                else
+                {
+                    Logger.LogError("User Data was null!");
+                    return null;
+                }
             }
             else
             {
                 Logger.LogError("Result didn't contain any Users");
-                return false;
+                return null;
             }
         }
         else
         {
             mustRefreshToken = true;
             Logger.LogError("Failed to get User Data. Refreshing token!");
-            return false;
+            return null;
         }
     }
 
@@ -266,10 +303,6 @@ public class TwitchSetup
 
         try
         {
-            this.twitchApi.Settings.AccessToken = appState.TwitchConnection.AccessToken;
-            this.twitchApi.Settings.ClientId = appState.TwitchConnection.ClientId;
-            this.twitchApi.Settings.Secret = appState.TwitchConnection.ClientSecret;
-
             var user = await this.twitchApi.Helix.Users.GetUsersAsync();
             return user;
         }
