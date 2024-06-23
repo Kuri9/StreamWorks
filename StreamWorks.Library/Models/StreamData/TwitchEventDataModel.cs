@@ -2,7 +2,7 @@
 using TwitchLib.EventSub.Core.SubscriptionTypes.Channel;
 
 namespace StreamWorks.Library.Models.StreamData;
-public class TwitchEventDataModel
+public class TwitchEventDataModel : ITwitchEventData
 {
     public ConcurrentBag<ChannelChatMessage>? ChannelChatMessage { get; set; }
     public ConcurrentBag<ChannelChatMessageDelete>? ChannelChatMessageDelete { get; set; }

@@ -21,6 +21,24 @@ public class MongoStreamEventLogData : IStreamEventLogData
         _streamEventLogData = db.StreamEventLogDataCollection;
     }
 
+    public async Task<StreamEventLogModel> GetOrCreateLogData(Guid userId)
+    {
+        StreamEventLogModel newLog = new StreamEventLogModel();
+        var result = await GetEventLogDataByUserId(userId);
+
+        if (result is null || result.Count() <= 0)
+        {
+            newLog.UserId = userId;
+            await CreateEventLogData(newLog);
+            return newLog;
+        }
+        else
+        {
+            newLog = result.First();
+            return newLog;
+        }
+    }
+
     public async Task<List<StreamEventLogModel>> GetAllEventLogData()
     {
         var output = _cache?.Get<List<StreamEventLogModel>>(CacheName);

@@ -14,12 +14,28 @@ public class StreamEventLogging
         _eventLogData = eventLogData;
     }
 
-    public async Task CreateLog(Guid userId)
+    public async Task<StreamEventLogModel> GetOrCreateLogData(Guid userId)
+    {
+        var result = await GetLog(userId);
+
+        if(result is null || String.IsNullOrEmpty(result.Id))
+        {
+            var newLog = await CreateLog(userId);
+            return newLog;
+        }
+        else
+        {
+            return result;
+        }
+    }
+
+    public async Task<StreamEventLogModel> CreateLog(Guid userId)
     {
         var newEventLog = new StreamEventLogModel();
         newEventLog.UserId = userId;
 
         await _eventLogData.CreateEventLogData(newEventLog);
+        return newEventLog;
     }
 
     public async Task UpdateLog(StreamEventLogModel eventLogData)

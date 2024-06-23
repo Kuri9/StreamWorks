@@ -165,7 +165,6 @@ public static class RegisterServices
         // User Data Services
         builder.Services.AddSingleton<IUserAppStateData, MongoUserAppStateData>();
         builder.Services.AddScoped<IUserAppState, UserAppStateModel>();
-        builder.Services.AddScoped<IStreamEventLog, StreamEventLogModel>();
 
         // Common App Services
         builder.Services.AddScoped<IAppStateCore, AppStateCore>();

@@ -88,7 +88,8 @@ public class TwitchSetup
 
         var refreshedToken = await this.twitchApi.Auth.RefreshAuthTokenAsync(
                 currentConnection.RefreshToken,
-                currentConnection.ClientSecret
+                currentConnection.ClientSecret,
+                currentConnection.ClientId
             );
 
         if (refreshedToken is not null)
@@ -271,24 +272,24 @@ public class TwitchSetup
         }
     }
 
-    //public async Task TwitchApiSetup()
+    //public async Task TwitchApiSetup(UserAppStateModel appState)
     //{
     //    // Call API as a test
-    //    if (AccessToken is not null)
+    //    if (appState.TwitchConnection.AccessToken is not null)
     //    {
     //        // Setup EventSub with data after testing
     //        Logger.LogInformation("Setting up EventSub");
 
-    //        if (twitchHub is null)
-    //        {
-    //            Logger.LogError("Twitch Hub is null! Will not call twitchHub.");
-    //            return;
-    //        };
+    //        //if (twitchHub is null)
+    //        //{
+    //        //    Logger.LogError("Twitch Hub is null! Will not call twitchHub.");
+    //        //    return;
+    //        //};
     //        // await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
     //        // await twitchHub.SendAsync("StartServiceRequest");
 
     //        // var user = loggedInUserAuthState?.Claims.Where(c => c.Type == "user_id").First().Value;
-    //        await twitchHub.SendAsync("SetupConnectionRequest", loggedInUser.Id, AccessToken, UserId);
+    //        await twitchHub.SendAsync("SetupConnectionRequest", loggedInUser.Id, appState.TwitchConnection.AccessToken, appState.TwitchConnection.id);
     //    }
     //    else
     //    {
