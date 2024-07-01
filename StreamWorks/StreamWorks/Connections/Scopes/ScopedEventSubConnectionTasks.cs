@@ -106,7 +106,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         }
         else
         {
-            await SetupConnection(accessToken, twitchUserId);
+            await SetupTwitchConnection(accessToken, twitchUserId);
             eventSubConnectionModel.TwitchApiClient = api;
             Logger.LogInformation($"TwitchAPI Created For: {api.Settings.ClientId}");
         }
@@ -151,7 +151,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         eventSubWebsocketClient.ChannelCheer += OnChannelCheer;
         eventSubWebsocketClient.ChannelRaid += OnChannelRaid;
 
-        await StartService();
+        await StartTwitchService();
 
         return eventSubConnectionModel;
     }
@@ -188,7 +188,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         }
     }
 
-    public async Task SetupConnection(string accessToken, string twitchUserId)
+    public async Task SetupTwitchConnection(string accessToken, string twitchUserId)
     {
         AccessToken = accessToken;
         UserId = twitchUserId;
@@ -214,7 +214,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         Logger.LogInformation("TwitchEventSubConnection setup complete.");
     }
 
-    public async Task<bool> StartService()
+    public async Task<bool> StartTwitchService()
     {
         if (eventSubWebsocketClient is not null)
         {
@@ -223,11 +223,19 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
             {
                 Logger.LogInformation("Switching to Test Service...");
                 await eventSubWebsocketClient.ConnectAsync(TestServer);
+                if (messageGroup is not null)
+                {
+                    await _hubContext.Clients.Group(messageGroup).SendAsync("OnTwitchServiceStarted");
+                } 
                 return true;
             }
             else
             {
                 await eventSubWebsocketClient.ConnectAsync();
+                if (messageGroup is not null)
+                {
+                    await _hubContext.Clients.Group(messageGroup).SendAsync("OnTwitchServiceStarted");
+                }
                 return true;
             }
         }
@@ -617,6 +625,11 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         }
 
         // End Events Sub
+        if (messageGroup is not null)
+        {
+            await _hubContext.Clients.Group(messageGroup).SendAsync("OnTwitchEventSubRegistrationCompleted");
+        }
+
         return true;
     }
 
@@ -629,6 +642,10 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         }
         IsConnected = false;
         Logger.LogError($"Websocket {eventSubWebsocketClient.SessionId} disconnected!");
+        if (messageGroup is not null)
+        {
+            await _hubContext.Clients.Group(messageGroup).SendAsync("OnTwitchClientDisconnected");
+        }
         await WebsocketReconnectAsync();
     }
 
@@ -640,6 +657,10 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
             return;
         }
         IsConnected = true;
+        if (messageGroup is not null)
+        {
+            await _hubContext.Clients.Group(messageGroup).SendAsync("OnTwitchClientReconnected");
+        }
         Logger.LogWarning($"Websocket {eventSubWebsocketClient.SessionId} reconnected");
     }
 
@@ -648,6 +669,10 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         if (eventSubWebsocketClient is not null)
         {
             Logger.LogError($"Websocket {eventSubWebsocketClient.SessionId} - Error occurred!");
+            if (messageGroup is not null)
+            {
+                await _hubContext.Clients.Group(messageGroup).SendAsync("OnTwitchError", e);
+            }
         }
     }
 
@@ -699,13 +724,50 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
     private async Task OnStreamOnline(object sender, StreamOnlineArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        Logger.LogInformation($"{eventData.BroadcasterUserName} started thier stream.");
+
+        if (_hubContext is not null)
+        {
+            if (this.streamEventLog is not null)
+            {
+                //this.streamEventLog.TwitchEventData?.ChannelFollow?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+                //await _twitchStreamData.LogTwitchStreamStartData(eventData);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                await _hubContext.Clients.Group(messageGroup).SendAsync("TwitchStreamStarted", eventData);
+                Logger.LogInformation($"{eventData.BroadcasterUserName} started thier stream.");
+            }
+        }
     }
 
     private async Task OnStreamOffline(object sender, StreamOfflineArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        Logger.LogInformation($"{eventData.BroadcasterUserName} ended their stream.");
+
+        if (_hubContext is not null)
+        {
+            //await hubContext.Clients.All.SendAsync("RecievedChannelFollow", messageGroup, eventData);
+            if (this.streamEventLog is not null)
+            {
+                //this.streamEventLog.TwitchEventData?.ChannelFollow?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+                //await _twitchStreamData.LogTwitchStreamEndData(eventData);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                await _hubContext.Clients.Group(messageGroup).SendAsync("TwitchStreamEnded", eventData);
+                Logger.LogInformation($"{eventData.BroadcasterUserName} ended their stream");
+            }
+        }
     }
 
     // FOLLOWS

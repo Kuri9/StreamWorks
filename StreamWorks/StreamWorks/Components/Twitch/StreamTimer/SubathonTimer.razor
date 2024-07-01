@@ -521,7 +521,7 @@
         .WithAutomaticReconnect()
         .Build();
 
-        twitchHub.On<ChannelChatMessage>("ChatMessageReceived", (message) =>
+        twitchHub.On<ChannelChatMessage>("TwitchChatMessageReceived", (message) =>
         {
             Logger.LogInformation($"Message Received: {message.Message.Text}");
             if (message.Message.Text == "!timer 5")
@@ -530,7 +530,7 @@
             }
         });
 
-        twitchHub.On<ChannelFollow>("GetFollows", (follow) =>
+        twitchHub.On<ChannelFollow>("GetTwitchFollows", (follow) =>
         {
             Logger.LogInformation($"Follow Received: {follow.UserName} followed {follow.BroadcasterUserName}");
             if (follow is not null)
@@ -539,7 +539,7 @@
             }
         });
 
-        twitchHub.On<ChannelSubscribe>("GetSubscribedEvents", (subscription) =>
+        twitchHub.On<ChannelSubscribe>("GetTwitchSubscribedEvents", (subscription) =>
         {
             Logger.LogInformation($"Message Received: {subscription.UserName} sent a Tier {subscription.Tier.ToString()} Sub");
 
@@ -560,7 +560,7 @@
             }
         });
 
-        twitchHub.On<ChannelSubscriptionGift>("GetSubscriptionGifts", (subGift) =>
+        twitchHub.On<ChannelSubscriptionGift>("GetTwitchSubscriptionGifts", (subGift) =>
         {
             Logger.LogInformation($"Message Received: {subGift.UserName} sent {subGift.Total} {subGift.Tier} Sub Gift(s)");
             if (subGift is not null)
@@ -580,7 +580,7 @@
             }
         });
 
-        twitchHub.On<ChannelCheer>("GetCheers", (cheer) =>
+        twitchHub.On<ChannelCheer>("GetTwitchCheers", (cheer) =>
         {
             Logger.LogInformation($"Message Received: {cheer.UserName} cheered {cheer.Bits} Bits");
             if (cheer is not null && cheer.Bits > 0)
@@ -590,7 +590,7 @@
 
         });
 
-        twitchHub.On<ChannelRaid>("GetRaid", (raid) =>
+        twitchHub.On<ChannelRaid>("GetTwitchRaid", (raid) =>
         {
             Logger.LogInformation($"Message Received: {raid.FromBroadcasterUserId} raided {raid.ToBroadcasterUserName} with {raid.Viewers} viewers!");
             if (raid is not null && raid.Viewers > 0)
