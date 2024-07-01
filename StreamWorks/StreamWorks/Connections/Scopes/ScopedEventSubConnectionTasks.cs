@@ -1,15 +1,7 @@
-﻿
-using Azure.Core;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Hosting;
-using StreamWorks.Components;
+﻿using Microsoft.AspNetCore.SignalR;
 using StreamWorks.Hubs;
-using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.StreamEventsData;
 using StreamWorks.Library.Models.Connections.TwitchEvent;
-using StreamWorks.Library.Models.StreamData;
 using TwitchLib.Api.Core.Enums;
-using TwitchLib.Api.Helix.Models.Moderation.GetModerators;
-using TwitchLib.EventSub.Core.Models.Chat;
 using TwitchLib.EventSub.Websockets;
 using TwitchLib.EventSub.Websockets.Core.EventArgs;
 using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
@@ -30,10 +22,17 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
     private readonly ILogger<ScopedEventSubConnectionTasks> Logger;
     private readonly IConfiguration Config;
     private readonly IStreamEventLogData _streamEventLogData;
+    private readonly ITwitchMessageData _twitchMessageData;
+    private readonly ITwitchFollowData _twitchFollowData;
+    private readonly ITwitchSubscribeData _twitchSubscribeData;
+    private readonly ITwitchSubscriptionGiftData _twitchSubscriptionGiftData;
+    private readonly ITwitchCheerData _twitchCheerData;
+    private readonly ITwitchRaidData _twitchRaidData;
+    
     private StreamEventLogModel streamEventLog;
 
     public IHubContext<TwitchHub> _hubContext { get; }
-    
+
     private HubConnection? twitchHub;
     private string hubName = "/twitchhub";
     private string? baseUrl;
@@ -59,11 +58,23 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         IConfiguration Config,
         EventSubWebsocketClient eventSubWebsocketClient,
         IStreamEventLogData streamEventLogData,
+        ITwitchMessageData twitchMessageData,
+        ITwitchFollowData twitchFollowData,
+        ITwitchSubscribeData twitchSubscribeData,
+        ITwitchSubscriptionGiftData twitchSubscriptionGiftData,
+        ITwitchCheerData twitchCheerData,
+        ITwitchRaidData twitchRaidData,
         IHubContext<TwitchHub> TwitchHubContext)
     {
         this.Logger = Logger;
         this.Config = Config;
         this._streamEventLogData = streamEventLogData;
+        this._twitchMessageData = twitchMessageData;
+        this._twitchFollowData = twitchFollowData;
+        this._twitchSubscribeData = twitchSubscribeData;
+        this._twitchSubscriptionGiftData = twitchSubscriptionGiftData;
+        this._twitchCheerData = twitchCheerData;
+        this._twitchRaidData = twitchRaidData;
         this.streamEventLog = new StreamEventLogModel();
         this.eventSubWebsocketClient = eventSubWebsocketClient;
         _hubContext = TwitchHubContext;
@@ -76,13 +87,17 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         messageGroup = ThisUser.ToString();
 
         eventSubConnectionModel = new EventSubConnectionModel();
+
         var result = await _streamEventLogData.GetOrCreateLogData(ThisUser);
-        this.streamEventLog = result; 
         if (result is not null)
         {
             this.streamEventLog = result;
         }
+        else
+        {
 
+           Logger.LogError("Stream Event Log is null.");
+        }
         api = new TwitchAPI();
         if (api is null)
         {
@@ -109,7 +124,7 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         }
 
         // Setup Client Hub Connection
-        await SetupHub(cancellationToken);
+        //await SetupHub(cancellationToken);
 
 
         // SETUP WEBSOCKET CLIENT EVENTS
@@ -134,7 +149,6 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         eventSubWebsocketClient.ChannelSubscriptionMessage += OnChannelSubscriptionMessage;
 
         eventSubWebsocketClient.ChannelCheer += OnChannelCheer;
-
         eventSubWebsocketClient.ChannelRaid += OnChannelRaid;
 
         await StartService();
@@ -698,14 +712,25 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
     private async Task OnChannelFollow(object sender, ChannelFollowArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (_hubContext is not null)
         {
             //await hubContext.Clients.All.SendAsync("RecievedChannelFollow", messageGroup, eventData);
-            this.streamEventLog.TwitchEventData.ChannelFollow.Add(eventData);
-            await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
-            await twitchHub.SendAsync("RecievedChannelFollow", messageGroup, eventData);
+            if (this.streamEventLog is not null)
+            {
+                this.streamEventLog.TwitchEventData?.ChannelFollow?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+                await _twitchFollowData.CreateTwitchFollowData(eventData);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                await _hubContext.Clients.Group(messageGroup).SendAsync("GetFollows", eventData);
+                Logger.LogInformation($"{eventData.UserName} followed {eventData.BroadcasterUserName} at {eventData.FollowedAt}");
+            }
         }
-        Logger.LogInformation($"{eventData.UserName} followed {eventData.BroadcasterUserName} at {eventData.FollowedAt}");
     }
 
     // MESSAGES
@@ -714,54 +739,114 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         var eventData = e.Notification.Payload.Event;
 
 
-        if (twitchHub is not null)
+        if (_hubContext is not null)
         {
-            this.streamEventLog.TwitchEventData.ChannelChatMessage.Add(eventData);
-            await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
-            await twitchHub.SendAsync("RecievedChatMessage", messageGroup, eventData);
+            if (this.streamEventLog.TwitchEventData is not null)
+            {
+                this.streamEventLog.TwitchEventData.ChannelChatMessage?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+                await _twitchMessageData.CreateTwitchMessageData(eventData);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                //await twitchHub.SendAsync("RecievedChatMessage", messageGroup, eventData);
+                await _hubContext.Clients.Group(messageGroup).SendAsync("ChatMessageRecieved", eventData);
+                Logger.LogInformation($"{eventData.ChatterUserName} typed {eventData.Message.Text}");
+            }
+            else
+            {
+                Logger.LogError("No message group is null.");
+            }
         }
-
-        Logger.LogInformation($"{eventData.ChatterUserName} typed {eventData.Message.Text}");
     }
 
     // SUBSCRIPTIONS
     private async Task OnChannelSubscribe(object sender, ChannelSubscribeArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (_hubContext is not null)
         {
-            this.streamEventLog.TwitchEventData.ChannelSubscription.Add(eventData);
-            await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
-            await twitchHub.SendAsync("RecievedSubscription", messageGroup, eventData);
+            //this.streamEventLog = await _streamEventLogData.GetOrCreateLogData(ThisUser);
+            if (this.streamEventLog.TwitchEventData is not null)
+            {
+                this.streamEventLog.TwitchEventData.ChannelSubscription?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+                await _twitchSubscribeData.CreateTwitchSubData(eventData);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                //await twitchHub.SendAsync("RecievedSubscription", messageGroup, eventData);
+                await _hubContext.Clients.Group(messageGroup).SendAsync("GetSubscribedEvents", eventData);
+                Logger.LogInformation($"{eventData.UserName} subscribed to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
+            } 
+            else 
+            {
+                Logger.LogError("No message group is null.");
+            }
         }
-
-        Logger.LogInformation($"{eventData.UserName} subscribed to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
     }
 
     private async Task OnChannelSubscriptionEnd(object sender, ChannelSubscriptionEndArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (_hubContext is not null)
         {
-            this.streamEventLog.TwitchEventData.ChannelSubscriptionEnd.Add(eventData);
-            await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
-            await twitchHub.SendAsync("RecievedSubscriptionEnding", messageGroup, eventData);
+            if (this.streamEventLog.TwitchEventData is not null)
+            {
+                this.streamEventLog.TwitchEventData.ChannelSubscriptionEnd?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                //await twitchHub.SendAsync("RecievedSubscriptionEnding", messageGroup, eventData);
+                await _hubContext.Clients.Group(messageGroup).SendAsync("GetSubscriptionEnding", eventData);
+                Logger.LogInformation($"{eventData.UserName} unsubscribed from {eventData.BroadcasterUserName}: It was a Tier {eventData.Tier} Sub");
+            }
+            else
+            {
+                Logger.LogError("No message group is null.");
+            }
         }
-
-        Logger.LogInformation($"{eventData.UserName} unsubscribed from {eventData.BroadcasterUserName}: It was a Tier {eventData.Tier} Sub");
     }
 
     private async Task OnChannelSubscriptionGift(object sender, ChannelSubscriptionGiftArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (_hubContext is not null)
         {
-            this.streamEventLog.TwitchEventData.ChannelSubscriptionGift.Add(eventData);
-            await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
-            await twitchHub.SendAsync("RecievedSubscriptionGift", messageGroup, eventData);
+            if (this.streamEventLog.TwitchEventData is not null)
+            {
+                this.streamEventLog.TwitchEventData.ChannelSubscriptionGift?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+                await _twitchSubscriptionGiftData.CreateTwitchSubGiftData(eventData);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                //await twitchHub.SendAsync("RecievedSubscriptionGift", messageGroup, eventData);
+                await _hubContext.Clients.Group(messageGroup).SendAsync("GetSubscriptionGifts", eventData);
+                Logger.LogInformation($"{eventData.UserName} gifted {eventData.BroadcasterUserName}'s channel a Tier {eventData.Tier} Sub");
+            }
+            else
+            {
+                Logger.LogError("No message group is null.");
+            }
         }
-
-        Logger.LogInformation($"{eventData.UserName} gifted {eventData.BroadcasterUserName}'s channel a Tier {eventData.Tier} Sub");
     }
 
     private async Task OnChannelSubscriptionMessage(object sender, ChannelSubscriptionMessageArgs e)
@@ -770,36 +855,65 @@ public sealed class ScopedEventSubConnectionTasks : IScopedEventSubConnection
         if (twitchHub is not null)
         {
             await twitchHub.SendAsync("RecievedSubscriptionMessage", messageGroup, eventData);
+            Logger.LogInformation($"{eventData.UserName} sent a sub message to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
         }
-
-        Logger.LogInformation($"{eventData.UserName} sent a sub message to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
     }
 
     // CHEER
     private async Task OnChannelCheer(object sender, ChannelCheerArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (_hubContext is not null)
         {
-            this.streamEventLog.TwitchEventData.ChannelCheer.Add(eventData);
-            await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
-            await twitchHub.SendAsync("RecievedChannelCheer", messageGroup, eventData);
+            if (this.streamEventLog.TwitchEventData is not null)
+            {
+                this.streamEventLog.TwitchEventData.ChannelCheer?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+                await _twitchCheerData.CreateTwitchCheerData(eventData);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                //await twitchHub.SendAsync("RecievedChannelCheer", messageGroup, eventData);
+                await _hubContext.Clients.Group(messageGroup).SendAsync("GetCheers", eventData);
+                Logger.LogInformation($"{eventData.UserName} cheered {eventData.Bits} Bits to {eventData.BroadcasterUserName}");
+            }
+            else
+            {
+                Logger.LogError("No message group is null.");
+            }
         }
-
-        Logger.LogInformation($"{eventData.UserName} cheered {eventData.Bits} Bits to {eventData.BroadcasterUserName}");
     }
 
     // RAID
     private async Task OnChannelRaid(object sender, ChannelRaidArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (_hubContext is not null)
         {
-            this.streamEventLog.TwitchEventData.ChannelRaid.Add(eventData);
-            await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
-            await twitchHub.SendAsync("RecievedChannelRaid", messageGroup, eventData);
+            if (this.streamEventLog.TwitchEventData is not null)
+            {
+                this.streamEventLog.TwitchEventData.ChannelRaid?.Add(eventData);
+                //await _streamEventLogData.UpdateEventLogData(this.streamEventLog);
+                await _twitchRaidData.CreateTwitchRaidData(eventData);
+            }
+            else
+            {
+                Logger.LogError("Stream Event Log is null. Cannot log event.");
+            }
+            if (messageGroup is not null)
+            {
+                //await twitchHub.SendAsync("RecievedChannelRaid", messageGroup, eventData);
+                await _hubContext.Clients.Group(messageGroup).SendAsync("GetRaid", eventData);
+                Logger.LogInformation($"{eventData.FromBroadcasterUserName} raided {eventData.ToBroadcasterUserName} with {eventData.Viewers} Viewers!");
+            }
+            else
+            {
+                Logger.LogError("No message group is null.");
+            }
         }
-
-        Logger.LogInformation($"{eventData.FromBroadcasterUserName} raided {eventData.ToBroadcasterUserName} with {eventData.Viewers} Viewers!");
     }
 }

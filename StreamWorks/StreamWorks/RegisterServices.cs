@@ -150,7 +150,7 @@ public static class RegisterServices
         });
 
         builder.Services.AddBlazorBootstrap();
-
+    
         builder.Services.AddSingleton<TwitchAPI>();
         builder.Services.AddTwitchLibEventSubWebsockets();
         //builder.Services.AddSingleton<TwitchUserController>();
@@ -175,8 +175,16 @@ public static class RegisterServices
         builder.Services.AddScoped<TwitchSetup>();
         builder.Services.AddHostedService<TwitchEventSubConnectionService>();
         builder.Services.AddScoped<IScopedEventSubConnection, ScopedEventSubConnectionTasks>();
-
         builder.Services.AddScoped<ITwitchSignInHelpers, TwitchSignInHelpers>();
+        builder.Services.AddSingleton<ITwitchSubscribeData, MongoTwitchSubscribeData>();
+        builder.Services.AddSingleton<ITwitchFollowData, MongoTwitchFollowData>();
+        builder.Services.AddSingleton<ITwitchSubscribeData, MongoTwitchSubscribeData>();
+        //builder.Services.AddScoped<ITwitchSubscriptionEndData, MongoTwitchSubscriptionEndData>();
+        builder.Services.AddSingleton<ITwitchSubscriptionGiftData, MongoTwitchSubscriptionGiftData>();
+        builder.Services.AddSingleton<ITwitchCheerData, MongoTwitchCheerData>();
+        builder.Services.AddSingleton<ITwitchRaidData, MongoTwitchRaidData>();
+        builder.Services.AddScoped<ITwitchMessageData, MongoTwitchMessageData>();
+
 
         // Widgets
         builder.Services.AddScoped<StreamTimer>();

@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using StreamWorks.Hubs;
 using StreamWorks.Library.Models.TwitchApi.Config;
 using StreamWorks.Library.Models.Users.UserData;
@@ -8,6 +9,7 @@ using TwitchLib.Api;
 using TwitchLib.Api.Core.Extensions.System;
 using TwitchLib.Api.Helix;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
+using TwitchLib.Communication.Interfaces;
 
 namespace StreamWorks.Core.App;
 
@@ -15,6 +17,7 @@ public class TwitchSetup
 {
     private ILogger<TwitchSetup> Logger;
     private IConfiguration Config;
+    private IHubContext<TwitchHub> TwitchHub;
     private IUserAppState AppState;
     private TwitchAPI twitchApi;
     private UserManager<StreamWorksUserModel> UserManager;
@@ -26,13 +29,14 @@ public class TwitchSetup
 
     private bool mustRefreshToken = false;
 
-    public TwitchSetup(ILogger<TwitchSetup> _logger, IConfiguration config, IUserAppState appState, UserManager<StreamWorksUserModel> userManager, NavigationManager navManager, TwitchAPI twitchApi)
+    public TwitchSetup(ILogger<TwitchSetup> _logger, IConfiguration config, IHubContext<TwitchHub> twitchHub, IUserAppState appState, UserManager<StreamWorksUserModel> userManager, NavigationManager navManager, TwitchAPI twitchApi)
     {
         Logger = _logger;
         Config = config;
         AppState = appState;
         UserManager = userManager;
         NavManager = navManager;
+        TwitchHub = twitchHub;
         this.twitchApi = twitchApi;
     }
 
@@ -272,30 +276,30 @@ public class TwitchSetup
         }
     }
 
-    //public async Task TwitchApiSetup(UserAppStateModel appState)
-    //{
-    //    // Call API as a test
-    //    if (appState.TwitchConnection.AccessToken is not null)
-    //    {
-    //        // Setup EventSub with data after testing
-    //        Logger.LogInformation("Setting up EventSub");
+    public async Task TwitchApiSetup(UserAppStateModel appState)
+    {
+        // Call API as a test
+        if (appState.TwitchConnection.AccessToken is not null)
+        {
+            // Setup EventSub with data after testing
+            Logger.LogInformation("Setting up EventSub");
 
-    //        //if (twitchHub is null)
-    //        //{
-    //        //    Logger.LogError("Twitch Hub is null! Will not call twitchHub.");
-    //        //    return;
-    //        //};
-    //        // await twitchHub.SendAsync("SetupConnectionRequest", AccessToken, UserId, BroadcasterId);
-    //        // await twitchHub.SendAsync("StartServiceRequest");
-
-    //        // var user = loggedInUserAuthState?.Claims.Where(c => c.Type == "user_id").First().Value;
-    //        await twitchHub.SendAsync("SetupConnectionRequest", loggedInUser.Id, appState.TwitchConnection.AccessToken, appState.TwitchConnection.id);
-    //    }
-    //    else
-    //    {
-    //        Logger.LogWarning($"Access Token was null!");
-    //    }
-    //}
+            //if (twitchHub is null)
+            //{
+            //    Logger.LogError("Twitch Hub is null! Will not call twitchHub.");
+            //    return;
+            //};
+            //await TwitchHub.Clients.All.SendAsync("SetupConnectionRequest", appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId, appState.TwitchConnection.TwitchId);
+            //await TwitchHub.Clients.All.SendAsync("StartServiceRequest");
+            await TwitchHub.Clients.All.SendAsync("StartService");
+            //await TwitchHub.Clients.All.SendAsync("SetupConnectionRequest", appState.UserId, appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId);
+            await TwitchHub.Clients.All.SendAsync("SetupConnection", appState.UserId, appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId);
+        }
+        else
+        {
+            Logger.LogWarning($"Access Token was null!");
+        }
+    }
 
     public async Task<GetUsersResponse> GetTwitchUserDataFromApi(UserAppStateModel appState)
     {

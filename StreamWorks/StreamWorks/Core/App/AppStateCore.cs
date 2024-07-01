@@ -108,7 +108,7 @@ public class AppStateCore : IAppStateCore
 
             if (accessCodeValid == true)
             {
-                await _twitchSetup.TwitchApiSetup();
+                await _twitchSetup.TwitchApiSetup(this.userAppStateDataModel);
             }
         }
     }
@@ -359,11 +359,27 @@ public class AppStateCore : IAppStateCore
             // Then try connecting to API to test the Access Token
             while (tryCount > 0)
             {
+                if (tryCount < 3)
+                {
+                    // If less than two, then Twitch info was updated, so re-update the user info
+                    this.loggedInUser = await CheckLoggedInUser();
+
+                    // If the loggedInMember has a Twitch Login, set up the Twitch User
+                    this.userAppStateDataModel.TwitchConnection = _twitchSetup.SetupTwitchUser(this.loggedInUser);
+
+                    Logger.LogWarning($"Refreshed User Data: {this.loggedInUser.Id}");
+                }
+
                 Logger.LogWarning($"Current Try: {tryCount}");
                 tryCount--;
 
+                UserAppStateModel? result = null;
+
                 // Try to get the User Data from Twitch API
-                var result = await _twitchSetup.GetTwitchUserData(this.userAppStateDataModel, this.loggedInUser);
+                if (this.loggedInUser is not null)
+                {
+                    result = await _twitchSetup.GetTwitchUserData(this.userAppStateDataModel, this.loggedInUser);
+                }
 
                 // If we get the data, break the loop by setting 
                 if (result is not null)
