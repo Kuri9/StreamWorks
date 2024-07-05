@@ -4,8 +4,6 @@ public class TimerSettingsModel
     public string? TimerTitle { get; set; }
     public TimeSpan StartingTime { get; set; }
     public TimeSpan MaximumTime { get; set; }
-    public TimeSpan CurrentTime { get; set; }
-    public TimeSpan TimeElapsed { get; set; }
     public TimeSpan TotalTime { get; set; }
     public TimeSpan DefaultTime { get; set; } = TimeSpan.FromSeconds(300);
 

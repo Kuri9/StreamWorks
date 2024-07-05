@@ -8,6 +8,7 @@ public class StreamTimerModel : IStreamTimerModel
     public string? Id { get; set; }
     public Guid UserId { get; set; }
     public TimeSpan CurrentTime { get; set; }
+    public TimeSpan TimeElapsed { get; set; }
     public TimeSpan AddTime { get; set; }
 
     public TimerSettingsModel TimerSettings { get; set; } = new TimerSettingsModel();

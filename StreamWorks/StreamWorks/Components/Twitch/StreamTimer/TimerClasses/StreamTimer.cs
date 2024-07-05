@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using StreamWorks.Hubs;
 using StreamWorks.Library.Models.Connections.TwitchEvent;
+using StreamWorks.Library.Models.Widgets.Timers;
 using StreamWorks.Library.Models.Widgets.Timers.TimerModels;
 using StreamWorks.Models.Widgets.Timers;
 using System.Numerics;
@@ -12,15 +13,13 @@ namespace StreamWorks.Components.Twitch.StreamTimer.TimerClasses;
 public class StreamTimer : IStreamTimer
 {
     private StreamWorksUserModel loggedInUser = default!;
+    private StreamTimerModel streamTimerData = new();
 
     ILogger<StreamTimer> Logger;
     IConfiguration Config;
 
-    private TimerDataModel timerData = new TimerDataModel();
-    private TimerSettingsModel timer = new TimerSettingsModel();
-
     private TimeSpan oneSecond = TimeSpan.FromSeconds(1);
-    public TimerSettingsModel Timer => timer;
+    public StreamTimerModel Timer => streamTimerData;
 
     //public event EventHandler<TimeSpan>? TimerTickEvent;
     private IHubContext<StreamHub> _hubContext { get; }
@@ -31,8 +30,15 @@ public class StreamTimer : IStreamTimer
         Config = config;
         _hubContext = hubContext;
 
-        timer.StartingTime = TimeSpan.FromSeconds(300);
-        timer.IsRunning = false;
+        streamTimerData.TimerSettings.StartingTime = TimeSpan.FromSeconds(300);
+        streamTimerData.TimerSettings.IsRunning = false;
+
+        Setup();
+    }
+
+    private async Task Setup()
+    {
+        streamTimerData.CurrentTime = streamTimerData.TimerSettings.StartingTime;
     }
 
     public async Task OnTimerTicked()
@@ -40,36 +46,36 @@ public class StreamTimer : IStreamTimer
         //await _hubContext.Clients.All.SendAsync("TimerTicked");
         //Logger.LogInformation("Timer Ticked");
 
-        if (timer.IsRunning == true)
+        if (streamTimerData.TimerSettings.IsRunning == true)
         {
-            if (timer.IsCountDown == true)
+            if (streamTimerData.TimerSettings.IsCountDown == true)
             {
-                timer.CurrentTime -= oneSecond;
-                timer.TimeElapsed += oneSecond;
+                streamTimerData.CurrentTime -= oneSecond;
+                streamTimerData.TimeElapsed += oneSecond;
 
-                if (timer.CurrentTime <= TimeSpan.Zero)
+                if (streamTimerData.CurrentTime <= TimeSpan.Zero)
                 {
                     StopTimer();
                 }
 
-                Logger.LogInformation($"Current Time: {timer.CurrentTime}");
+                Logger.LogInformation($"Current Time: {streamTimerData.CurrentTime}");
             }
             else
             {
-                timer.CurrentTime += oneSecond;
-                timer.TimeElapsed += oneSecond;
+                streamTimerData.CurrentTime += oneSecond;
+                streamTimerData.TimeElapsed += oneSecond;
 
-                if (timer.CurrentTime >= TimeSpan.Zero)
+                if (streamTimerData.CurrentTime >= TimeSpan.Zero)
                 {
                     StopTimer();
                 }
 
-                Logger.LogInformation($"Current Time: {timer.CurrentTime}");
+                Logger.LogInformation($"Current Time: {streamTimerData.CurrentTime}");
             }
         }
         else
         {
-            Logger.LogError($"IsRunning is {timer.IsRunning}.");
+            Logger.LogError($"IsRunning is {streamTimerData.TimerSettings.IsRunning}.");
         }
     }
 
@@ -79,7 +85,7 @@ public class StreamTimer : IStreamTimer
         {
             addTime.Multiply(-1);
         }
-        timer.CurrentTime += addTime;
+        streamTimerData.CurrentTime += addTime;
     }
 
     public void RemoveTime(TimeSpan removeTime, bool noNegative = true)
@@ -88,48 +94,49 @@ public class StreamTimer : IStreamTimer
         {
             removeTime.Multiply(-1);
         }
-        if (noNegative == true && timer.CurrentTime - removeTime < TimeSpan.Zero)
+        if (noNegative == true && streamTimerData.CurrentTime - removeTime < TimeSpan.Zero)
         {
-            timer.CurrentTime = TimeSpan.Zero;
+            streamTimerData.CurrentTime = TimeSpan.Zero;
             return;
         }
         else
         {
-            timer.CurrentTime -= removeTime;
+            streamTimerData.CurrentTime -= removeTime;
         }
     }
 
     public void StartTimer()
     {
-        timer.CurrentTime = timer.StartingTime;
-
-        if (timer.IsRunning == false)
+        if (streamTimerData.TimerSettings.IsRunning == false)
         {
-            timer.IsRunning = true;
+            streamTimerData.TimerSettings.IsRunning = true;
         }
     }
 
     public void StopTimer()
     {
-        if (timer.IsRunning == true)
+        if (streamTimerData.TimerSettings.IsRunning == true)
         {
-            timer.IsRunning = false;
+            streamTimerData.TimerSettings.IsRunning = false;
         }
+    }
+
+    public void SetTimerData(StreamTimerModel newTimerData)
+    {
+        streamTimerData = newTimerData;
     }
 
     public void SetStartingTime(int hours = 0, int mins = 0, int secs = 0)
     {
         var totalTime = 0;
         totalTime = (((hours * 60) * 60) * 1000) + ((mins * 60) * 1000) + (secs * 1000);
-        timer.StartingTime = TimeSpan.FromMilliseconds(totalTime);
+        streamTimerData.TimerSettings.StartingTime = TimeSpan.FromMilliseconds(totalTime);
     }
 
     public void ClearTimer()
     {
         StopTimer();
-        timer.CurrentTime = TimeSpan.Zero;
-        timer.TimeElapsed = TimeSpan.Zero;
+        streamTimerData.CurrentTime = TimeSpan.Zero;
+        streamTimerData.TimeElapsed = TimeSpan.Zero;
     }
-
-
 }
