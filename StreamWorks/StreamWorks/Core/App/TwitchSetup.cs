@@ -284,16 +284,16 @@ public class TwitchSetup
             // Setup EventSub with data after testing
             Logger.LogInformation("Setting up EventSub");
 
-            //if (twitchHub is null)
+            //if (StreamHub is null)
             //{
-            //    Logger.LogError("Twitch Hub is null! Will not call twitchHub.");
+            //    Logger.LogError("Twitch Hub is null! Will not call StreamHub.");
             //    return;
             //};
-            //await TwitchHub.Clients.All.SendAsync("SetupConnectionRequest", appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId, appState.TwitchConnection.TwitchId);
-            //await TwitchHub.Clients.All.SendAsync("StartServiceRequest");
-            await TwitchHub.Clients.All.SendAsync("StartService");
-            //await TwitchHub.Clients.All.SendAsync("SetupConnectionRequest", appState.UserId, appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId);
-            await TwitchHub.Clients.All.SendAsync("SetupConnection", appState.UserId, appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId);
+            //await StreamHub.Clients.All.SendAsync("SetupConnectionRequest", appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId, appState.TwitchConnection.TwitchId);
+            //await StreamHub.Clients.All.SendAsync("StartServiceRequest");
+            await StreamHub.Clients.All.SendAsync("StartService");
+            //await StreamHub.Clients.All.SendAsync("SetupConnectionRequest", appState.UserId, appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId);
+            await StreamHub.Clients.All.SendAsync("SetupConnection", appState.UserId, appState.TwitchConnection.AccessToken, appState.TwitchConnection.TwitchId);
         }
         else
         {
