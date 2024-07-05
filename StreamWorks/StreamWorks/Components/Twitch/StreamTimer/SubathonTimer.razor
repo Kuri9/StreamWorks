@@ -4,7 +4,7 @@
 @attribute [Authorize]
 
 @using System.Timers;
-@using Components.Twitch.StreamTimer.TimerClasses
+@* @using Components.Twitch.StreamTimer.TimerClasses *@
 @using StreamWorks.Library.DataAccess.MongoDB.StreamWorks.Widgets.Timers
 @using StreamWorks.Library.Models.Widgets.Timers
 @using StreamWorks.Models.Widgets.Timers
@@ -465,7 +465,7 @@
     //Remove Time
     //Set base values for all the times
     //Save the data
-    private HubConnection? twitchHub;
+    private HubConnection? streamHub;
     private List<StreamTimerModel>? allTimerData = new();
     private StreamTimerModel? timerData = new();
     private CreateStreamTimerModel updatedTimerModel = new();
@@ -516,12 +516,12 @@
         loggedInUser = await authProvider.GetUserFromAuth(userData);
         allTimerData = await timerConfig.GetTimerDataByUserId(loggedInUser.Id);
 
-        twitchHub = new HubConnectionBuilder()
-        .WithUrl(navManager.ToAbsoluteUri("/twitchhub"))
+        streamHub = new HubConnectionBuilder()
+        .WithUrl(navManager.ToAbsoluteUri("/Streamhub"))
         .WithAutomaticReconnect()
         .Build();
 
-        twitchHub.On<ChannelChatMessage>("TwitchChatMessageReceived", (message) =>
+        streamHub.On<ChannelChatMessage>("TwitchChatMessageReceived", (message) =>
         {
             Logger.LogInformation($"Message Received: {message.Message.Text}");
             if (message.Message.Text == "!timer 5")
@@ -530,7 +530,7 @@
             }
         });
 
-        twitchHub.On<ChannelFollow>("GetTwitchFollows", (follow) =>
+        streamHub.On<ChannelFollow>("GetTwitchFollows", (follow) =>
         {
             Logger.LogInformation($"Follow Received: {follow.UserName} followed {follow.BroadcasterUserName}");
             if (follow is not null)
@@ -539,7 +539,7 @@
             }
         });
 
-        twitchHub.On<ChannelSubscribe>("GetTwitchSubscribedEvents", (subscription) =>
+        streamHub.On<ChannelSubscribe>("GetTwitchSubscribedEvents", (subscription) =>
         {
             Logger.LogInformation($"Message Received: {subscription.UserName} sent a Tier {subscription.Tier.ToString()} Sub");
 
@@ -560,7 +560,7 @@
             }
         });
 
-        twitchHub.On<ChannelSubscriptionGift>("GetTwitchSubscriptionGifts", (subGift) =>
+        streamHub.On<ChannelSubscriptionGift>("GetTwitchSubscriptionGifts", (subGift) =>
         {
             Logger.LogInformation($"Message Received: {subGift.UserName} sent {subGift.Total} {subGift.Tier} Sub Gift(s)");
             if (subGift is not null)
@@ -580,7 +580,7 @@
             }
         });
 
-        twitchHub.On<ChannelCheer>("GetTwitchCheers", (cheer) =>
+        streamHub.On<ChannelCheer>("GetTwitchCheers", (cheer) =>
         {
             Logger.LogInformation($"Message Received: {cheer.UserName} cheered {cheer.Bits} Bits");
             if (cheer is not null && cheer.Bits > 0)
@@ -590,7 +590,7 @@
 
         });
 
-        twitchHub.On<ChannelRaid>("GetTwitchRaid", (raid) =>
+        streamHub.On<ChannelRaid>("GetTwitchRaid", (raid) =>
         {
             Logger.LogInformation($"Message Received: {raid.FromBroadcasterUserId} raided {raid.ToBroadcasterUserName} with {raid.Viewers} viewers!");
             if (raid is not null && raid.Viewers > 0)
@@ -600,37 +600,37 @@
 
         });
 
-        // twitchHub.On<int>("Tick", newTime =>
+        // streamHub.On<int>("Tick", newTime =>
         // {
         //     currentTime = newTime;
         //     tickCount += 1;
         //     InvokeAsync(StateHasChanged);
         // });
 
-        // twitchHub.On<int, string>("TimerSet", (time, message) =>
+        // streamHub.On<int, string>("TimerSet", (time, message) =>
         // {
         //     currentTime = time;
         //     lastSystemMessage = message;
         //     InvokeAsync(StateHasChanged);
         // });
 
-        // twitchHub.On<string>("TimerStarted", message =>
+        // streamHub.On<string>("TimerStarted", message =>
         // {
         //     lastSystemMessage = message;
         //     InvokeAsync(StateHasChanged);
         // });
 
-        // twitchHub.On<string>("TimerStopped", message =>
+        // streamHub.On<string>("TimerStopped", message =>
         // {
         //     lastSystemMessage = message;
         //     InvokeAsync(StateHasChanged);
         // });
 
-        await twitchHub.StartAsync();
+        await streamHub.StartAsync();
 
         // Join the Hub Group for this User
         var groupName = loggedInUser.Id.ToString();
-        await twitchHub.SendAsync("JoinGroup", groupName);
+        await streamHub.SendAsync("JoinGroup", groupName);
         Logger.LogInformation($"Joined Group: {groupName}");
 
         // Set Timer
@@ -1101,17 +1101,17 @@
 
     public async Task SetHubTimer()
     {
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("SetTimer");
+            await streamHub.SendAsync("SetTimer");
         }
     }
 
     public async Task StartHubTimer()
     {
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("StartTimer");
+            await streamHub.SendAsync("StartTimer");
         }
     }
 

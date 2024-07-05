@@ -6,6 +6,7 @@ using TwitchLib.EventSub.Websockets.Extensions;
 using Microsoft.AspNetCore.ResponseCompression;
 using StreamWorks.Library.Models.Users.UserData;
 using StreamWorks.Core.App;
+using StreamWorks.Services.TimerServices;
 
 namespace StreamWorks;
 
@@ -168,12 +169,13 @@ public static class RegisterServices
 
         // Common App Services
         builder.Services.AddScoped<IAppStateCore, AppStateCore>();
+        builder.Services.AddHostedService<StreamTimerService>();
+        builder.Services.AddHostedService<TwitchEventSubConnectionService>();
 
         // Twitch Data Services
         builder.Services.AddTwitchLibEventSubWebsockets();
         //builder.Services.AddHostedService<TwitchEventSubConnection>();
         builder.Services.AddScoped<TwitchSetup>();
-        builder.Services.AddHostedService<TwitchEventSubConnectionService>();
         builder.Services.AddScoped<IScopedEventSubConnection, ScopedEventSubConnectionTasks>();
         builder.Services.AddScoped<ITwitchSignInHelpers, TwitchSignInHelpers>();
         builder.Services.AddSingleton<ITwitchSubscribeData, MongoTwitchSubscribeData>();
@@ -187,7 +189,7 @@ public static class RegisterServices
 
 
         // Widgets
-        builder.Services.AddScoped<StreamTimer>();
+        builder.Services.AddScoped<IStreamTimer, StreamTimer>();
         builder.Services.AddScoped<IStreamWorksTimerData, MongoStreamWorksTimerData>();
     }
 }

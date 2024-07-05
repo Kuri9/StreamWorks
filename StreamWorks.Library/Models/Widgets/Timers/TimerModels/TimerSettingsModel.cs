@@ -3,8 +3,12 @@ public class TimerSettingsModel
 {
     public string? TimerTitle { get; set; }
     public TimeSpan StartingTime { get; set; }
+    public TimeSpan MaximumTime { get; set; }
+    public TimeSpan CurrentTime { get; set; }
+    public TimeSpan TimeElapsed { get; set; }
     public TimeSpan TotalTime { get; set; }
     public TimeSpan DefaultTime { get; set; } = TimeSpan.FromSeconds(300);
+
     public string? TimerFormat { get; set; }
     public string? TimeNumFormat { get; set; } = @"dd\:hh\:mm\:ss";
     public string? TimeCharFormat { get; set; } = @"d'd 'h'h 'm'm 's's'";
@@ -18,6 +22,7 @@ public class TimerSettingsModel
     public bool IsShowRemaining { get; set; } = true;
     public bool IsShowElapsed { get; set; } = false;
     public bool IsShowTotal { get; set; } = false;
+    public bool IsCountDown { get; set; } = true;
 
     public TimeSpan LastSetTime { get; set; }
     public bool ShowLast { get; set; } = true;

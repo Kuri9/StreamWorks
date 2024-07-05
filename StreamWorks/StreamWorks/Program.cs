@@ -44,6 +44,6 @@ app.MapRazorComponents<App>()
 app.MapAdditionalIdentityEndpoints();
 //app.MapGroup("/authentication").MapLoginAndLogout();
 
-app.MapHub<TwitchHub>("/TwitchHub");
+app.MapHub<StreamHub>("/Streamhub");
 
 app.Run();

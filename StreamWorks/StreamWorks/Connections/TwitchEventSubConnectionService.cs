@@ -13,12 +13,12 @@ public sealed class TwitchEventSubConnectionService(
         IServiceScopeFactory ServiceScopeFatory,
         ILogger<TwitchEventSubConnectionService> Logger,
         IConfiguration Config,
-        IHubContext<TwitchHub> HubContext
+        IHubContext<StreamHub> HubContext
     ) : BackgroundService
 {
     private const string ClassName = nameof(TwitchEventSubConnectionService);
-    private HubConnection? twitchHub;
-    private string hubName = "/twitchhub";
+    private HubConnection? streamHub;
+    private string hubName = "/streamhub";
 
     private readonly ConcurrentDictionary<Guid, EventSubConnectionModel> connectionsList = new();
 
@@ -27,23 +27,23 @@ public sealed class TwitchEventSubConnectionService(
         Logger.LogInformation($"{ClassName} is running.");
 
         // SETUP SIGNALR HUB CONNECTION 
-        twitchHub = new HubConnectionBuilder()
+        streamHub = new HubConnectionBuilder()
         .WithUrl(Config["BaseUrl"] + hubName)
         .WithAutomaticReconnect()
         .Build();
 
         // SETUP SIGNALR HUB CONNECTION EVENTS
-        twitchHub.On<Guid, string, string>("SetupConnection", async (loggedInUserId, accessToken, userId) =>
+        streamHub.On<Guid, string, string>("SetupConnection", async (loggedInUserId, accessToken, userId) =>
         {
             await SetupScopedInstance(stoppingToken, loggedInUserId, accessToken, userId);
         });
 
-        twitchHub.On<Guid>("RemoveConnection", async (loggedInUserId) =>
+        streamHub.On<Guid>("RemoveConnection", async (loggedInUserId) =>
         {
             await RemoveScopedInstance(loggedInUserId);
         });
 
-        await twitchHub.StartAsync();
+        await streamHub.StartAsync();
 
         //while (!stoppingToken.IsCancellationRequested) { }
     }

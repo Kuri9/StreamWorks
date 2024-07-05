@@ -1,49 +1,88 @@
-﻿using StreamWorks.Models.Widgets.Timers;
+﻿using Microsoft.AspNetCore.SignalR;
+using StreamWorks.Hubs;
+using StreamWorks.Library.Models.Connections.TwitchEvent;
+using StreamWorks.Library.Models.Widgets.Timers.TimerModels;
+using StreamWorks.Models.Widgets.Timers;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using TwitchLib.EventSub.Core.SubscriptionTypes.Channel;
 
 namespace StreamWorks.Components.Twitch.StreamTimer.TimerClasses;
 
-public class StreamTimer : IDisposable
+public class StreamTimer : IStreamTimer
 {
-    ILogger<StreamTimer>? Logger;
+    private StreamWorksUserModel loggedInUser = default!;
 
-    private System.Timers.Timer? _timer = new();
-    private TimerDataModel timer = new TimerDataModel();
+    ILogger<StreamTimer> Logger;
+    IConfiguration Config;
+
+    private TimerDataModel timerData = new TimerDataModel();
+    private TimerSettingsModel timer = new TimerSettingsModel();
 
     private TimeSpan oneSecond = TimeSpan.FromSeconds(1);
-    public TimerDataModel Timer => timer;
-    public TimeSpan CurrentTime => timer.CurrentTime;
+    public TimerSettingsModel Timer => timer;
 
     //public event EventHandler<TimeSpan>? TimerTickEvent;
+    private IHubContext<StreamHub> _hubContext { get; }
 
-    public event Action? OnTimerTick;
-    public event Action? OnTimerStart;
-    public event Action? OnTimerStop;
-    public event Action? OnTimerReset;
-    public event Action? OnAddTime;
-    public event Action? OnRemoveTime;
-
-    public StreamTimer()
+    public StreamTimer(ILogger<StreamTimer> logger, IConfiguration config, IHubContext<StreamHub> hubContext)
     {
-        // Set Timer
-        _timer = new System.Timers.Timer(timer.TimerTicks);
-        _timer.Elapsed += OnTickEvent;
-        _timer.AutoReset = true;
+        Logger = logger;
+        Config = config;
+        _hubContext = hubContext;
 
-        timer.Timer = _timer;
-        timer.CurrentTime = TimeSpan.FromSeconds(10000);
+        timer.StartingTime = TimeSpan.FromSeconds(300);
+        timer.IsRunning = false;
     }
 
-    public void AddTimeSeconds(TimeSpan addTime)
+    public async Task OnTimerTicked()
+    {
+        //await _hubContext.Clients.All.SendAsync("TimerTicked");
+        //Logger.LogInformation("Timer Ticked");
+
+        if (timer.IsRunning == true)
+        {
+            if (timer.IsCountDown == true)
+            {
+                timer.CurrentTime -= oneSecond;
+                timer.TimeElapsed += oneSecond;
+
+                if (timer.CurrentTime <= TimeSpan.Zero)
+                {
+                    StopTimer();
+                }
+
+                Logger.LogInformation($"Current Time: {timer.CurrentTime}");
+            }
+            else
+            {
+                timer.CurrentTime += oneSecond;
+                timer.TimeElapsed += oneSecond;
+
+                if (timer.CurrentTime >= TimeSpan.Zero)
+                {
+                    StopTimer();
+                }
+
+                Logger.LogInformation($"Current Time: {timer.CurrentTime}");
+            }
+        }
+        else
+        {
+            Logger.LogError($"IsRunning is {timer.IsRunning}.");
+        }
+    }
+
+    public void AddTime(TimeSpan addTime)
     {
         if (addTime.TotalSeconds < 0)
         {
             addTime.Multiply(-1);
         }
         timer.CurrentTime += addTime;
-        OnAddTime?.Invoke();
     }
 
-    public void RemoveTimeSeconds(TimeSpan removeTime, bool noNegative = true)
+    public void RemoveTime(TimeSpan removeTime, bool noNegative = true)
     {
         if (removeTime.TotalSeconds < 0)
         {
@@ -52,84 +91,45 @@ public class StreamTimer : IDisposable
         if (noNegative == true && timer.CurrentTime - removeTime < TimeSpan.Zero)
         {
             timer.CurrentTime = TimeSpan.Zero;
-            OnRemoveTime?.Invoke();
             return;
         }
         else
         {
             timer.CurrentTime -= removeTime;
-            OnRemoveTime?.Invoke();
-        }
-    }
-
-    private void OnTickEvent(object? sender, ElapsedEventArgs e)
-    {
-        if (_timer is not null)
-        {
-            Logger.LogInformation("Timer ticked in Class");
-            timer.CurrentTime -= oneSecond;
-            timer.TimeElapsed += oneSecond;
-            OnTimerTick?.Invoke();
-
-            if (timer.CurrentTime <= TimeSpan.Zero)
-            {
-                StopTimer();
-            }
-        }
-        else
-        {
-            Logger.LogError("Timer is null. Cannot Tick");
         }
     }
 
     public void StartTimer()
     {
-        if (_timer is not null)
+        timer.CurrentTime = timer.StartingTime;
+
+        if (timer.IsRunning == false)
         {
-            _timer.Start();
-            OnTimerStart?.Invoke();
-        }
-        else
-        {
-            Logger.LogError("Timer is null. Cannot Start");
+            timer.IsRunning = true;
         }
     }
 
     public void StopTimer()
     {
-        if (_timer is not null)
+        if (timer.IsRunning == true)
         {
-            _timer.Stop();
-            OnTimerStop?.Invoke();
-        }
-        else
-        {
-            Logger.LogError("Timer is null. Cannot Stop");
+            timer.IsRunning = false;
         }
     }
 
-    public void ResetTimer()
+    public void SetStartingTime(int hours = 0, int mins = 0, int secs = 0)
     {
-        if (_timer is not null)
-        {
-            _timer.Stop();
-            timer.CurrentTime = TimeSpan.Zero;
-            timer.TimeElapsed = TimeSpan.Zero;
-            OnTimerReset?.Invoke();
-        }
-        else
-        {
-            Logger.LogError("Timer is null. Cannot Reset");
-        }
+        var totalTime = 0;
+        totalTime = (((hours * 60) * 60) * 1000) + ((mins * 60) * 1000) + (secs * 1000);
+        timer.StartingTime = TimeSpan.FromMilliseconds(totalTime);
     }
 
-
-
-    void IDisposable.Dispose()
+    public void ClearTimer()
     {
-        if (_timer is not null)
-        {
-            _timer.Dispose();
-        }
+        StopTimer();
+        timer.CurrentTime = TimeSpan.Zero;
+        timer.TimeElapsed = TimeSpan.Zero;
     }
+
+
 }

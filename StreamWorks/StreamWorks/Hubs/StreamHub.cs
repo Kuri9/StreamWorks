@@ -1,13 +1,10 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using StreamWorks.Hubs.Interfaces;
-using TwitchLib.Api.Helix.Models.EventSub;
-using TwitchLib.Api.Helix.Models.Users.GetUserFollows;
 using TwitchLib.EventSub.Core.SubscriptionTypes.Channel;
 using TwitchLib.EventSub.Websockets.Core.EventArgs;
 
 namespace StreamWorks.Hubs;
 
-public class TwitchHub: Hub
+public class StreamHub: Hub
 {
     public Task JoinGroup(string groupName)
     {
@@ -55,6 +52,12 @@ public class TwitchHub: Hub
     public Task SubscriptionsRequest(string group)
     {
         return Clients.Group(group).SendAsync("OnGetTwitchSubscriptions");
+    }
+
+    // SETUP OTHER TASKS
+    public Task TimerTicked(string timeNow)
+    {
+        return Clients.All.SendAsync("OnTimerTicked", timeNow);
     }
 
     // Non Setup-Related Requests

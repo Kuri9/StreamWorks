@@ -16,13 +16,13 @@ public class TwitchEventSubConnection : IHostedService
 {
     private readonly ILogger<TwitchEventSubConnection> Logger;
     private readonly IConfiguration Config;
-    private IHubContext<TwitchHub> TwitchHubContext;
+    private IHubContext<StreamHub> streamHubContext;
     private CancellationToken CancellationToken;
 
     private readonly EventSubWebsocketClient EventSubWebsocketClient;
     private TwitchAPI api = new();
-    private HubConnection? twitchHub;
-    private string hubName = "/twitchhub";
+    private HubConnection? streamHub;
+    private string hubName = "/streamhub";
 
     // Set to true to use the Test Server
     private bool isTesting = false;
@@ -38,13 +38,13 @@ public class TwitchEventSubConnection : IHostedService
     public TwitchEventSubConnection(
         ILogger<TwitchEventSubConnection> logger,
         IConfiguration config, 
-        IHubContext<TwitchHub> twitchHubContext, 
+        IHubContext<StreamHub> streamHubContext, 
         EventSubWebsocketClient eventSubWebsocketClient
         )
     {
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         Config = config ?? throw new ArgumentNullException(nameof(config));
-        TwitchHubContext = twitchHubContext ?? throw new ArgumentNullException(nameof(twitchHubContext));
+        streamHubContext = streamHubContext ?? throw new ArgumentNullException(nameof(streamHubContext));
         EventSubWebsocketClient = eventSubWebsocketClient ?? throw new ArgumentNullException(nameof(eventSubWebsocketClient));
 
         // SETUP THE API
@@ -53,28 +53,28 @@ public class TwitchEventSubConnection : IHostedService
         api.Settings.Secret = Config["Twitch:ClientSecret"];
 
         // SETUP SIGNALR HUB CONNECTION 
-        twitchHub = new HubConnectionBuilder()
+        streamHub = new HubConnectionBuilder()
         .WithUrl(Config["BaseUrl"] + hubName)
         .WithAutomaticReconnect()
         .Build();
 
         // SETUP SIGNALR HUB CONNECTION EVENTS
-        twitchHub.On<string, string, string>("SetupConnection", async (accessToken, userId, broadcasterId) =>
+        streamHub.On<string, string, string>("SetupConnection", async (accessToken, userId, broadcasterId) =>
         {
             await SetupConnection(accessToken, userId, broadcasterId);
         });
 
-        twitchHub.On("StartService", async () =>
+        streamHub.On("StartService", async () =>
         {
             await StartService();
         });
 
-        twitchHub.On("RequestSubscriptions", async () =>
+        streamHub.On("RequestSubscriptions", async () =>
         {
             await StartService();
         });
 
-        twitchHub.StartAsync();
+        streamHub.StartAsync();
 
         // SETUP WEBSOCKET CLIENT EVENTS
         EventSubWebsocketClient.WebsocketConnected += OnWebsocketConnected;
@@ -519,7 +519,7 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnGetSubscriptions()
     {
         var subData = await api.Helix.EventSub.GetEventSubSubscriptionsAsync();
-        await twitchHub.SendAsync("RecievedSubscriptions", subData);
+        await streamHub.SendAsync("RecievedSubscriptions", subData);
 
         Logger.LogInformation($"Total Number of Subscriptions: {subData.Total} Total Points Used: {subData.TotalCost}");
     }
@@ -562,9 +562,9 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnChannelFollow(object sender, ChannelFollowArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("RecievedChannelFollow", eventData);
+            await streamHub.SendAsync("RecievedChannelFollow", eventData);
         }
         Logger.LogInformation($"{eventData.UserName} followed {eventData.BroadcasterUserName} at {eventData.FollowedAt}");
     }
@@ -573,9 +573,9 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnChannelChatMessage(object sender, ChannelChatMessageArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("RecievedChatMessage", eventData);
+            await streamHub.SendAsync("RecievedChatMessage", eventData);
         }
 
         Logger.LogInformation($"{eventData.ChatterUserName} typed {eventData.Message.Text}");
@@ -585,9 +585,9 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnChannelSubscribe(object sender, ChannelSubscribeArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("RecievedSubscription", eventData);
+            await streamHub.SendAsync("RecievedSubscription", eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} subscribed to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
@@ -596,9 +596,9 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnChannelSubscriptionEnd(object sender, ChannelSubscriptionEndArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("RecievedSubscriptionEnding", eventData);
+            await streamHub.SendAsync("RecievedSubscriptionEnding", eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} unsubscribed from {eventData.BroadcasterUserName}: It was a Tier {eventData.Tier} Sub");
@@ -607,9 +607,9 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnChannelSubscriptionGift(object sender, ChannelSubscriptionGiftArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("RecievedSubscriptionGift", eventData);
+            await streamHub.SendAsync("RecievedSubscriptionGift", eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} gifted {eventData.BroadcasterUserName}'s channel a Tier {eventData.Tier} Sub");
@@ -618,9 +618,9 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnChannelSubscriptionMessage(object sender, ChannelSubscriptionMessageArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("RecievedSubscriptionMessage", eventData);
+            await streamHub.SendAsync("RecievedSubscriptionMessage", eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} sent a sub message to {eventData.BroadcasterUserName} with a Tier {eventData.Tier} Sub");
@@ -630,9 +630,9 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnChannelCheer(object sender, ChannelCheerArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("RecievedChannelCheer", eventData);
+            await streamHub.SendAsync("RecievedChannelCheer", eventData);
         }
 
         Logger.LogInformation($"{eventData.UserName} cheered {eventData.Bits} Bits to {eventData.BroadcasterUserName}");
@@ -642,9 +642,9 @@ public class TwitchEventSubConnection : IHostedService
     private async Task OnChannelRaid(object sender, ChannelRaidArgs e)
     {
         var eventData = e.Notification.Payload.Event;
-        if (twitchHub is not null)
+        if (streamHub is not null)
         {
-            await twitchHub.SendAsync("RecievedChannelRaid", eventData);
+            await streamHub.SendAsync("RecievedChannelRaid", eventData);
         }
 
         Logger.LogInformation($"{eventData.FromBroadcasterUserName} raided {eventData.ToBroadcasterUserName} with {eventData.Viewers} Viewers!");

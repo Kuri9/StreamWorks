@@ -17,7 +17,7 @@ public class TwitchSetup
 {
     private ILogger<TwitchSetup> Logger;
     private IConfiguration Config;
-    private IHubContext<TwitchHub> TwitchHub;
+    private IHubContext<StreamHub> StreamHub;
     private IUserAppState AppState;
     private TwitchAPI twitchApi;
     private UserManager<StreamWorksUserModel> UserManager;
@@ -29,14 +29,14 @@ public class TwitchSetup
 
     private bool mustRefreshToken = false;
 
-    public TwitchSetup(ILogger<TwitchSetup> _logger, IConfiguration config, IHubContext<TwitchHub> twitchHub, IUserAppState appState, UserManager<StreamWorksUserModel> userManager, NavigationManager navManager, TwitchAPI twitchApi)
+    public TwitchSetup(ILogger<TwitchSetup> _logger, IConfiguration config, IHubContext<StreamHub> streamHub, IUserAppState appState, UserManager<StreamWorksUserModel> userManager, NavigationManager navManager, TwitchAPI twitchApi)
     {
         Logger = _logger;
         Config = config;
         AppState = appState;
         UserManager = userManager;
         NavManager = navManager;
-        TwitchHub = twitchHub;
+        StreamHub = streamHub;
         this.twitchApi = twitchApi;
     }
 
