@@ -1,8 +1,7 @@
 ﻿@page "/"
-@using StreamWorks.Core.App
 @using StreamWorks.Helpers.Twitch
-
 @using StreamWorks.Library.Models.Users.UserData
+@using StreamWorks.Shared.App
 @using TwitchLib.Api.Helix.Models.Users.GetUsers
 @using TwitchLib.EventSub.Core.SubscriptionTypes.Channel
 
@@ -18,7 +17,7 @@
 @inject IHttpClientFactory clientFactory
 @inject TwitchAPI twitchApi;
 @inject ITwitchSignInHelpers twitchSignInHelpers
-@inject IAppStateCore appState
+@inject AppStateCore appState
 @inject IUserAppState userAppState
 
 @implements IAsyncDisposable
@@ -204,7 +203,7 @@
 
     public async Task RunSetup()
     {
-        await appState.SetUserData();
+        await appState.Initialize();
     }
 
     public async Task CheckLoggedInUser()

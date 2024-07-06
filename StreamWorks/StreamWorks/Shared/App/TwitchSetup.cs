@@ -1,17 +1,10 @@
-﻿using Azure.Core;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR;
 using StreamWorks.Hubs;
-using StreamWorks.Library.Models.TwitchApi.Config;
 using StreamWorks.Library.Models.Users.UserData;
-using TwitchLib.Api;
-using TwitchLib.Api.Core.Extensions.System;
-using TwitchLib.Api.Helix;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
-using TwitchLib.Communication.Interfaces;
 
-namespace StreamWorks.Core.App;
+namespace StreamWorks.Shared.App;
 
 public class TwitchSetup
 {
@@ -71,7 +64,7 @@ public class TwitchSetup
 
     public string GetAuthorizationCodeUrl(string clientId, string redirectUri, List<string> scopes)
     {
-        var scopesStr = String.Join('+', scopes);
+        var scopesStr = string.Join('+', scopes);
 
         return "https://id.twitch.tv/oauth2/authorize?" +
                $"client_id={clientId}&" +
@@ -90,7 +83,7 @@ public class TwitchSetup
         twitchApi.Settings.ClientId = currentConnection.ClientId;
         twitchApi.Settings.Secret = currentConnection.ClientSecret;
 
-        var refreshedToken = await this.twitchApi.Auth.RefreshAuthTokenAsync(
+        var refreshedToken = await twitchApi.Auth.RefreshAuthTokenAsync(
                 currentConnection.RefreshToken,
                 currentConnection.ClientSecret,
                 currentConnection.ClientId
@@ -163,7 +156,7 @@ public class TwitchSetup
         var broadcasterId = result.Users[0].Id;
         twitchConnectionData.BroadcasterId = broadcasterId;
 
-        if (String.IsNullOrEmpty(broadcasterId))
+        if (string.IsNullOrEmpty(broadcasterId))
         {
             broadcasterId = Config["Twitch:DefaultBroadcaster"] ?? "No default broadcaster set.";
             Logger.LogInformation($"Twitch BroadcasterID was not found. Using default instead: {broadcasterId}");
@@ -212,16 +205,16 @@ public class TwitchSetup
     {
         Logger.LogInformation("Getting Twitch User Data...");
 
-        if (String.IsNullOrWhiteSpace(appState.TwitchConnection.TwitchId))
+        if (string.IsNullOrWhiteSpace(appState.TwitchConnection.TwitchId))
         {
             appState.TwitchConnection.TwitchId = loggedInUser.Logins.Where(l => l.LoginProvider == "TwitchLogin").ToList().First().ProviderKey;
         }
 
         //getUserResponse = await twitchInternalUserApi.GetTwitchUserData(name, accessToken);
-        this.twitchApi.Settings.AccessToken = appState.TwitchConnection.AccessToken;
-        this.twitchApi.Settings.ClientId = appState.TwitchConnection.ClientId;
-        this.twitchApi.Settings.Secret = appState.TwitchConnection.ClientSecret;
-        var getUserResponse = await GetTwitchUserDataFromApi(appState);
+        twitchApi.Settings.AccessToken = appState.TwitchConnection.AccessToken;
+        twitchApi.Settings.ClientId = appState.TwitchConnection.ClientId;
+        twitchApi.Settings.Secret = appState.TwitchConnection.ClientSecret;
+        var getUserResponse = await GetTwitchUserDataFromApi();
 
         await Task.Delay(1000);
 
@@ -301,14 +294,11 @@ public class TwitchSetup
         }
     }
 
-    public async Task<GetUsersResponse> GetTwitchUserDataFromApi(UserAppStateModel appState)
+    public async Task<GetUsersResponse> GetTwitchUserDataFromApi()
     {
-        // var logins =  new List<string>();
-        // logins.Add(id);
-
         try
         {
-            var user = await this.twitchApi.Helix.Users.GetUsersAsync();
+            var user = await twitchApi.Helix.Users.GetUsersAsync();
             return user;
         }
         catch (Exception ex)

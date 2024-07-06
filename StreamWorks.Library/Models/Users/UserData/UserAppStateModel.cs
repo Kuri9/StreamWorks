@@ -13,12 +13,16 @@ public class UserAppStateModel : IUserAppState
     public string? Id { get; set; }
     public Guid UserId { get; set; } = Guid.Empty;
     public string DisplayName { get; set; } = string.Empty;
+
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.Now;
     public DateTimeOffset LastLogin { get; set; } = DateTimeOffset.Now;
     public DateTimeOffset LastLogout { get; set; } = DateTimeOffset.Now;
+    
     public bool IsLoggedIn { get; set; } = false;
     public bool IsStreaming { get; set; } = false;
+    
     public StreamEventLogModel EventLogs { get; set; } = new StreamEventLogModel();
+
     public bool TwitchAccountConnected { get; set; } = false;
     public TwitchConnectionModel TwitchConnection { get; set; } = new TwitchConnectionModel();
     public GetUserDataModel TwitchUserData { get; set; } = new GetUserDataModel();

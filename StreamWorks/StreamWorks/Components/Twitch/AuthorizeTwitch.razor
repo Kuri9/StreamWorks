@@ -1,8 +1,8 @@
 ﻿@page "/AuthorizeTwitch"
 
 @using System.Net
-@using StreamWorks.Core.App
 @using StreamWorks.Library.Models.Users.UserData
+@using StreamWorks.Shared.App
 @using TwitchLib.Api
 @using TwitchLib.Api.Auth
 @rendermode InteractiveServer
@@ -11,7 +11,7 @@
 @inject AuthenticationStateProvider authProvider
 @inject ProtectedSessionStorage protectedSessionStore
 @inject IStreamWorksUserData userData
-@inject IAppStateCore appState
+@inject AppStateCore appState
 @inject IUserAppState userAppState
 @inject TwitchSetup twitchSetup
 @inject NavigationManager navManager

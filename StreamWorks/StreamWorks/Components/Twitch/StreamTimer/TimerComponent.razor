@@ -1,5 +1,4 @@
-﻿@page "/timer"
-@rendermode InteractiveServer
+﻿@rendermode InteractiveServer
 @using StreamWorks.Helpers.Widgets.Timers
 @using StreamWorks.Library.Models.Widgets.Timers
 @inject ILogger<TimerComponent> Logger
@@ -12,12 +11,12 @@
 
 <h3>@streamTimer.Timer.CurrentTime</h3>
 
-<div class="row mb-3">
+@* <div class="row mb-3">
     <div class="d-grid button-connected-group">
         <Button Class="btn btn-lg btn-dark" @onclick="StartTimer">Start</Button>
         <Button Class="btn btn-lg btn-dark" @onclick="StopTimer">Stop</Button>
     </div>
-</div>
+</div> *@
 
 @code {
     private StreamWorksUserModel loggedInUser = default!;
