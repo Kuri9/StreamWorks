@@ -16,6 +16,8 @@
 <Button Class="btn btn-outline-dark" @onclick="StopTimer">Stop</Button>
 
 @code {
+    // TODO: Add a button that sends this timer instance to a blank page? Same instance and maybe same controls..
+
     private StreamWorksUserModel loggedInUser = default!;
 
     private TimeSpan oneSecond = TimeSpan.FromSeconds(1);
