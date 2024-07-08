@@ -1,10 +1,62 @@
 ﻿@page "/timer"
-
+@rendermode InteractiveServer
+@using StreamWorks.Library.Models.Widgets.Timers
 @using StreamWorks.Shared.Timers
+@inject ILogger<StreamTimer> Logger
+@inject NavigationManager NavManager
+@inject IStreamWorksUserData UserData
+@inject AuthenticationStateProvider AuthProvider
 @inject StreamTimerStateManager TimerState
 
+
 <h3>StreamTimer</h3>
+<TimerComponent />
+
+<Button Class="btn btn-outline-dark" @onclick="StartTimer" >Start</Button>
+<Button Class="btn btn-outline-dark" @onclick="StopTimer">Stop</Button>
 
 @code {
+    private StreamWorksUserModel loggedInUser = default!;
 
+    private TimeSpan oneSecond = TimeSpan.FromSeconds(1);
+
+    protected override async Task OnInitializedAsync()
+    {
+        loggedInUser = await AuthProvider.GetUserFromAuth(UserData);
+    }
+
+    public void AddTime(TimeSpan addTime)
+    {
+        TimerState.AddTime(addTime);
+    }
+
+    public void RemoveTime(TimeSpan removeTime, bool noNegative = true)
+    {
+        TimerState.RemoveTime(removeTime, noNegative);
+    }
+
+    public void StartTimer()
+    {
+        this.TimerState.StartTimer();
+    }
+
+    public void StopTimer()
+    {
+        this.TimerState.StopTimer();
+    }
+
+    public void SetTimerData(StreamTimerModel newTimerData)
+    {
+
+    }
+
+    public void SetStartingTime(int hours = 0, int mins = 10, int secs = 0)
+    {
+        TimerState.SetStartingTime(hours, mins, secs);
+    }
+
+    public void ClearTimer()
+    {
+        TimerState.ClearTimer();
+    }
 }

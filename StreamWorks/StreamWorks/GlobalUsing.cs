@@ -11,7 +11,6 @@ global using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 global using AspNet.Security.OAuth.Twitch;
 
 global using StreamWorks.Components.Account;
-global using StreamWorks.Components.Twitch.StreamTimer.TimerClasses;
 global using StreamWorks.Helpers.Users;
 global using StreamWorks.Helpers.Twitch;
 global using StreamWorks.Connections.Scopes;

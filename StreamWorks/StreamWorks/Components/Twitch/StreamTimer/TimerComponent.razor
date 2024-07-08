@@ -1,15 +1,17 @@
 ﻿@rendermode InteractiveServer
 @using StreamWorks.Helpers.Widgets.Timers
 @using StreamWorks.Library.Models.Widgets.Timers
+@using StreamWorks.Shared.Timers
+
+@implements IDisposable
 @inject ILogger<TimerComponent> Logger
 @inject NavigationManager navManager
-@inject IConfiguration Config
 @inject IStreamWorksUserData userData
 @inject AuthenticationStateProvider authProvider
-@inject IStreamWorksTimerData timerConfig
-@inject IStreamTimer streamTimer
 
-<h3>@streamTimer.Timer.CurrentTime</h3>
+@inject StreamTimerStateManager _timerState
+
+<h3>@_timerState.CurrentTime</h3>
 
 @* <div class="row mb-3">
     <div class="d-grid button-connected-group">
@@ -20,15 +22,12 @@
 
 @code {
     private StreamWorksUserModel loggedInUser = default!;
-    private StreamTimerModel currentStreamTimer = default!;
-
-    TimeSpan timerInterval = TimeSpan.FromMilliseconds(1000);
-
     private HubConnection? streamHub;
 
     protected override async Task OnInitializedAsync()
     {
         loggedInUser = await authProvider.GetUserFromAuth(userData);
+        _timerState.OnChange += RefreshAsync;
 
         streamHub = new HubConnectionBuilder()
         .WithUrl(navManager.ToAbsoluteUri("/Streamhub"))
@@ -37,7 +36,7 @@
 
         streamHub.On<string>("TimerTicked", (timeNow) =>
         {
-            Logger.LogInformation($"In timer component!");
+            //Logger.LogInformation($"In timer component!");
             onTick(timeNow);
         });
 
@@ -47,8 +46,6 @@
         var groupName = loggedInUser.Id.ToString();
         await streamHub.SendAsync("JoinGroup", groupName);
         Logger.LogInformation($"Joined Group: {groupName}");
-
-        Setup();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -59,61 +56,20 @@
         }
     }
 
-    private async Task Setup()
+    private void RefreshAsync()
     {
-        var result = await GetUserTimer();
-        if (result is not null)
-        {
-            SetTimerData(result);
-        }
-    }
-
-    private void onTick(string timeNow)
-    {
-        // Logger.LogInformation($"Timer ticked: {timeNow}");
-        streamTimer.OnTimerTicked();
-
         InvokeAsync(StateHasChanged);
     }
 
-    public async Task StartTimer()
+    private async Task onTick(string timeNow)
     {
-        Logger.LogInformation("Starting Timer");
-        streamTimer.StartTimer();
+        // Logger.LogInformation($"Timer ticked: {timeNow}");
+        await _timerState.OnTimerTicked();
     }
 
-    public async Task StopTimer()
+    public void Dispose()
     {
-        streamTimer.StopTimer();
-    }
-
-    public async Task<StreamTimerModel> GetUserTimer()
-    {
-        if (timerConfig is not null)
-        {
-            try
-            {
-                var result = await timerConfig.GetTimerDataByUserId(loggedInUser.Id);
-                currentStreamTimer = result.First();
-
-                return currentStreamTimer;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error getting user timer");
-            }
-        }
-
-        return null;
-    }
-
-    public void SetTimerData(StreamTimerModel timerToSet)
-    {
-        streamTimer.SetTimerData(timerToSet);
-    }
-
-    private void Dispose()
-    {
+        _timerState.OnChange -= RefreshAsync;
         streamHub?.DisposeAsync();
     }
 }

@@ -8,6 +8,7 @@ using StreamWorks.Library.Models.Users.UserData;
 using StreamWorks.Services.TimerServices;
 using StreamWorks.Shared.Timers;
 using StreamWorks.Shared.App;
+using StreamWorks.Shared.Events;
 
 namespace StreamWorks;
 
@@ -168,10 +169,14 @@ public static class RegisterServices
         builder.Services.AddSingleton<IUserAppStateData, MongoUserAppStateData>();
         builder.Services.AddScoped<IUserAppState, UserAppStateModel>();
 
-        // Common App Services
-        builder.Services.AddScoped<AppStateCore>();
+        // Hosted Services
         builder.Services.AddHostedService<StreamTimerService>();
         builder.Services.AddHostedService<TwitchEventSubConnectionService>();
+
+        // State Managers
+        builder.Services.AddScoped<AppStateCore>();
+        builder.Services.AddScoped<EventStateManager>();
+        builder.Services.AddScoped<StreamTimerStateManager>();
 
         // Twitch Data Services
         builder.Services.AddTwitchLibEventSubWebsockets();
@@ -179,7 +184,6 @@ public static class RegisterServices
         builder.Services.AddScoped<TwitchSetup>();
         builder.Services.AddScoped<IScopedEventSubConnection, ScopedEventSubConnectionTasks>();
         builder.Services.AddScoped<ITwitchSignInHelpers, TwitchSignInHelpers>();
-        builder.Services.AddSingleton<ITwitchSubscribeData, MongoTwitchSubscribeData>();
         builder.Services.AddSingleton<ITwitchFollowData, MongoTwitchFollowData>();
         builder.Services.AddSingleton<ITwitchSubscribeData, MongoTwitchSubscribeData>();
         //builder.Services.AddScoped<ITwitchSubscriptionEndData, MongoTwitchSubscriptionEndData>();
@@ -190,7 +194,6 @@ public static class RegisterServices
 
 
         // Widgets
-        builder.Services.AddScoped<IStreamTimer, StreamTimer>();
         builder.Services.AddScoped<StreamTimerStateManager>();
         builder.Services.AddScoped<IStreamWorksTimerData, MongoStreamWorksTimerData>();
     }
